@@ -1,0 +1,696 @@
+Create a complete high-fidelity mobile app design for a women-first fitness, wellness, nutrition, cycle health, pregnancy, confidence, and personal-safety platform.
+
+WORKING APP NAME:
+UNSTOPPABLE
+
+CORE BRAND PROMISE:
+“One journey: beginner → fit → confident → safe → unstoppable.”
+
+The app must combine:
+1. Workout and fitness programs
+2. Yoga, breathwork, flexibility, and recovery
+3. Self-defense and beginner taekwondo education
+4. Food scanning and macro coaching
+5. Recipes and meal planning
+6. Menstrual-cycle tracking
+7. Pregnancy-safe and postpartum programs
+8. Progress, levels, challenges, badges, and streaks
+
+Do not design these as disconnected mini-apps. Everything must feel like one personalized transformation journey.
+
+DESIGN DIRECTION
+
+Use the uploaded UI reference as visual inspiration.
+
+Create a soft, modern, feminine sports-tech interface with:
+- White and warm off-white main backgrounds
+- Pastel pink, lavender, sky blue, aqua, mint, and soft coral accents
+- Subtle pink-to-blue gradient backgrounds for promotional areas
+- Large rounded cards with 20–28 px corner radii
+- Pill-shaped filters and buttons
+- Thin, simple rounded icons
+- Soft shadows with low opacity
+- Large circular progress rings
+- Bold black or dark-charcoal headlines
+- Muted gray supporting text
+- Athlete photo cutouts inside colorful cards
+- Generous white space
+- Friendly, supportive, premium visual tone
+- Minimal visual clutter
+- Strong content hierarchy
+- Clear 44 px or larger touch targets
+- Accessible text contrast
+
+Use diverse women with realistic body types, ages, ethnicities, fitness levels, pregnancy stages, and postpartum experiences. Avoid overly sexualized fitness imagery.
+
+TYPOGRAPHY
+
+Use Manrope, SF Pro Rounded, or a similar modern rounded sans-serif.
+
+Suggested hierarchy:
+- Display statistic: 40–48 px, extra bold
+- Main screen heading: 28–32 px, bold
+- Section heading: 18–20 px, bold
+- Card title: 16–18 px, semibold
+- Body text: 14–16 px
+- Caption and metadata: 12–13 px
+
+COLOR SYSTEM
+
+Create reusable color variables:
+
+Primary Pink: #F26BB5
+Deep Pink: #D94A9A
+Sky Blue: #77CDED
+Soft Cyan: #C9F2F6
+Lavender: #B9A7F2
+Soft Lavender: #E9E2FC
+Mint: #A9E4D2
+Coral: #FF928F
+Warm Yellow: #FFD88A
+Charcoal: #17181C
+Secondary Text: #747985
+Border Gray: #EBEDF0
+Surface White: #FFFFFF
+App Background: #FAFAFC
+
+Use pastel gradients sparingly:
+- Blush pink to pale lavender
+- Pale lavender to sky blue
+- Aqua to pale blue
+
+FIGMA CONSTRUCTION REQUIREMENTS
+
+Create the designs as editable production-ready Figma layouts.
+
+Use:
+- Mobile frame size: 390 × 844 px
+- Auto Layout on every screen and major container
+- An 8-point spacing system
+- Responsive constraints
+- Named color and typography variables
+- Reusable components
+- Component variants
+- Consistent layer naming
+- Separate Figma sections for each product pillar
+
+Create reusable components for:
+- Primary, secondary, ghost, icon, and disabled buttons
+- Mission cards
+- Workout cards
+- Yoga session cards
+- Self-defense technique cards
+- Recipe cards
+- Food scan result cards
+- Progress cards
+- Challenge cards
+- Level badges
+- Filter chips
+- Search bars
+- Progress rings
+- Macro charts
+- Calendar cells
+- Video-player controls
+- Bottom sheets
+- Modals
+- Toast messages
+- Navigation bars
+- Bottom navigation
+- Input fields
+- Empty states
+- Loading states
+- Error states
+- Locked premium states
+
+PRIMARY NAVIGATION
+
+Use a five-item bottom navigation:
+
+1. Today
+2. Explore
+3. Scan
+4. Progress
+5. Profile
+
+Today is the main experience.
+
+Explore contains the categories:
+- Fitness
+- Yoga
+- Safety
+- Nutrition
+- Cycle & Pregnancy
+
+Do not create a confusing bottom-navigation tab for every feature.
+
+CORE PERSONALIZATION LOGIC
+
+During onboarding, collect:
+- Primary goal
+- Fitness experience
+- Available time per day
+- Home or gym preference
+- Available equipment
+- Food style
+- Allergies
+- Stress level
+- Sleep quality
+- Menstrual-cycle preferences
+- Pregnancy or postpartum status
+- Self-defense experience
+- Confidence level
+
+Goal options:
+- Weight loss
+- Tone and sculpt
+- Build muscle
+- Improve confidence
+- Pregnancy wellness
+- Postpartum recovery
+- Learn self-defense
+- Improve flexibility
+- Reduce stress
+
+After onboarding, show an AI-generated transformation plan.
+
+Example plan:
+“Confidence Builder Plan”
+
+Weekly schedule:
+- 3 fitness workouts
+- 2 yoga sessions
+- 2 beginner self-defense sessions
+- Daily food scanning
+- Personalized meal plan
+- Weekly progress review
+
+LEVEL SYSTEM
+
+Create five progression levels:
+1. Beginner
+2. Warrior
+3. Protector
+4. Elite
+5. Goddess
+
+The level system must feel encouraging rather than competitive.
+
+Rewards include:
+- Badges
+- Streak milestones
+- New workout programs
+- Advanced self-defense lessons
+- Premium recipes
+- New challenges
+- Recovery sessions
+- Pregnancy-safe content
+- Profile decorations
+
+CREATE THE FOLLOWING COMPLETE SCREEN SYSTEM
+
+SECTION 1 — ENTRY AND ACCOUNT
+
+01. Animated splash screen
+02. Welcome screen with value proposition
+03. Sign up
+04. Log in
+05. Forgot password
+06. Social sign-in options
+07. Notification permission
+08. Health-data permission
+09. Privacy and safety consent
+
+SECTION 2 — PERSONALIZED ONBOARDING
+
+10. Name and identity introduction
+11. Choose primary transformation goal
+12. Select additional goals
+13. Fitness experience level
+14. Daily available time
+15. Home or gym preference
+16. Equipment selection
+17. Food preferences
+18. Allergies and dietary restrictions
+19. Stress and sleep check-in
+20. Menstrual-cycle preference
+21. Pregnancy or postpartum status
+22. Self-defense experience
+23. Personal confidence rating
+24. AI plan-generation loading screen
+25. Personalized plan reveal
+26. Weekly schedule preview
+27. Plan confirmation
+
+Use one question per screen, large answer cards, friendly illustrations, and a visible onboarding progress indicator.
+
+SECTION 3 — TODAY’S MISSION
+
+28. Main Today home screen
+
+The home screen must present one unified daily mission instead of disconnected feature tabs.
+
+Example content:
+
+Header:
+“Good morning, Maya”
+“Confidence Builder Plan”
+“Day 12 of your journey”
+
+Main progress:
+“3 of 5 missions complete”
+Circular daily progress ring
+
+Today’s missions:
+- 20 min Lower Body Sculpt
+- 10 min Stress Relief Yoga
+- 5 min Wrist Escape Practice
+- Scan Lunch
+- AI Dinner Recipe
+
+Each mission card should show:
+- Category color
+- Estimated duration
+- Difficulty
+- Calories or benefit
+- Completion state
+- Start button
+
+Also include:
+- Current streak
+- Weekly goal
+- Current level
+- Cycle or pregnancy insight
+- Next recommended mission
+- Motivational message
+- AI Coach shortcut
+
+29. Expanded daily mission timeline
+30. Mission detail bottom sheet
+31. Daily energy and mood check-in
+32. End-of-day summary
+33. Missed-mission recovery plan
+34. Notifications center
+35. AI Coach conversation screen
+
+SECTION 4 — EXPLORE
+
+36. Explore landing screen
+37. Search results
+38. Recently viewed
+39. Saved content
+40. Recommended for you
+41. Category-filter screen
+
+The Explore screen should display five large pastel category cards:
+- Fitness
+- Yoga & Recovery
+- Safety & Self-defense
+- Nutrition
+- Cycle, Pregnancy & Postpartum
+
+SECTION 5 — FITNESS
+
+42. Fitness hub
+43. Fitness category list
+44. Program collection
+45. Program details
+46. Weekly workout schedule
+47. Workout details
+48. Exercise preview
+49. Active workout player
+50. Exercise timer
+51. Repetition counter
+52. Rest timer
+53. Replace exercise bottom sheet
+54. Pause workout screen
+55. Workout completion summary
+56. Calories and muscle-group summary
+57. Rate workout
+58. Fitness history
+
+Fitness categories:
+- Fat loss
+- Full body
+- Lower body
+- Upper body
+- Core
+- Sculpt
+- Strength
+- Low impact
+- Beginner
+- Home workouts
+- Gym workouts
+- Pregnancy safe
+- Postpartum recovery
+
+SECTION 6 — YOGA, MINDFULNESS, AND RECOVERY
+
+59. Yoga hub
+60. Yoga category list
+61. Yoga-session details
+62. Guided yoga player
+63. Pose detail
+64. Breathwork library
+65. Guided breathing player
+66. Recovery session
+67. Stretching routine
+68. Sleep yoga
+69. Stress-relief collection
+70. Yoga completion summary
+
+Yoga categories:
+- Beginner yoga
+- Flexibility
+- Stress relief
+- Morning energy
+- Sleep
+- Recovery
+- Menstrual comfort
+- Pregnancy yoga
+- Postpartum mobility
+- Breathwork
+
+Use calm blue, lavender, and mint accents for this area.
+
+SECTION 7 — SELF-DEFENSE AND SAFETY
+
+71. Safety hub
+72. Self-defense learning paths
+73. Beginner taekwondo path
+74. Technique library
+75. Technique details
+76. Step-by-step technique breakdown
+77. Self-defense video player
+78. Practice drill timer
+79. Confidence drill
+80. Scenario-based lesson
+81. Knowledge quiz
+82. Skill checkpoint
+83. Safety-plan builder
+84. Emergency contacts
+85. Personal safety checklist
+86. Lesson completion
+87. Safety progress dashboard
+
+Technique categories:
+- Awareness and avoidance
+- Verbal boundaries
+- Confident posture
+- Wrist-grab escape
+- Clothing-grab escape
+- Distance management
+- Basic stance
+- Basic blocks
+- Beginner kicks
+- Ground-safety fundamentals
+- Escape and seek help
+- Public-space awareness
+
+Keep all safety education de-escalation-first, non-graphic, beginner-friendly, and focused on escaping danger rather than fighting.
+
+Use lavender, coral, and deeper pink accents. Make the visuals confident but not aggressive.
+
+SECTION 8 — FOOD SCANNER AND MACRO COACH
+
+88. Nutrition hub
+89. Food-scanner camera
+90. Barcode scanning
+91. Food-photo scanning
+92. Scan-processing animation
+93. Food scan result
+94. Nutrition score
+95. Ingredient breakdown
+96. Macro breakdown
+97. Allergy warning
+98. Portion-size adjustment
+99. Healthier alternative suggestions
+100. Add food to meal
+101. Daily nutrition summary
+102. Macro-coach insights
+103. Water tracker
+104. Scan history
+
+Food scan results should show:
+- Product or meal name
+- Nutrition score
+- Calories
+- Protein
+- Carbohydrates
+- Fat
+- Fiber
+- Sugar
+- Sodium
+- Portion size
+- Ingredient concerns
+- Allergens
+- Better alternatives
+- Add to breakfast, lunch, dinner, or snack
+
+Use aqua, mint, yellow, and soft coral accents.
+
+SECTION 9 — MEAL PLANNER AND RECIPES
+
+105. Weekly meal planner
+106. Daily meal planner
+107. Add meal
+108. Recipe browse
+109. Recipe categories
+110. Recipe search
+111. Recipe details
+112. Ingredient substitutions
+113. Recipe nutrition facts
+114. Step-by-step cooking mode
+115. Cooking timer
+116. Save recipe
+117. Favorite recipes
+118. AI recipe generator
+119. AI recipe result
+120. Grocery planner
+121. Grocery-list categories
+122. Pantry inventory
+123. Meal-prep planner
+
+Recipe categories:
+- High protein
+- Weight loss
+- Vegetarian
+- Vegan
+- Pregnancy friendly
+- Postpartum
+- Quick meals
+- Budget meals
+- Family meals
+- Low sugar
+- High fiber
+- Recovery meals
+
+Recipe cards should use high-quality food imagery, rounded image containers, preparation time, calories, protein, rating, and dietary tags.
+
+SECTION 10 — MENSTRUAL CYCLE
+
+124. Cycle overview
+125. Monthly cycle calendar
+126. Log period
+127. Log symptoms
+128. Log mood
+129. Log energy
+130. Daily cycle insight
+131. Current-phase details
+132. Cycle-history chart
+133. Predicted period
+134. Fitness recommendations by phase
+135. Yoga recommendations by phase
+136. Nutrition recommendations by phase
+137. Symptom trends
+138. Cycle settings
+
+Cycle phases:
+- Menstrual
+- Follicular
+- Ovulation
+- Luteal
+
+Show clear educational language and explain that predictions are estimates.
+
+Use blush pink, lavender, soft coral, and warm cream.
+
+SECTION 11 — PREGNANCY AND POSTPARTUM
+
+139. Pregnancy-mode onboarding
+140. Pregnancy overview
+141. Current pregnancy week
+142. Weekly body changes
+143. Baby-development overview
+144. Pregnancy-safe daily plan
+145. Pregnancy-safe workouts
+146. Pregnancy yoga
+147. Pregnancy nutrition
+148. Symptom log
+149. Appointment reminders
+150. Hospital-bag checklist
+151. Postpartum-mode onboarding
+152. Postpartum recovery dashboard
+153. Recovery timeline
+154. Gentle postpartum exercise
+155. Pelvic-floor education
+156. Postpartum nutrition
+157. Mood and wellbeing check-in
+
+Include clear safety messaging encouraging users to consult qualified healthcare professionals. Do not present medical predictions or diagnoses.
+
+SECTION 12 — PROGRESS AND GAMIFICATION
+
+158. Transformation progress dashboard
+159. Current level screen
+160. Level journey map
+161. Streak calendar
+162. Badge collection
+163. Badge detail
+164. Challenge library
+165. Challenge detail
+166. Active challenge
+167. Weekly progress report
+168. Monthly progress report
+169. Workout statistics
+170. Yoga statistics
+171. Safety-skill statistics
+172. Nutrition statistics
+173. Body measurements
+174. Progress photos
+175. Personal achievements
+176. Shareable achievement card
+
+Use circular rings, soft bar charts, achievement illustrations, badges, and encouraging progress messages.
+
+SECTION 13 — PROFILE, SETTINGS, AND PREMIUM
+
+177. Profile overview
+178. Edit profile
+179. Personal goals
+180. Plan preferences
+181. Saved content
+182. Connected devices
+183. Notification settings
+184. Cycle settings
+185. Pregnancy settings
+186. Food and allergy settings
+187. Privacy settings
+188. Safety settings
+189. Emergency contacts
+190. Subscription overview
+191. Premium paywall
+192. Plan comparison
+193. Help center
+194. Contact support
+195. Legal and health disclaimers
+196. Log-out confirmation
+197. Delete-account confirmation
+
+PREMIUM EXPERIENCE
+
+Create a tasteful premium system.
+
+Premium benefits:
+- Fully personalized AI plan
+- Advanced workout programs
+- Full self-defense courses
+- AI recipe generator
+- Unlimited food scans
+- Detailed macro coaching
+- Pregnancy-safe programs
+- Advanced cycle insights
+- Premium challenges
+- Offline video access
+
+Avoid aggressive paywall tactics. Clearly distinguish free and premium content.
+
+CONTENT STATES
+
+For key screens, create:
+- Default state
+- Loading state
+- Empty state
+- Completed state
+- Locked premium state
+- Offline state
+- Error state
+
+INTERACTIONS AND PROTOTYPE FLOW
+
+Connect the main prototype journey:
+
+Welcome
+→ Onboarding
+→ AI plan generation
+→ Personalized plan
+→ Today’s Mission
+→ Start workout
+→ Complete workout
+→ Start yoga
+→ Complete yoga
+→ Learn self-defense technique
+→ Scan lunch
+→ Review nutrition
+→ Generate dinner recipe
+→ Complete day
+→ Earn streak and level progress
+
+Additional prototype flows:
+- Scan food → scan result → adjust serving → add to lunch
+- Recipe browse → recipe detail → cooking mode → mark complete
+- Cycle calendar → log symptoms → receive daily recommendation
+- Pregnancy mode → pregnancy-safe plan → safe workout
+- Safety hub → technique → video → practice drill → skill checkpoint
+- Progress → challenge → achievement → share card
+
+MICROCOPY STYLE
+
+Use language that is:
+- Supportive
+- Confident
+- Clear
+- Non-judgmental
+- Motivational
+- Safety-conscious
+
+Example phrases:
+- “Today’s mission is ready.”
+- “Small steps build unstoppable confidence.”
+- “You are stronger than yesterday.”
+- “Listen to your body and move at your pace.”
+- “Your next level is closer than you think.”
+- “Practice awareness first. Escape and seek safety.”
+- “Your plan adapts to your energy today.”
+- “One more mission to protect your streak.”
+
+FINAL OUTPUT
+
+Organize the Figma file into these sections:
+01 Foundations
+02 Components
+03 Onboarding
+04 Today
+05 Explore
+06 Fitness
+07 Yoga
+08 Safety
+09 Nutrition
+10 Recipes
+11 Cycle
+12 Pregnancy & Postpartum
+13 Progress
+14 Profile & Premium
+15 Prototype Flow
+
+The final result should feel like one complete premium application, not five separate apps.
+
+The strongest emotional transformation should be visible throughout the product:
+
+Beginner
+→ consistent
+→ stronger
+→ calmer
+→ more confident
+→ more aware
+→ safer
+→ unstoppable.

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp"
+    },
+    "mux": {
+      "url": "https://mcp.mux.com"
+    }
+  }
+}
