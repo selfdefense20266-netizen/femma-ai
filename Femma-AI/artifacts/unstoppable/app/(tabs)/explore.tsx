@@ -254,48 +254,69 @@ export default function ExploreScreen() {
               <Text style={[styles.swipeLabel, { color: colors.mutedForeground }]}>SWIPE</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journeyList}>
-              {journeys.map((journey) => (
-                <TouchableOpacity
-                  key={journey.id}
-                  activeOpacity={0.88}
-                  style={[styles.journeyCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => {
-                    vibrate();
-                    router.push(journey.route as never);
-                  }}
-                >
-                  <LinearGradient colors={journey.colors} style={styles.journeyHero}>
-                    <Text style={styles.journeyEyebrow}>{journey.eyebrow}</Text>
-                    <Text style={styles.journeyTitle}>{journey.title}</Text>
-                  </LinearGradient>
-                  <View style={styles.journeyFooter}>
-                    <View style={styles.journeyFooterText}>
-                      <Text numberOfLines={1} style={[styles.journeyDetail, { color: colors.mutedForeground }]}>
-                        {journey.detail}
-                      </Text>
-                      {journey.hasLessons ? (
-                        <View style={styles.journeyProgressRow}>
-                          <ProgressBar
-                            progress={journey.progress}
-                            color={colors.primary}
-                            trackColor={colors.muted}
-                            height={4}
-                            style={styles.journeyProgressBar}
-                          />
-                          <Text style={[styles.journeyProgressLabel, { color: colors.mutedForeground }]}>
-                            {journey.progress}%
-                          </Text>
+              {journeys.map((journey) => {
+                const comingSoon = !journey.hasLessons;
+                return (
+                  <TouchableOpacity
+                    key={journey.id}
+                    activeOpacity={comingSoon ? 1 : 0.88}
+                    disabled={comingSoon}
+                    style={[
+                      styles.journeyCard,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        opacity: comingSoon ? 0.55 : 1,
+                      },
+                    ]}
+                    onPress={() => {
+                      if (comingSoon) return;
+                      vibrate();
+                      router.push(journey.route as never);
+                    }}
+                  >
+                    <LinearGradient colors={journey.colors} style={styles.journeyHero}>
+                      <Text style={styles.journeyEyebrow}>{journey.eyebrow}</Text>
+                      <Text style={styles.journeyTitle}>{journey.title}</Text>
+                      {comingSoon && (
+                        <View style={styles.comingSoonBadge}>
+                          <Text style={styles.comingSoonBadgeText}>COMING SOON</Text>
                         </View>
-                      ) : (
-                        <Text style={[styles.journeyProgressLabel, { color: colors.mutedForeground, marginTop: 8 }]}>
-                          {journey.progressLabel}
-                        </Text>
                       )}
+                    </LinearGradient>
+                    <View style={styles.journeyFooter}>
+                      <View style={styles.journeyFooterText}>
+                        <Text numberOfLines={1} style={[styles.journeyDetail, { color: colors.mutedForeground }]}>
+                          {journey.detail}
+                        </Text>
+                        {comingSoon ? (
+                          <Text style={[styles.comingSoonHint, { color: colors.mutedForeground }]}>
+                            Content is being prepared
+                          </Text>
+                        ) : (
+                          <View style={styles.journeyProgressRow}>
+                            <ProgressBar
+                              progress={journey.progress}
+                              color={colors.primary}
+                              trackColor={colors.muted}
+                              height={4}
+                              style={styles.journeyProgressBar}
+                            />
+                            <Text style={[styles.journeyProgressLabel, { color: colors.mutedForeground }]}>
+                              {journey.progress}%
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Feather
+                        name={comingSoon ? 'clock' : journey.progress > 0 ? 'play' : 'chevron-right'}
+                        size={17}
+                        color={comingSoon ? colors.mutedForeground : colors.primary}
+                      />
                     </View>
-                    <Feather name={journey.hasLessons && journey.progress > 0 ? 'play' : 'chevron-right'} size={17} color={colors.primary} />
-                  </View>
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </Animated.View>
         )}
@@ -450,6 +471,23 @@ const styles = StyleSheet.create({
   journeyHero: { height: 110, padding: 14, justifyContent: 'flex-end' },
   journeyEyebrow: { color: 'rgba(255,255,255,0.75)', fontSize: 9, letterSpacing: 1, fontFamily: 'Manrope_800ExtraBold' },
   journeyTitle: { color: '#FFFFFF', fontSize: 18, fontFamily: 'Manrope_800ExtraBold', marginTop: 4 },
+  comingSoonBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 100,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  comingSoonBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    fontFamily: 'Manrope_800ExtraBold',
+  },
+  comingSoonHint: { fontSize: 10.5, fontFamily: 'Manrope_600SemiBold', marginTop: 8 },
   journeyFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   journeyFooterText: { flex: 1 },
   journeyDetail: { fontSize: 11, fontFamily: 'Manrope_500Medium' },

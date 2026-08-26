@@ -182,48 +182,70 @@ export default function LibraryHubScreen({ categoryId }: Props) {
             const courseCompleted = lessons.filter((item) => completedLessonIds.includes(item.id)).length;
             const courseUploaded = lessons.filter((item) => Boolean(item.videoUrl)).length;
             const progress = courseProgressPercent(lessons, completedLessonIds, lessonWatchProgress);
+            const comingSoon = courseUploaded === 0;
             return (
               <TouchableOpacity
                 key={course.id}
-                activeOpacity={0.86}
-                onPress={() => openCourse(course.id)}
-                style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={comingSoon ? 1 : 0.86}
+                disabled={comingSoon}
+                onPress={() => {
+                  if (comingSoon) return;
+                  openCourse(course.id);
+                }}
+                style={[
+                  styles.courseCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    opacity: comingSoon ? 0.55 : 1,
+                  },
+                ]}
               >
                 <LinearGradient colors={[`${course.gradient[0]}25`, `${course.gradient[1]}08`]} style={styles.courseAccent} />
                 <View style={[styles.courseIcon, { backgroundColor: `${course.color}18` }]}>
-                  <Feather name={course.icon} size={22} color={course.color} />
+                  <Feather name={comingSoon ? 'clock' : course.icon} size={22} color={course.color} />
                 </View>
                 <View style={styles.courseContent}>
                   <View style={styles.courseTitleRow}>
                     <Text style={[styles.courseTitle, { color: colors.foreground }]}>{course.title}</Text>
-                    {savedCourseIds.includes(course.id) && <Feather name="bookmark" size={15} color={course.color} />}
+                    {comingSoon ? (
+                      <View style={[styles.comingSoonPill, { backgroundColor: `${course.color}18`, borderColor: `${course.color}40` }]}>
+                        <Text style={[styles.comingSoonPillText, { color: course.color }]}>COMING SOON</Text>
+                      </View>
+                    ) : (
+                      savedCourseIds.includes(course.id) && <Feather name="bookmark" size={15} color={course.color} />
+                    )}
                   </View>
                   <Text numberOfLines={2} style={[styles.courseDescription, { color: colors.mutedForeground }]}>
-                    {course.description || 'Tap to open modules and lessons.'}
+                    {comingSoon
+                      ? 'This course is being prepared. Check back soon.'
+                      : course.description || 'Tap to open modules and lessons.'}
                   </Text>
                   <View style={styles.metaRow}>
                     <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{course.modules.length} modules</Text>
                     <View style={[styles.metaDot, { backgroundColor: colors.border }]} />
                     <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{lessons.length} lessons</Text>
                     <View style={[styles.metaDot, { backgroundColor: colors.border }]} />
-                    <Text style={[styles.metaText, { color: courseUploaded ? course.color : colors.mutedForeground }]}>
-                      {courseUploaded ? `${courseUploaded} ready` : 'Coming soon'}
+                    <Text style={[styles.metaText, { color: comingSoon ? colors.mutedForeground : course.color }]}>
+                      {comingSoon ? 'Not ready yet' : `${courseUploaded} ready`}
                     </Text>
                   </View>
-                  <View style={styles.progressRow}>
-                    <ProgressBar
-                      progress={progress}
-                      color={course.color}
-                      trackColor={colors.muted}
-                      height={5}
-                      style={styles.progressTrack}
-                    />
-                    <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>
-                      {lessons.length ? `${courseCompleted}/${lessons.length}` : '—'}
-                    </Text>
-                  </View>
+                  {!comingSoon && (
+                    <View style={styles.progressRow}>
+                      <ProgressBar
+                        progress={progress}
+                        color={course.color}
+                        trackColor={colors.muted}
+                        height={5}
+                        style={styles.progressTrack}
+                      />
+                      <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>
+                        {lessons.length ? `${courseCompleted}/${lessons.length}` : '—'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-                <Feather name="chevron-right" size={19} color={colors.mutedForeground} />
+                <Feather name={comingSoon ? 'clock' : 'chevron-right'} size={19} color={colors.mutedForeground} />
               </TouchableOpacity>
             );
           })}
@@ -322,8 +344,19 @@ const styles = StyleSheet.create({
   courseAccent: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   courseIcon: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   courseContent: { flex: 1 },
-  courseTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  courseTitle: { fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
+  courseTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  courseTitle: { flex: 1, fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
+  comingSoonPill: {
+    borderRadius: 100,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  comingSoonPillText: {
+    fontSize: 8.5,
+    letterSpacing: 0.6,
+    fontFamily: 'Manrope_800ExtraBold',
+  },
   courseDescription: { fontSize: 10.8, lineHeight: 16, fontFamily: 'Manrope_500Medium', marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 7, flexWrap: 'wrap' },
   metaText: { fontSize: 9.6, fontFamily: 'Manrope_600SemiBold' },

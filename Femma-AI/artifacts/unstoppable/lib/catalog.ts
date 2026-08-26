@@ -268,6 +268,18 @@ const FEATURE_COURSE_IDS = new Set([
   'dn-recipes',
 ]);
 
+/** Display order for library / Explore. Diet & Nutrition stays last. */
+const CATEGORY_ORDER: Record<string, number> = {
+  'self-defence': 1,
+  fitness: 2,
+  'cycle-pregnancy-health': 3,
+  'diet-nutrition': 99,
+};
+
+function categorySortRank(id: string) {
+  return CATEGORY_ORDER[id] ?? 50;
+}
+
 export async function fetchCatalog(): Promise<CatalogBundle> {
   const [categoriesRes, coursesRes, modulesRes, lessonsRes] = await Promise.all([
     supabase.from('categories').select('*').eq('status', 'published').order('title'),
@@ -284,7 +296,9 @@ export async function fetchCatalog(): Promise<CatalogBundle> {
   const courses = (coursesRes.data || [])
     .filter((row) => !FEATURE_COURSE_IDS.has(row.id))
     .map((row) => mapCourse(row, moduleRows, lessonRows));
-  const categories = (categoriesRes.data || []).map((row) => mapCategory(row, courses));
+  const categories = (categoriesRes.data || [])
+    .map((row) => mapCategory(row, courses))
+    .sort((a, b) => categorySortRank(a.id) - categorySortRank(b.id) || a.title.localeCompare(b.title));
 
   return { categories, courses };
 }

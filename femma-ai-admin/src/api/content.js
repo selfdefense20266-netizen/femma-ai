@@ -75,6 +75,17 @@ export function mapCourse(row, moduleRows = [], lessonRows = []) {
   };
 }
 
+const CATEGORY_ORDER = {
+  'self-defence': 1,
+  fitness: 2,
+  'cycle-pregnancy-health': 3,
+  'diet-nutrition': 99
+};
+
+function categorySortRank(id) {
+  return CATEGORY_ORDER[id] ?? 50;
+}
+
 export async function fetchCatalog() {
   const [categoriesRes, coursesRes, modulesRes, lessonsRes] = await Promise.all([
     supabase.from('categories').select('*').order('title'),
@@ -92,7 +103,9 @@ export async function fetchCatalog() {
   const lessonRows = lessonsRes.data || [];
 
   return {
-    categories: (categoriesRes.data || []).map(mapCategory),
+    categories: (categoriesRes.data || [])
+      .map(mapCategory)
+      .sort((a, b) => categorySortRank(a.id) - categorySortRank(b.id) || a.title.localeCompare(b.title)),
     courses: (coursesRes.data || []).map((row) => mapCourse(row, moduleRows, lessonRows))
   };
 }
