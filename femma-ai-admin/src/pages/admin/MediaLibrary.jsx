@@ -232,9 +232,9 @@ export default function MediaLibrary() {
       setUploading(true);
       setProgress(0);
       setActionError('');
-      const saved = await uploadLessonMedia(selected.id, file, setProgress);
-      setSelected({ ...selected, ...saved });
+      await uploadLessonMedia(selected.id, file, setProgress);
       await refreshCatalog();
+      setSelected(null);
     } catch (err) {
       setActionError(err.message || 'Upload failed');
     } finally {
@@ -419,7 +419,7 @@ export default function MediaLibrary() {
               </Typography>
               {selected.muxPlaybackId && (
                 <Typography variant="body2">
-                  <strong>Mux playback ID:</strong> {selected.muxPlaybackId}
+                  <strong>Playback ID:</strong> {selected.muxPlaybackId}
                 </Typography>
               )}
               {selected.videoUrl && (
@@ -435,7 +435,7 @@ export default function MediaLibrary() {
               {uploading && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Uploading to Mux… {progress}%
+                    Uploading… {progress}%
                   </Typography>
                   <LinearProgress variant="determinate" value={progress} sx={{ mt: 1 }} />
                 </Box>
@@ -449,7 +449,7 @@ export default function MediaLibrary() {
           </Button>
           {selected && (
             <Button variant="contained" startIcon={<CloudUploadOutlined />} onClick={handlePickFile} disabled={uploading}>
-              {lessonStatus(selected) === 'ready' ? 'Replace video' : 'Upload to Mux'}
+              {lessonStatus(selected) === 'ready' ? 'Replace video' : 'Upload'}
             </Button>
           )}
         </DialogActions>

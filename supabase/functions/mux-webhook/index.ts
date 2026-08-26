@@ -35,6 +35,11 @@ Deno.serve(async (req) => {
     const passthrough = String(data.passthrough || "");
     const playbackIds = (data.playback_ids as Array<{ id: string; policy: string }>) || [];
     const playbackId = playbackIds[0]?.id || "";
+    const durationSeconds = Number(data.duration);
+    const durationMinutes =
+      Number.isFinite(durationSeconds) && durationSeconds > 0
+        ? Math.max(1, Math.min(240, Math.round(durationSeconds / 60)))
+        : null;
 
     if (!assetId || !playbackId) {
       return json({ ok: true, skipped: "missing asset or playback id" });
@@ -49,6 +54,7 @@ Deno.serve(async (req) => {
       video_url: videoUrl,
       thumbnail_url: thumbnailUrl,
       video_status: "ready",
+      ...(durationMinutes != null ? { duration_minutes: durationMinutes } : {}),
       updated_at: new Date().toISOString(),
     });
 
@@ -60,7 +66,12 @@ Deno.serve(async (req) => {
 
     const { error } = await query;
     if (error) return json({ error: error.message }, 500);
-    return json({ ok: true, lessonId: passthrough || null, status: "ready" });
+    return json({
+      ok: true,
+      lessonId: passthrough || null,
+      status: "ready",
+      durationMinutes,
+    });
   }
 
   if (type === "video.asset.errored") {

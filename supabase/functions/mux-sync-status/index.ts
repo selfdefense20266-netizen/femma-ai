@@ -38,9 +38,16 @@ async function resolveMuxCredentials(adminClient: ReturnType<typeof createClient
 type MuxAsset = {
   id?: string;
   status?: string;
+  duration?: number;
   passthrough?: string;
   playback_ids?: Array<{ id: string; policy?: string }>;
 };
+
+function durationMinutesFromSeconds(seconds: unknown): number | null {
+  const value = Number(seconds);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return Math.max(1, Math.min(240, Math.round(value / 60)));
+}
 
 async function muxGet(path: string, tokenId: string, tokenSecret: string) {
   const basic = btoa(`${tokenId}:${tokenSecret}`);
@@ -81,6 +88,7 @@ async function syncLessonRecord(
   const playbackId = asset.playback_ids?.[0]?.id || "";
 
   if (asset.status === "ready" && playbackId) {
+    const durationMinutes = durationMinutesFromSeconds(asset.duration);
     const { error } = await adminClient
       .from("lessons")
       .update({
@@ -89,12 +97,19 @@ async function syncLessonRecord(
         video_url: `https://stream.mux.com/${playbackId}.m3u8`,
         thumbnail_url: `https://image.mux.com/${playbackId}/thumbnail.jpg`,
         video_status: "ready",
+        ...(durationMinutes != null ? { duration_minutes: durationMinutes } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", lesson.id);
 
     if (error) throw error;
-    return { lessonId: lesson.id, updated: true, status: "ready", playbackId };
+    return {
+      lessonId: lesson.id,
+      updated: true,
+      status: "ready",
+      playbackId,
+      durationMinutes,
+    };
   }
 
   if (asset.status === "errored") {

@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,7 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
 import { useCatalog } from '@/hooks/useCatalog';
-import { getCourseLessons, libraryPath } from '@/lib/catalog';
+import { getCourseLessons, courseProgressPercent, getVideoCategory, libraryPath } from '@/lib/catalog';
+import ProgressBar from '@/components/ProgressBar';
 
 type Journey = {
   id: string;
@@ -26,8 +28,7 @@ type Journey = {
   title: string;
   detail: string;
   colors: [string, string];
-  route: string;
-  progress?: number;
+  categoryId: string;
 };
 
 const JOURNEYS: Journey[] = [
@@ -37,7 +38,7 @@ const JOURNEYS: Journey[] = [
     title: 'New Mom Recovery',
     detail: 'Postpartum + Nutrition + Yoga',
     colors: ['#FF928F', '#F26BB5'],
-    route: '/library/cycle-pregnancy-health',
+    categoryId: 'cycle-pregnancy-health',
   },
   {
     id: 'confidence-safety',
@@ -45,8 +46,7 @@ const JOURNEYS: Journey[] = [
     title: 'Confidence & Safety',
     detail: 'Self Defence courses',
     colors: ['#B9A7F2', '#F26BB5'],
-    route: '/library/self-defence',
-    progress: 35,
+    categoryId: 'self-defence',
   },
   {
     id: 'fat-loss',
@@ -54,7 +54,7 @@ const JOURNEYS: Journey[] = [
     title: 'Fitness Library',
     detail: 'Strength, cardio, yoga & more',
     colors: ['#F26BB5', '#D94A9A'],
-    route: '/library/fitness',
+    categoryId: 'fitness',
   },
   {
     id: 'cycle-aligned',
@@ -62,7 +62,7 @@ const JOURNEYS: Journey[] = [
     title: 'Cycle-Aligned Living',
     detail: 'Cycle, pregnancy & health paths',
     colors: ['#77CDED', '#B9A7F2'],
-    route: '/library/cycle-pregnancy-health',
+    categoryId: 'cycle-pregnancy-health',
   },
 ];
 
@@ -70,9 +70,28 @@ function vibrate() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
 }
 
+function categoryProgress(
+  catalog: NonNullable<ReturnType<typeof useCatalog>['data']>,
+  categoryId: string,
+  completedLessonIds: string[],
+  lessonWatchProgress: Record<string, number>
+) {
+  const category = getVideoCategory(catalog, categoryId);
+  if (!category) return { percent: 0, completed: 0, total: 0 };
+  const lessons = category.courses.flatMap(getCourseLessons);
+  const total = lessons.length;
+  if (!total) return { percent: 0, completed: 0, total: 0 };
+  const completed = lessons.filter((lesson) => completedLessonIds.includes(lesson.id)).length;
+  return {
+    percent: courseProgressPercent(lessons, completedLessonIds, lessonWatchProgress),
+    completed,
+    total,
+  };
+}
+
 export default function ExploreScreen() {
   const colors = useColors();
-  const { savedCourseIds } = useApp();
+  const { savedCourseIds, completedLessonIds, lessonWatchProgress } = useApp();
   const { data: catalog, isLoading, error, refetch } = useCatalog();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === 'web' ? 58 : insets.top + 12;
@@ -80,6 +99,30 @@ export default function ExploreScreen() {
   const [query, setQuery] = useState('');
   const [expandedCourse, setExpandedCourse] = useState('');
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  const journeys = useMemo(() => {
+    if (!catalog) return [];
+    return JOURNEYS.map((journey) => {
+      const progress = categoryProgress(catalog, journey.categoryId, completedLessonIds, lessonWatchProgress);
+      return {
+        ...journey,
+        route: libraryPath(journey.categoryId),
+        progress: progress.percent,
+        progressLabel: progress.total ? `${progress.completed}/${progress.total}` : 'Coming soon',
+        hasLessons: progress.total > 0,
+      };
+    });
+  }, [catalog, completedLessonIds, lessonWatchProgress]);
 
   const categories = useMemo(() => {
     if (!catalog) return [];
@@ -155,7 +198,18 @@ export default function ExploreScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 110 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: botPad + 110 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <View style={[styles.header, { paddingTop: topPad }]}>
           <View style={styles.titleRow}>
             <Text style={[styles.title, { color: colors.foreground }]}>Explore</Text>
@@ -200,7 +254,7 @@ export default function ExploreScreen() {
               <Text style={[styles.swipeLabel, { color: colors.mutedForeground }]}>SWIPE</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journeyList}>
-              {JOURNEYS.map((journey) => (
+              {journeys.map((journey) => (
                 <TouchableOpacity
                   key={journey.id}
                   activeOpacity={0.88}
@@ -219,15 +273,26 @@ export default function ExploreScreen() {
                       <Text numberOfLines={1} style={[styles.journeyDetail, { color: colors.mutedForeground }]}>
                         {journey.detail}
                       </Text>
-                      {journey.progress != null && (
-                        <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
-                          <View
-                            style={[styles.progressFill, { width: `${journey.progress}%`, backgroundColor: colors.primary }]}
+                      {journey.hasLessons ? (
+                        <View style={styles.journeyProgressRow}>
+                          <ProgressBar
+                            progress={journey.progress}
+                            color={colors.primary}
+                            trackColor={colors.muted}
+                            height={4}
+                            style={styles.journeyProgressBar}
                           />
+                          <Text style={[styles.journeyProgressLabel, { color: colors.mutedForeground }]}>
+                            {journey.progress}%
+                          </Text>
                         </View>
+                      ) : (
+                        <Text style={[styles.journeyProgressLabel, { color: colors.mutedForeground, marginTop: 8 }]}>
+                          {journey.progressLabel}
+                        </Text>
                       )}
                     </View>
-                    <Feather name={journey.progress != null ? 'play' : 'chevron-right'} size={17} color={colors.primary} />
+                    <Feather name={journey.hasLessons && journey.progress > 0 ? 'play' : 'chevron-right'} size={17} color={colors.primary} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -388,8 +453,9 @@ const styles = StyleSheet.create({
   journeyFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   journeyFooterText: { flex: 1 },
   journeyDetail: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
-  progressTrack: { height: 4, borderRadius: 4, overflow: 'hidden', marginTop: 8 },
-  progressFill: { height: '100%', borderRadius: 4 },
+  journeyProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  journeyProgressBar: { flex: 1, minWidth: 0 },
+  journeyProgressLabel: { fontSize: 10, fontFamily: 'Manrope_700Bold', minWidth: 30, textAlign: 'right' },
   curriculumHeader: { paddingHorizontal: 20, marginTop: 28, marginBottom: 12 },
   curriculumHint: { fontSize: 11, fontFamily: 'Manrope_500Medium', marginTop: 2 },
   categories: { paddingHorizontal: 20, gap: 18 },

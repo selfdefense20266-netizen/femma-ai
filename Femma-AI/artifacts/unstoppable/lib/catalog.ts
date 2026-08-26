@@ -259,6 +259,15 @@ function mapCategory(row: any, courses: VideoCourse[]): VideoCategory {
   };
 }
 
+/** App features that were seeded as courses — never show in the video library. */
+const FEATURE_COURSE_IDS = new Set([
+  'dn-meal-scanner',
+  'dn-ai-meal-planner',
+  'dn-saved-meals',
+  'dn-grocery-planner',
+  'dn-recipes',
+]);
+
 export async function fetchCatalog(): Promise<CatalogBundle> {
   const [categoriesRes, coursesRes, modulesRes, lessonsRes] = await Promise.all([
     supabase.from('categories').select('*').eq('status', 'published').order('title'),
@@ -272,7 +281,9 @@ export async function fetchCatalog(): Promise<CatalogBundle> {
 
   const moduleRows = modulesRes.data || [];
   const lessonRows = lessonsRes.data || [];
-  const courses = (coursesRes.data || []).map((row) => mapCourse(row, moduleRows, lessonRows));
+  const courses = (coursesRes.data || [])
+    .filter((row) => !FEATURE_COURSE_IDS.has(row.id))
+    .map((row) => mapCourse(row, moduleRows, lessonRows));
   const categories = (categoriesRes.data || []).map((row) => mapCategory(row, courses));
 
   return { categories, courses };
@@ -280,6 +291,20 @@ export async function fetchCatalog(): Promise<CatalogBundle> {
 
 export function getCourseLessons(course: VideoCourse): VideoLesson[] {
   return course.modules.flatMap((module) => module.lessons);
+}
+
+/** Completed lessons count as 1; in-progress lessons count by saved watch % (0–1). */
+export function courseProgressPercent(
+  lessons: { id: string }[],
+  completedLessonIds: string[],
+  lessonWatchProgress: Record<string, number> = {}
+) {
+  if (!lessons.length) return 0;
+  const units = lessons.reduce((sum, lesson) => {
+    if (completedLessonIds.includes(lesson.id)) return sum + 1;
+    return sum + Math.min(1, Math.max(0, (lessonWatchProgress[lesson.id] ?? 0) / 100));
+  }, 0);
+  return Math.round((units / lessons.length) * 100);
 }
 
 export function getVideoCategory(catalog: CatalogBundle, categoryId: string): VideoCategory | undefined {

@@ -6,16 +6,17 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/context/AppContext';
-import { getCourseLessons, libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
+import { getCourseLessons, courseProgressPercent, libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
 import { useCatalogCourse } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
+import ProgressBar from '@/components/ProgressBar';
 
 type Props = { categoryId: LibraryCategoryId; courseId: string };
 
 export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { completedLessonIds, savedCourseIds, toggleSavedCourse } = useApp();
+  const { completedLessonIds, lessonWatchProgress, savedCourseIds, toggleSavedCourse } = useApp();
   const resolvedCategoryId = resolveCategoryId(categoryId);
   const { course, isLoading, error, refetch } = useCatalogCourse(courseId);
   const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
@@ -25,7 +26,7 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const lessons = useMemo(() => (course ? getCourseLessons(course) : []), [course]);
   const completedCount = lessons.filter((item) => completedLessonIds.includes(item.id)).length;
   const uploadedCount = lessons.filter((item) => Boolean(item.videoUrl)).length;
-  const progress = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
+  const progress = courseProgressPercent(lessons, completedLessonIds, lessonWatchProgress);
   const firstIncomplete = lessons.find((item) => !completedLessonIds.includes(item.id)) ?? lessons[0];
 
   if (isLoading) {
@@ -103,8 +104,8 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
               </View>
               <Text style={[styles.progressPercent, { color: course.color }]}>{progress}%</Text>
             </View>
-            <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}> 
-              <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: course.color }]} />
+            <View style={[styles.progressTrackWrap]}>
+              <ProgressBar progress={progress} color={course.color} trackColor={colors.muted} height={6} />
             </View>
             <View style={styles.uploadStatus}>
               <Feather name={uploadedCount === lessons.length ? 'check-circle' : 'upload-cloud'} size={14} color={uploadedCount ? course.color : colors.mutedForeground} />
@@ -221,8 +222,7 @@ const styles = StyleSheet.create({
   progressTitle: { fontSize: 14, fontFamily: 'Manrope_700Bold' },
   progressMeta: { fontSize: 10.5, fontFamily: 'Manrope_500Medium', marginTop: 2 },
   progressPercent: { fontSize: 21, fontFamily: 'Manrope_800ExtraBold' },
-  progressTrack: { height: 6, borderRadius: 6, overflow: 'hidden', marginTop: 11 },
-  progressFill: { height: '100%', borderRadius: 6 },
+  progressTrackWrap: { marginTop: 11 },
   uploadStatus: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   uploadStatusText: { fontSize: 10.5, fontFamily: 'Manrope_600SemiBold' },
   aboutRow: { flexDirection: 'row', gap: 10 },

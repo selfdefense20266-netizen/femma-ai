@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '@/constants/colors';
+import { useAuth } from '@/context/AuthContext';
+import {
+  fetchMemberProgress,
+  mergeProgressSnapshots,
+  saveMemberProgress,
+  type MemberProgressSnapshot,
+} from '@/lib/memberProgress';
 
 export type MissionCategory = 'fitness' | 'yoga' | 'safety' | 'nutrition' | 'recipe';
 export type CyclePhase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal' | 'none';
@@ -82,18 +89,31 @@ const DEFAULT_PROFILE: UserProfile = {
   pregnancyWeek: 0,
 };
 
+const STORAGE_KEYS = {
+  profile: 'user_profile',
+  missions: 'daily_missions',
+  onboarding: 'onboarding_completed',
+  lessons: 'completed_video_lessons',
+  courses: 'saved_video_courses',
+  lastLesson: 'last_viewed_video_lesson',
+  watch: 'lesson_watch_progress',
+} as const;
+
 interface AppContextType {
   profile: UserProfile;
   missions: Mission[];
   onboardingCompleted: boolean;
   completedLessonIds: string[];
+  lessonWatchProgress: Record<string, number>;
   savedCourseIds: string[];
   lastViewedLessonId: string | null;
+  syncReady: boolean;
   updateProfile: (updates: Partial<UserProfile>) => void;
   completeMission: (id: string) => void;
   resetMissions: () => void;
   completeOnboarding: (profile: Partial<UserProfile>) => void;
   setLessonComplete: (lessonId: string, completed: boolean) => void;
+  setLessonWatchProgress: (lessonId: string, percent: number) => void;
   toggleSavedCourse: (courseId: string) => void;
   setLastViewedLesson: (lessonId: string) => void;
   missionsCompleted: number;
@@ -102,133 +122,269 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
+async function writeLocalSnapshot(snapshot: MemberProgressSnapshot) {
+  await Promise.all([
+    AsyncStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(snapshot.profile)),
+    AsyncStorage.setItem(STORAGE_KEYS.missions, JSON.stringify(snapshot.missions)),
+    AsyncStorage.setItem(STORAGE_KEYS.onboarding, snapshot.onboardingCompleted ? 'true' : 'false'),
+    AsyncStorage.setItem(STORAGE_KEYS.lessons, JSON.stringify(snapshot.completedLessonIds)),
+    AsyncStorage.setItem(STORAGE_KEYS.courses, JSON.stringify(snapshot.savedCourseIds)),
+    AsyncStorage.setItem(STORAGE_KEYS.watch, JSON.stringify(snapshot.lessonWatchProgress)),
+    snapshot.lastViewedLessonId
+      ? AsyncStorage.setItem(STORAGE_KEYS.lastLesson, snapshot.lastViewedLessonId)
+      : AsyncStorage.removeItem(STORAGE_KEYS.lastLesson),
+  ]);
+}
+
+async function readLocalSnapshot(): Promise<MemberProgressSnapshot> {
+  const [savedProfile, savedMissions, completed, savedLessons, savedCourses, lastLesson, watchProgress] =
+    await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.profile),
+      AsyncStorage.getItem(STORAGE_KEYS.missions),
+      AsyncStorage.getItem(STORAGE_KEYS.onboarding),
+      AsyncStorage.getItem(STORAGE_KEYS.lessons),
+      AsyncStorage.getItem(STORAGE_KEYS.courses),
+      AsyncStorage.getItem(STORAGE_KEYS.lastLesson),
+      AsyncStorage.getItem(STORAGE_KEYS.watch),
+    ]);
+
+  return {
+    profile: savedProfile ? { ...DEFAULT_PROFILE, ...JSON.parse(savedProfile) } : DEFAULT_PROFILE,
+    missions: savedMissions ? JSON.parse(savedMissions) : DEFAULT_MISSIONS,
+    onboardingCompleted: completed === 'true',
+    completedLessonIds: savedLessons ? JSON.parse(savedLessons) : [],
+    savedCourseIds: savedCourses ? JSON.parse(savedCourses) : [],
+    lastViewedLessonId: lastLesson || null,
+    lessonWatchProgress: watchProgress ? JSON.parse(watchProgress) : {},
+  };
+}
+
+function levelFromPoints(points: number): Level {
+  if (points >= 10000) return 5;
+  if (points >= 6000) return 4;
+  if (points >= 3000) return 3;
+  if (points >= 1000) return 2;
+  return 1;
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [missions, setMissions] = useState<Mission[]>(DEFAULT_MISSIONS);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
+  const [lessonWatchProgress, setLessonWatchProgressState] = useState<Record<string, number>>({});
   const [savedCourseIds, setSavedCourseIds] = useState<string[]>([]);
   const [lastViewedLessonId, setLastViewedLessonIdState] = useState<string | null>(null);
+  const [syncReady, setSyncReady] = useState(false);
+  const cloudTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const snapshotRef = useRef<MemberProgressSnapshot>({
+    profile: DEFAULT_PROFILE,
+    missions: DEFAULT_MISSIONS,
+    onboardingCompleted: false,
+    completedLessonIds: [],
+    lessonWatchProgress: {},
+    savedCourseIds: [],
+    lastViewedLessonId: null,
+  });
+
+  const applySnapshot = useCallback((snapshot: MemberProgressSnapshot) => {
+    snapshotRef.current = snapshot;
+    setProfile(snapshot.profile);
+    setMissions(snapshot.missions.length ? snapshot.missions : DEFAULT_MISSIONS);
+    setOnboardingCompleted(snapshot.onboardingCompleted);
+    setCompletedLessonIds(snapshot.completedLessonIds);
+    setLessonWatchProgressState(snapshot.lessonWatchProgress);
+    setSavedCourseIds(snapshot.savedCourseIds);
+    setLastViewedLessonIdState(snapshot.lastViewedLessonId);
+  }, []);
+
+  const queueCloudSave = useCallback((snapshot: MemberProgressSnapshot, immediate = false) => {
+    snapshotRef.current = snapshot;
+    if (cloudTimerRef.current) clearTimeout(cloudTimerRef.current);
+    const run = () => {
+      saveMemberProgress(snapshot).catch(() => undefined);
+    };
+    if (immediate) {
+      run();
+      return;
+    }
+    cloudTimerRef.current = setTimeout(run, 800);
+  }, []);
+
+  const persistAll = useCallback(
+    async (snapshot: MemberProgressSnapshot, options?: { immediateCloud?: boolean }) => {
+      applySnapshot(snapshot);
+      await writeLocalSnapshot(snapshot);
+      if (user?.email) {
+        queueCloudSave(snapshot, options?.immediateCloud);
+      }
+    },
+    [applySnapshot, queueCloudSave, user?.email]
+  );
 
   useEffect(() => {
-    const load = async () => {
+    let mounted = true;
+    (async () => {
       try {
-        const [savedProfile, savedMissions, completed, savedLessons, savedCourses, lastLesson] = await Promise.all([
-          AsyncStorage.getItem('user_profile'),
-          AsyncStorage.getItem('daily_missions'),
-          AsyncStorage.getItem('onboarding_completed'),
-          AsyncStorage.getItem('completed_video_lessons'),
-          AsyncStorage.getItem('saved_video_courses'),
-          AsyncStorage.getItem('last_viewed_video_lesson'),
-        ]);
-        if (savedProfile) setProfile(JSON.parse(savedProfile));
-        if (savedMissions) setMissions(JSON.parse(savedMissions));
-        if (completed === 'true') setOnboardingCompleted(true);
-        if (savedLessons) setCompletedLessonIds(JSON.parse(savedLessons));
-        if (savedCourses) setSavedCourseIds(JSON.parse(savedCourses));
-        if (lastLesson) setLastViewedLessonIdState(lastLesson);
-      } catch {}
+        const local = await readLocalSnapshot();
+        if (!mounted) return;
+        applySnapshot(local);
+      } catch {
+        // keep defaults
+      } finally {
+        if (mounted) setSyncReady(true);
+      }
+    })();
+    return () => {
+      mounted = false;
     };
-    load();
+  }, [applySnapshot]);
+
+  useEffect(() => {
+    if (!user?.email || !syncReady) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        const remote = await fetchMemberProgress();
+        if (!mounted) return;
+        const merged = mergeProgressSnapshots(snapshotRef.current, remote);
+        applySnapshot(merged);
+        await writeLocalSnapshot(merged);
+        await saveMemberProgress(merged);
+      } catch (error) {
+        console.warn('Cloud progress sync failed', error);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.email, syncReady, applySnapshot]);
+
+  useEffect(() => {
+    return () => {
+      if (cloudTimerRef.current) clearTimeout(cloudTimerRef.current);
+    };
   }, []);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
-    setProfile(prev => {
-      const updated = { ...prev, ...updates };
-      AsyncStorage.setItem('user_profile', JSON.stringify(updated));
-      return updated;
-    });
+    const next = {
+      ...snapshotRef.current,
+      profile: { ...snapshotRef.current.profile, ...updates },
+    };
+    void persistAll(next);
   };
 
   const completeMission = (id: string) => {
-    setMissions(prev => {
-      const updated = prev.map(m => m.id === id ? { ...m, completed: true } : m);
-      AsyncStorage.setItem('daily_missions', JSON.stringify(updated));
-      return updated;
-    });
-    setProfile(prev => {
-      const newPoints = prev.points + 50;
-      const newLevel: Level = newPoints >= 10000 ? 5 : newPoints >= 6000 ? 4 : newPoints >= 3000 ? 3 : newPoints >= 1000 ? 2 : 1;
-      const updated = { ...prev, points: newPoints, level: newLevel };
-      AsyncStorage.setItem('user_profile', JSON.stringify(updated));
-      return updated;
-    });
+    const updatedMissions = snapshotRef.current.missions.map((m) =>
+      m.id === id ? { ...m, completed: true } : m
+    );
+    const newPoints = snapshotRef.current.profile.points + 50;
+    const next: MemberProgressSnapshot = {
+      ...snapshotRef.current,
+      missions: updatedMissions,
+      profile: {
+        ...snapshotRef.current.profile,
+        points: newPoints,
+        level: levelFromPoints(newPoints),
+      },
+    };
+    void persistAll(next);
   };
 
   const resetMissions = () => {
-    setMissions(DEFAULT_MISSIONS);
-    AsyncStorage.setItem('daily_missions', JSON.stringify(DEFAULT_MISSIONS));
+    const next = { ...snapshotRef.current, missions: DEFAULT_MISSIONS };
+    void persistAll(next);
   };
 
   const completeOnboarding = (profileUpdates: Partial<UserProfile>) => {
-    const updated = { ...DEFAULT_PROFILE, ...profileUpdates };
-    setProfile(updated);
-    setOnboardingCompleted(true);
-    AsyncStorage.setItem('user_profile', JSON.stringify(updated));
-    AsyncStorage.setItem('onboarding_completed', 'true');
+    const next: MemberProgressSnapshot = {
+      ...snapshotRef.current,
+      profile: { ...DEFAULT_PROFILE, ...profileUpdates },
+      onboardingCompleted: true,
+    };
+    void persistAll(next, { immediateCloud: true });
+  };
+
+  const setLessonWatchProgress = (lessonId: string, percent: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+    const current = snapshotRef.current.lessonWatchProgress[lessonId] ?? 0;
+    if (clamped <= current) return;
+    const next: MemberProgressSnapshot = {
+      ...snapshotRef.current,
+      lessonWatchProgress: {
+        ...snapshotRef.current.lessonWatchProgress,
+        [lessonId]: clamped,
+      },
+    };
+    void persistAll(next);
   };
 
   const setLessonComplete = (lessonId: string, completed: boolean) => {
-    setCompletedLessonIds(prev => {
-      const wasCompleted = prev.includes(lessonId);
-      const updated = completed
-        ? (wasCompleted ? prev : [...prev, lessonId])
-        : prev.filter(id => id !== lessonId);
+    const wasCompleted = snapshotRef.current.completedLessonIds.includes(lessonId);
+    const completedLessonIdsNext = completed
+      ? wasCompleted
+        ? snapshotRef.current.completedLessonIds
+        : [...snapshotRef.current.completedLessonIds, lessonId]
+      : snapshotRef.current.completedLessonIds.filter((id) => id !== lessonId);
 
-      if (updated !== prev) {
-        AsyncStorage.setItem('completed_video_lessons', JSON.stringify(updated));
-      }
+    let profileNext = snapshotRef.current.profile;
+    let watchNext = snapshotRef.current.lessonWatchProgress;
 
-      if (completed && !wasCompleted) {
-        setProfile(current => {
-          const newPoints = current.points + 25;
-          const newLevel: Level = newPoints >= 10000 ? 5 : newPoints >= 6000 ? 4 : newPoints >= 3000 ? 3 : newPoints >= 1000 ? 2 : 1;
-          const updatedProfile = { ...current, points: newPoints, level: newLevel };
-          AsyncStorage.setItem('user_profile', JSON.stringify(updatedProfile));
-          return updatedProfile;
-        });
-      }
+    if (completed && !wasCompleted) {
+      watchNext = { ...watchNext, [lessonId]: Math.max(watchNext[lessonId] ?? 0, 100) };
+      const newPoints = profileNext.points + 25;
+      profileNext = { ...profileNext, points: newPoints, level: levelFromPoints(newPoints) };
+    }
 
-      return updated;
-    });
+    const next: MemberProgressSnapshot = {
+      ...snapshotRef.current,
+      completedLessonIds: completedLessonIdsNext,
+      lessonWatchProgress: watchNext,
+      profile: profileNext,
+    };
+    void persistAll(next, { immediateCloud: true });
   };
 
   const toggleSavedCourse = (courseId: string) => {
-    setSavedCourseIds(prev => {
-      const updated = prev.includes(courseId)
-        ? prev.filter(id => id !== courseId)
-        : [...prev, courseId];
-      AsyncStorage.setItem('saved_video_courses', JSON.stringify(updated));
-      return updated;
-    });
+    const saved = snapshotRef.current.savedCourseIds.includes(courseId)
+      ? snapshotRef.current.savedCourseIds.filter((id) => id !== courseId)
+      : [...snapshotRef.current.savedCourseIds, courseId];
+    void persistAll({ ...snapshotRef.current, savedCourseIds: saved }, { immediateCloud: true });
   };
 
   const setLastViewedLesson = (lessonId: string) => {
-    setLastViewedLessonIdState(lessonId);
-    AsyncStorage.setItem('last_viewed_video_lesson', lessonId);
+    void persistAll({ ...snapshotRef.current, lastViewedLessonId: lessonId });
   };
 
-  const missionsCompleted = missions.filter(m => m.completed).length;
+  const missionsCompleted = missions.filter((m) => m.completed).length;
   const totalMissions = missions.length;
 
   return (
-    <AppContext.Provider value={{
-      profile,
-      missions,
-      onboardingCompleted,
-      completedLessonIds,
-      savedCourseIds,
-      lastViewedLessonId,
-      updateProfile,
-      completeMission,
-      resetMissions,
-      completeOnboarding,
-      setLessonComplete,
-      toggleSavedCourse,
-      setLastViewedLesson,
-      missionsCompleted,
-      totalMissions,
-    }}>
+    <AppContext.Provider
+      value={{
+        profile,
+        missions,
+        onboardingCompleted,
+        completedLessonIds,
+        lessonWatchProgress,
+        savedCourseIds,
+        lastViewedLessonId,
+        syncReady,
+        updateProfile,
+        completeMission,
+        resetMissions,
+        completeOnboarding,
+        setLessonComplete,
+        setLessonWatchProgress,
+        toggleSavedCourse,
+        setLastViewedLesson,
+        missionsCompleted,
+        totalMissions,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

@@ -43,7 +43,7 @@ import CloudUploadOutlined from '@ant-design/icons/CloudUploadOutlined';
 const emptyLessonForm = {
   id: '',
   title: '',
-  durationMinutes: '10',
+  durationMinutes: null,
   description: '',
   videoStatus: 'awaiting'
 };
@@ -110,7 +110,7 @@ export default function ModulesLessons() {
         ? {
             id: lesson.id,
             title: lesson.title,
-            durationMinutes: String(lesson.durationMinutes ?? 10),
+            durationMinutes: lesson.durationMinutes ?? null,
             description: lesson.description || '',
             videoStatus: lessonMediaStatus(lesson)
           }
@@ -120,14 +120,12 @@ export default function ModulesLessons() {
 
   const saveLessonForm = async () => {
     if (!course || !lessonDialog.moduleId || !lessonDialog.form.title.trim() || savingLesson) return;
-    const duration = Math.max(1, Math.min(240, Number(lessonDialog.form.durationMinutes) || 10));
     try {
       setSavingLesson(true);
       setActionError('');
       await saveLesson(course.id, lessonDialog.moduleId, {
         id: lessonDialog.form.id || undefined,
         title: lessonDialog.form.title.trim(),
-        durationMinutes: duration,
         description: lessonDialog.form.description.trim()
       });
       setLessonDialog({ open: false, moduleId: '', form: emptyLessonForm });
@@ -243,7 +241,11 @@ export default function ModulesLessons() {
                               </Typography>
                             )}
                           </TableCell>
-                          <TableCell>{lesson.durationMinutes} min</TableCell>
+                          <TableCell>
+                            {lessonMediaStatus(lesson) === 'ready' || lesson.muxPlaybackId || lesson.videoUrl
+                              ? `${lesson.durationMinutes} min`
+                              : '—'}
+                          </TableCell>
                           <TableCell>
                             <StatusChip status={status} />
                           </TableCell>
@@ -336,15 +338,14 @@ export default function ModulesLessons() {
               value={lessonDialog.form.title}
               onChange={(e) => setLessonDialog((s) => ({ ...s, form: { ...s.form, title: e.target.value } }))}
             />
-            <TextField
-              label="Estimated duration (minutes)"
-              type="number"
-              fullWidth
-              inputProps={{ min: 1, max: 240, step: 1 }}
-              helperText="Approximate lesson length shown in the app. You can adjust after recording."
-              value={lessonDialog.form.durationMinutes}
-              onChange={(e) => setLessonDialog((s) => ({ ...s, form: { ...s.form, durationMinutes: e.target.value } }))}
-            />
+            <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'grey.50', border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle2">Estimated duration</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {isEditingLesson && (lessonDialog.form.videoStatus === 'ready' || lessonDialog.form.durationMinutes)
+                  ? `Auto-calculated from video · ${lessonDialog.form.durationMinutes || 1} min`
+                  : 'Filled automatically when you upload the lesson video in Media Library.'}
+              </Typography>
+            </Box>
             <TextField
               label="Description"
               fullWidth

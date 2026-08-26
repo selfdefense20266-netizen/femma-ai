@@ -166,23 +166,48 @@ export async function removeModule(moduleId) {
   if (error) throw error;
 }
 
+function clampDurationMinutes(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.max(1, Math.min(240, Math.round(n)));
+}
+
+export function durationMinutesFromVideoFile(file) {
+  return new Promise((resolve) => {
+    if (!file || typeof URL === 'undefined' || typeof document === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    const finish = (minutes) => {
+      URL.revokeObjectURL(url);
+      resolve(minutes);
+    };
+    video.onloadedmetadata = () => {
+      finish(clampDurationMinutes(video.duration / 60));
+    };
+    video.onerror = () => finish(null);
+    video.src = url;
+  });
+}
+
 export async function upsertLesson(courseId, moduleId, payload) {
   const id = payload.id || slugify(`${moduleId}-${payload.title}`, 'lesson');
-  const duration = Math.max(1, Math.min(240, Number(payload.durationMinutes) || 10));
+  const duration = clampDurationMinutes(payload.durationMinutes);
 
   if (payload.id) {
-    const { data, error } = await supabase
-      .from('lessons')
-      .update({
-        title: payload.title.trim(),
-        description: payload.description || null,
-        duration_minutes: duration,
-        course_id: courseId,
-        module_id: moduleId
-      })
-      .eq('id', id)
-      .select('*')
-      .single();
+    const patch = {
+      title: payload.title.trim(),
+      description: payload.description || null,
+      course_id: courseId,
+      module_id: moduleId
+    };
+    // Keep existing duration unless caller explicitly provides one (e.g. video upload).
+    if (duration != null) patch.duration_minutes = duration;
+
+    const { data, error } = await supabase.from('lessons').update(patch).eq('id', id).select('*').single();
     if (error) throw error;
     return mapLesson(data);
   }
@@ -195,7 +220,8 @@ export async function upsertLesson(courseId, moduleId, payload) {
       module_id: moduleId,
       title: payload.title.trim(),
       description: payload.description || null,
-      duration_minutes: duration,
+      // Placeholder until video upload/Mux sync fills the real length.
+      duration_minutes: duration ?? 1,
       video_status: 'awaiting',
       sort_order: payload.sortOrder ?? 0
     })
@@ -258,9 +284,11 @@ export async function setLessonVideoStatus(lessonId, videoStatus, extra = {}) {
 export async function uploadLessonVideo(lessonId, file, onProgress) {
   const { uploadUrl, uploadId } = await createMuxDirectUpload(lessonId);
   await putFileToMuxUpload(uploadUrl, file, onProgress);
+  const durationMinutes = await durationMinutesFromVideoFile(file);
   await setLessonVideoStatus(lessonId, 'processing', {
     mux_upload_id: uploadId,
-    upload_key: `mux://${uploadId}`
+    upload_key: `mux://${uploadId}`,
+    ...(durationMinutes != null ? { duration_minutes: durationMinutes } : {})
   });
   return syncLessonVideoStatus(lessonId);
 }
