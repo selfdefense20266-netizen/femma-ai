@@ -18,31 +18,37 @@ export default function Analytics() {
 
   return (
     <>
-      <PageHeader
-        title="Analytics"
-        subtitle="Engagement signals from the Fema AI member base — completions, streaks, and premium conversion."
-      />
+      <PageHeader title="Analytics" subtitle="Live engagement signals from Supabase members and the content library." />
 
       <Grid container spacing={2.75}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticEcommerce title="Weekly completions" count={String(analytics.weeklyCompletions.reduce((a, b) => a + b, 0))} percentage={9.3} extra="lessons" />
+          <AnalyticEcommerce
+            title="Lessons completed (all time)"
+            count={String(analytics.totalCompletedLessons || 0)}
+            extra="from member profiles"
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticEcommerce title="Premium conversion" count={`${analytics.premiumConversion}%`} percentage={3.1} color="primary" extra="of actives" />
+          <AnalyticEcommerce
+            title="Premium conversion"
+            count={`${analytics.premiumConversion}%`}
+            color="primary"
+            extra="of active members"
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticEcommerce title="Avg streak" count={`${avgStreak}d`} percentage={5.4} color="info" extra="across members" />
+          <AnalyticEcommerce title="Avg streak" count={`${avgStreak}d`} color="info" extra="across members" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticEcommerce title="Library size" count={String(stats.totalLessons)} percentage={1.2} color="success" extra="lessons" />
+          <AnalyticEcommerce title="Library size" count={String(stats.totalLessons)} color="success" extra="lessons" />
         </Grid>
 
         <Grid size={{ xs: 12, md: 7 }}>
-          <MainCard title="Completions by category">
+          <MainCard title="Lessons by category">
             <BarChart
               height={320}
               hideLegend
-              series={[{ data: analytics.completionsByCategory.map((c) => c.value), label: 'Completions' }]}
+              series={[{ data: analytics.completionsByCategory.map((c) => c.value), label: 'Lessons' }]}
               xAxis={[{ data: analytics.completionsByCategory.map((c) => c.label), scaleType: 'band', categoryGapRatio: 0.35 }]}
               margin={{ left: 40, right: 20, top: 20, bottom: 40 }}
               colors={[theme.vars.palette.primary.main]}
@@ -84,9 +90,8 @@ export default function Analytics() {
               Reading the numbers
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Fitness drives the majority of lesson completions, while Safety remains a strong secondary pillar. Premium conversion sits at{' '}
-              {analytics.premiumConversion}% of active members. Use Media Library to clear awaiting uploads and Courses to publish draft
-              Pregnancy / Nutrition paths when ready.
+              Charts use live member and catalog data. Premium conversion is {analytics.premiumConversion}% of active members. Clear
+              awaiting uploads in Media Library and publish draft courses when ready.
             </Typography>
           </MainCard>
         </Grid>

@@ -24,20 +24,30 @@ function TabPanel({ children, value, index }) {
 }
 
 export default function Settings() {
-  const { settings, saveSettings, resetData } = useAdminData();
+  const { settings, saveSettings } = useAdminData();
   const { user } = useAuth();
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState(settings);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setForm(settings);
   }, [settings]);
 
-  const handleSave = () => {
-    saveSettings(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await saveSettings(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err.message || 'Could not save settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleFlag = (key) => {
@@ -49,7 +59,7 @@ export default function Settings() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Branding, feature flags, and admin account preferences." />
+      <PageHeader title="Settings" subtitle="Branding, feature flags, and admin account preferences (saved to Supabase)." />
 
       <MainCard>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
@@ -69,7 +79,7 @@ export default function Settings() {
               onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
             />
             <Box sx={{ height: 48, borderRadius: 2, bgcolor: form.primaryColor, border: '1px solid', borderColor: 'divider' }} />
-            <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start' }}>
+            <Button variant="contained" disabled={saving} onClick={handleSave} sx={{ alignSelf: 'flex-start' }}>
               Save branding
             </Button>
           </Stack>
@@ -84,7 +94,7 @@ export default function Settings() {
                 label={key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}
               />
             ))}
-            <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start', mt: 1 }}>
+            <Button variant="contained" disabled={saving} onClick={handleSave} sx={{ alignSelf: 'flex-start', mt: 1 }}>
               Save flags
             </Button>
           </Stack>
@@ -101,21 +111,20 @@ export default function Settings() {
               value={form.adminEmail}
               onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
             />
-            <Button variant="contained" onClick={handleSave} sx={{ alignSelf: 'flex-start' }}>
+            <Button variant="contained" disabled={saving} onClick={handleSave} sx={{ alignSelf: 'flex-start' }}>
               Save account
-            </Button>
-            <Alert severity="warning">
-              Reset demo data restores seed categories, courses, users, and subscriptions in this browser.
-            </Alert>
-            <Button color="error" variant="outlined" onClick={resetData} sx={{ alignSelf: 'flex-start' }}>
-              Reset demo data
             </Button>
           </Stack>
         </TabPanel>
 
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
         {saved && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            Settings saved locally.
+            Settings saved to Supabase.
           </Alert>
         )}
       </MainCard>

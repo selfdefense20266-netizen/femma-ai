@@ -19,7 +19,7 @@ async function findUserByEmail(admin: ReturnType<typeof createClient>, email: st
   for (let page = 1; page <= 10; page += 1) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
     if (error) throw error;
-    const found = data.users.find((user) => user.email?.toLowerCase() === normalized);
+    const found = data.users.find((user: { email?: string }) => user.email?.toLowerCase() === normalized);
     if (found) return found;
     if (data.users.length < 200) break;
   }

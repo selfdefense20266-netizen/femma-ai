@@ -18,7 +18,9 @@ out/
 !.env.example
 !.**/.env.example
 supabase/.env.mux.local
+supabase/.env.openai.local
 .env.mux.local
+.env.openai.local
 
 # Logs & debug
 logs/

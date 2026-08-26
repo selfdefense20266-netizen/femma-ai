@@ -14,7 +14,7 @@ const UsersPage = Loadable(lazy(() => import('pages/admin/Users')));
 const SubscriptionsPage = Loadable(lazy(() => import('pages/admin/Subscriptions')));
 const AnalyticsPage = Loadable(lazy(() => import('pages/admin/Analytics')));
 const NotificationsPage = Loadable(lazy(() => import('pages/admin/Notifications')));
-// const SettingsPage = Loadable(lazy(() => import('pages/admin/Settings')));
+const SettingsPage = Loadable(lazy(() => import('pages/admin/Settings')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -46,8 +46,8 @@ const MainRoutes = {
     { path: 'users', element: <UsersPage /> },
     { path: 'subscriptions', element: <SubscriptionsPage /> },
     { path: 'analytics', element: <AnalyticsPage /> },
-    { path: 'notifications', element: <NotificationsPage /> }
-    // { path: 'settings', element: <SettingsPage /> }
+    { path: 'notifications', element: <NotificationsPage /> },
+    { path: 'settings', element: <SettingsPage /> }
   ]
 };
 

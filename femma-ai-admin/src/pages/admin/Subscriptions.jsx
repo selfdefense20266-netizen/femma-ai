@@ -84,15 +84,19 @@ export default function Subscriptions() {
     });
   };
 
-  const handleSavePrice = () => {
+  const handleSavePrice = async () => {
     const amount = Number(priceDialog.price);
     if (Number.isNaN(amount) || amount < 0) {
       setPriceError('Enter a valid price (0 or greater).');
       return;
     }
-    updatePremiumPrice(amount);
-    setPriceDialog({ open: false, price: '' });
-    setPriceError('');
+    try {
+      await updatePremiumPrice(amount);
+      setPriceDialog({ open: false, price: '' });
+      setPriceError('');
+    } catch (err) {
+      setPriceError(err.message || 'Could not update price');
+    }
   };
 
   return (

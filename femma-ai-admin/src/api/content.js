@@ -303,20 +303,3 @@ export async function syncProcessingLessonVideos() {
   if (data?.error) throw new Error(data.error);
   return data;
 }
-
-export async function markLessonMediaUploaded(lessonId) {
-  const videoUrl = `https://cdn.fema.ai/mock/${lessonId}.mp4`;
-  const thumbnailUrl = `https://cdn.fema.ai/mock/${lessonId}-thumb.jpg`;
-  const { data, error } = await supabase
-    .from('lessons')
-    .update({
-      video_url: videoUrl,
-      thumbnail_url: thumbnailUrl,
-      video_status: 'ready'
-    })
-    .eq('id', lessonId)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return mapLesson(data);
-}

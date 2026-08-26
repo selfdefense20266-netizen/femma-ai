@@ -1,0 +1,6 @@
+{
+  "deno.enable": true,
+  "deno.enablePaths": ["."],
+  "deno.lint": true,
+  "editor.defaultFormatter": "denoland.vscode-deno"
+}

@@ -55,10 +55,7 @@ export async function fetchMemberByUser(userId: string, email: string) {
 }
 
 function newMemberId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `member-${Date.now()}`;
+  return `member-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export async function saveMemberProfile(input: {

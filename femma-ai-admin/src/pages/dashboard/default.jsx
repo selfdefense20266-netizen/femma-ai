@@ -44,22 +44,20 @@ export default function DashboardDefault() {
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <AnalyticEcommerce title="Active members" count={String(stats.activeUsers)} percentage={12.4} extra={`${stats.activeUsers} members`} />
+        <AnalyticEcommerce title="Active members" count={String(stats.activeUsers)} extra={`${users.length} total`} />
       </Grid>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <AnalyticEcommerce
           title="Premium subscribers"
           count={String(stats.premiumUsers)}
-          percentage={8.2}
           color="primary"
-          extra={`${stats.premiumUsers} premium`}
+          extra={`${analytics.premiumConversion}% of actives`}
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <AnalyticEcommerce
           title="Published courses"
           count={String(stats.publishedCourses)}
-          percentage={4.1}
           color="info"
           extra={`${courses.length} total`}
         />
@@ -68,7 +66,6 @@ export default function DashboardDefault() {
         <AnalyticEcommerce
           title="Lessons awaiting upload"
           count={String(stats.awaitingUpload)}
-          percentage={2.5}
           isLoss
           color="warning"
           extra={`${stats.totalLessons} lessons`}
@@ -76,11 +73,11 @@ export default function DashboardDefault() {
       </Grid>
 
       <Grid size={{ xs: 12, md: 7 }}>
-        <MainCard title="Lesson completions this week">
+        <MainCard title="New members (last 7 days)">
           <BarChart
             hideLegend
             height={300}
-            series={[{ data: analytics.weeklyCompletions, label: 'Completions' }]}
+            series={[{ data: analytics.weeklySignups || analytics.weeklyCompletions, label: 'Signups' }]}
             xAxis={[{ data: analytics.weekLabels, scaleType: 'band', categoryGapRatio: 0.4 }]}
             margin={{ left: 30, right: 20, top: 20, bottom: 30 }}
             colors={[theme.vars.palette.primary.main]}

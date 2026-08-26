@@ -28,31 +28,41 @@ const emptyForm = {
 };
 
 export default function Notifications() {
-  const { notifications, categories, saveNotification, sendNotification } = useAdminData();
+  const { notifications, categories, saveNotification, sendNotification, membersLoading } = useAdminData();
   const [form, setForm] = useState(emptyForm);
+  const [busy, setBusy] = useState(false);
   const { page, rowsPerPage, paginatedItems, handleChangePage, handleChangeRowsPerPage, count } = usePagination(
     notifications,
     5,
     notifications.length
   );
 
-  const handleSaveDraft = () => {
-    if (!form.title.trim() || !form.body.trim()) return;
-    saveNotification({ ...form, status: 'draft' });
-    setForm(emptyForm);
+  const handleSaveDraft = async () => {
+    if (!form.title.trim() || !form.body.trim() || busy) return;
+    setBusy(true);
+    try {
+      await saveNotification({ ...form, status: 'draft' });
+      setForm(emptyForm);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleSend = () => {
-    if (!form.title.trim() || !form.body.trim()) return;
-    const id = `notif-${Date.now().toString(36)}`;
-    saveNotification({ ...form, id, status: 'draft' });
-    sendNotification(id);
-    setForm(emptyForm);
+  const handleSend = async () => {
+    if (!form.title.trim() || !form.body.trim() || busy) return;
+    setBusy(true);
+    try {
+      const saved = await saveNotification({ ...form, status: 'draft' });
+      await sendNotification(saved.id);
+      setForm(emptyForm);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <>
-      <PageHeader title="Notifications" subtitle="Compose member push messages and review send history (local demo)." />
+      <PageHeader title="Notifications" subtitle="Compose member messages and review send history stored in Supabase." />
 
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, md: 5 }}>
@@ -83,10 +93,10 @@ export default function Notifications() {
                 ))}
               </TextField>
               <Stack direction="row" spacing={1}>
-                <Button variant="outlined" onClick={handleSaveDraft}>
+                <Button variant="outlined" disabled={busy} onClick={handleSaveDraft}>
                   Save draft
                 </Button>
-                <Button variant="contained" onClick={handleSend}>
+                <Button variant="contained" disabled={busy} onClick={handleSend}>
                   Send now
                 </Button>
               </Stack>
@@ -96,6 +106,11 @@ export default function Notifications() {
 
         <Grid size={{ xs: 12, md: 7 }}>
           <MainCard title="History" content={false}>
+            {membersLoading && (
+              <Box sx={{ p: 2 }}>
+                <Typography color="text.secondary">Loading…</Typography>
+              </Box>
+            )}
             <List disablePadding>
               {paginatedItems.map((n, index) => (
                 <Box key={n.id}>
@@ -104,7 +119,7 @@ export default function Notifications() {
                     alignItems="flex-start"
                     secondaryAction={
                       n.status === 'draft' ? (
-                        <Button size="small" onClick={() => sendNotification(n.id)}>
+                        <Button size="small" disabled={busy} onClick={() => sendNotification(n.id)}>
                           Send
                         </Button>
                       ) : (
@@ -126,9 +141,7 @@ export default function Notifications() {
                           </Typography>
                           <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
                             Audience: {n.audience} ·{' '}
-                            {n.sentAt
-                              ? `Sent ${new Date(n.sentAt).toLocaleString()}`
-                              : `Created ${new Date(n.createdAt).toLocaleString()}`}
+                            {n.sentAt ? `Sent ${new Date(n.sentAt).toLocaleString()}` : `Created ${new Date(n.createdAt).toLocaleString()}`}
                           </Typography>
                         </>
                       }

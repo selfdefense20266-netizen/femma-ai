@@ -16,6 +16,7 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 
 // project imports
 import MainCard from 'components/MainCard';
@@ -30,11 +31,12 @@ import usePagination from 'hooks/usePagination';
 import EyeOutlined from '@ant-design/icons/EyeOutlined';
 
 export default function Users() {
-  const { users, plans, levelNames, setUserStatus, assignPlan, saveUser } = useAdminData();
+  const { users, plans, levelNames, setUserStatus, assignPlan, saveUser, membersLoading, membersError } = useAdminData();
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const rows = useMemo(() => {
     return users
@@ -53,20 +55,36 @@ export default function Users() {
     `${search}|${planFilter}|${statusFilter}`
   );
 
-  const handleAssignPlan = (planId) => {
+  const handleAssignPlan = async (planId) => {
     if (!selected) return;
-    assignPlan(selected.id, planId, planId === 'premium' ? 'active' : 'active');
-    setSelected((prev) => ({ ...prev, planId, planName: plans.find((p) => p.id === planId)?.name }));
+    setSaving(true);
+    try {
+      await assignPlan(selected.id, planId, 'active');
+      setSelected((prev) => ({ ...prev, planId, planName: plans.find((p) => p.id === planId)?.name }));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <>
       <PageHeader
         title="Users"
-        subtitle="Fema AI members — profile fields mirror the mobile app (goal, level, streak, cycle, plan)."
+        subtitle="Fema AI members from Supabase — profile fields mirror the mobile app (goal, level, streak, cycle, plan)."
       />
 
+      {membersError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {membersError}
+        </Alert>
+      )}
+
       <MainCard content={false}>
+        {membersLoading ? (
+          <Box sx={{ p: 3 }}>
+            <Typography color="text.secondary">Loading members…</Typography>
+          </Box>
+        ) : null}
         <Box sx={{ p: 2.5, pb: 0 }}>
           <DataTableToolbar
             search={search}
@@ -146,7 +164,12 @@ export default function Users() {
         />
       </MainCard>
 
-      <Drawer anchor="right" open={Boolean(selected)} onClose={() => setSelected(null)} PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
+      <Drawer
+        anchor="right"
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}
+      >
         {selected && (
           <Box sx={{ p: 3 }}>
             <Typography variant="h4">{selected.name}</Typography>
@@ -165,9 +188,7 @@ export default function Users() {
               <Detail
                 label="Cycle"
                 value={
-                  selected.isPregnant
-                    ? `Pregnant · week ${selected.pregnancyWeek}`
-                    : `${selected.cyclePhase} · day ${selected.cycleDay}`
+                  selected.isPregnant ? `Pregnant · week ${selected.pregnancyWeek}` : `${selected.cyclePhase} · day ${selected.cycleDay}`
                 }
               />
               <Detail label="Joined" value={selected.joinedAt} />
@@ -199,9 +220,15 @@ export default function Users() {
                 <Button
                   color="error"
                   variant="outlined"
-                  onClick={() => {
-                    setUserStatus(selected.id, 'suspended');
-                    setSelected({ ...selected, status: 'suspended' });
+                  disabled={saving}
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      await setUserStatus(selected.id, 'suspended');
+                      setSelected({ ...selected, status: 'suspended' });
+                    } finally {
+                      setSaving(false);
+                    }
                   }}
                 >
                   Suspend
@@ -210,9 +237,15 @@ export default function Users() {
                 <Button
                   color="success"
                   variant="outlined"
-                  onClick={() => {
-                    setUserStatus(selected.id, 'active');
-                    setSelected({ ...selected, status: 'active' });
+                  disabled={saving}
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      await setUserStatus(selected.id, 'active');
+                      setSelected({ ...selected, status: 'active' });
+                    } finally {
+                      setSaving(false);
+                    }
                   }}
                 >
                   Activate
@@ -220,9 +253,15 @@ export default function Users() {
               )}
               <Button
                 variant="contained"
-                onClick={() => {
-                  saveUser(selected);
-                  setSelected(null);
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  try {
+                    await saveUser(selected);
+                    setSelected(null);
+                  } finally {
+                    setSaving(false);
+                  }
                 }}
               >
                 Done

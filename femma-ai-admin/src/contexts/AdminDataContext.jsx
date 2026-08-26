@@ -11,63 +11,96 @@ import {
   removeModule,
   upsertLesson,
   removeLesson,
-  markLessonMediaUploaded,
   uploadLessonVideo,
-  syncProcessingLessonVideos,
-  syncLessonVideoStatus
+  syncProcessingLessonVideos
 } from 'api/content';
+import { fetchMembersBundle, upsertMember, updateMemberStatus, assignMemberPlan, updatePlanPrice } from 'api/members';
+import { fetchNotifications, upsertNotification, markNotificationSent } from 'api/notifications';
+import { DEFAULT_SETTINGS, fetchSettings, saveAppSettings } from 'api/settings';
 import { flattenLessons } from 'data/content';
-import { SEED_USERS, LEVEL_NAMES } from 'data/users';
-import { SEED_PLANS, SEED_SUBSCRIPTIONS } from 'data/subscriptions';
-import { SEED_NOTIFICATIONS, SEED_SETTINGS, SEED_ANALYTICS } from 'data/notifications';
-
-const STORAGE_KEY = 'fema-ai-admin-local-v2';
-
-const defaultLocalState = {
-  users: SEED_USERS,
-  plans: SEED_PLANS,
-  subscriptions: SEED_SUBSCRIPTIONS,
-  notifications: SEED_NOTIFICATIONS,
-  settings: SEED_SETTINGS
-};
-
-function loadLocalState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return structuredClone(defaultLocalState);
-    const parsed = JSON.parse(raw);
-    return {
-      ...structuredClone(defaultLocalState),
-      ...parsed,
-      settings: { ...SEED_SETTINGS, ...(parsed.settings || {}) }
-    };
-  } catch {
-    return structuredClone(defaultLocalState);
-  }
-}
-
-function uid(prefix) {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-}
+import { LEVEL_NAMES } from 'data/users';
 
 const AdminDataContext = createContext(null);
 
+function buildAnalytics({ users, categories, courses }) {
+  const now = new Date();
+  const active = users.filter((u) => u.status === 'active');
+  const premiumActive = active.filter((u) => u.planId === 'premium').length;
+  const premiumConversion = active.length ? Math.round((premiumActive / active.length) * 100) : 0;
+
+  const weekLabels = [];
+  const weeklyCompletions = [];
+  for (let i = 6; i >= 0; i -= 1) {
+    const day = new Date(now);
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - i);
+    weekLabels.push(day.toLocaleDateString(undefined, { weekday: 'short' }));
+    const y = day.getFullYear();
+    const m = String(day.getMonth() + 1).padStart(2, '0');
+    const d = String(day.getDate()).padStart(2, '0');
+    const key = `${y}-${m}-${d}`;
+    weeklyCompletions.push(users.filter((u) => u.joinedAt === key).length);
+  }
+
+  const lessonsByCategory = Object.fromEntries(categories.map((c) => [c.id, 0]));
+  courses.forEach((course) => {
+    const count = (course.modules || []).reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+    if (lessonsByCategory[course.categoryId] !== undefined) {
+      lessonsByCategory[course.categoryId] += count;
+    }
+  });
+
+  const completionsByCategory = categories.map((c) => ({
+    id: c.id,
+    label: c.title,
+    value: lessonsByCategory[c.id] || 0
+  }));
+
+  const streakBuckets = [
+    { label: '0 days', value: 0 },
+    { label: '1–3', value: 0 },
+    { label: '4–7', value: 0 },
+    { label: '8–14', value: 0 },
+    { label: '15+', value: 0 }
+  ];
+  users.forEach((u) => {
+    const s = Number(u.streak) || 0;
+    if (s <= 0) streakBuckets[0].value += 1;
+    else if (s <= 3) streakBuckets[1].value += 1;
+    else if (s <= 7) streakBuckets[2].value += 1;
+    else if (s <= 14) streakBuckets[3].value += 1;
+    else streakBuckets[4].value += 1;
+  });
+
+  return {
+    weekLabels,
+    weeklyCompletions,
+    weeklySignups: weeklyCompletions,
+    completionsByCategory,
+    streakBuckets,
+    premiumConversion,
+    totalCompletedLessons: users.reduce((sum, u) => sum + (Number(u.completedLessons) || 0), 0)
+  };
+}
+
 export function AdminDataProvider({ children }) {
-  const [localState, setLocalState] = useState(() => loadLocalState());
   const [categories, setCategories] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [contentLoading, setContentLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(true);
   const [contentError, setContentError] = useState(null);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(localState));
-  }, [localState]);
+  const [membersError, setMembersError] = useState(null);
 
   const refreshCatalog = useCallback(async () => {
     try {
       await syncProcessingLessonVideos();
     } catch {
-      // Mux sync is best-effort; catalog still loads if sync fails
+      // Mux sync is best-effort
     }
     const catalog = await fetchCatalog();
     setCategories(catalog.categories);
@@ -76,21 +109,33 @@ export function AdminDataProvider({ children }) {
     return catalog;
   }, []);
 
+  const refreshMembers = useCallback(async () => {
+    const bundle = await fetchMembersBundle();
+    setPlans(bundle.plans);
+    setUsers(bundle.users);
+    setSubscriptions(bundle.subscriptions);
+    setMembersError(null);
+    return bundle;
+  }, []);
+
+  const refreshNotifications = useCallback(async () => {
+    const rows = await fetchNotifications();
+    setNotifications(rows);
+    return rows;
+  }, []);
+
+  const refreshSettings = useCallback(async () => {
+    const next = await fetchSettings();
+    setSettings(next);
+    return next;
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setContentLoading(true);
-        try {
-          await syncProcessingLessonVideos();
-        } catch {
-          // ignore initial sync errors
-        }
-        const catalog = await fetchCatalog();
-        if (!mounted) return;
-        setCategories(catalog.categories);
-        setCourses(catalog.courses);
-        setContentError(null);
+        await refreshCatalog();
       } catch (err) {
         if (!mounted) return;
         setContentError(err.message || 'Failed to load catalog from Supabase');
@@ -103,18 +148,25 @@ export function AdminDataProvider({ children }) {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const updateLocal = useCallback((updater) => {
-    setLocalState((prev) => (typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }));
-  }, []);
-
-  const resetData = useCallback(() => {
-    const fresh = structuredClone(defaultLocalState);
-    setLocalState(fresh);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-    refreshCatalog().catch(() => {});
   }, [refreshCatalog]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setMembersLoading(true);
+        await Promise.all([refreshMembers(), refreshNotifications(), refreshSettings()]);
+      } catch (err) {
+        if (!mounted) return;
+        setMembersError(err.message || 'Failed to load members data from Supabase');
+      } finally {
+        if (mounted) setMembersLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [refreshMembers, refreshNotifications, refreshSettings]);
 
   // Categories
   const saveCategory = useCallback(async (payload) => {
@@ -173,9 +225,7 @@ export function AdminDataProvider({ children }) {
   const deleteModule = useCallback(async (courseId, moduleId) => {
     await removeModule(moduleId);
     setCourses((prev) =>
-      prev.map((course) =>
-        course.id === courseId ? { ...course, modules: course.modules.filter((m) => m.id !== moduleId) } : course
-      )
+      prev.map((course) => (course.id === courseId ? { ...course, modules: course.modules.filter((m) => m.id !== moduleId) } : course))
     );
   }, []);
 
@@ -215,20 +265,6 @@ export function AdminDataProvider({ children }) {
     );
   }, []);
 
-  const markLessonUploaded = useCallback(async (lessonId) => {
-    const saved = await markLessonMediaUploaded(lessonId);
-    setCourses((prev) =>
-      prev.map((course) => ({
-        ...course,
-        modules: course.modules.map((module) => ({
-          ...module,
-          lessons: module.lessons.map((lesson) => (lesson.id === lessonId ? { ...lesson, ...saved } : lesson))
-        }))
-      }))
-    );
-    return saved;
-  }, []);
-
   const uploadLessonMedia = useCallback(async (lessonId, file, onProgress) => {
     const saved = await uploadLessonVideo(lessonId, file, onProgress);
     setCourses((prev) =>
@@ -243,172 +279,114 @@ export function AdminDataProvider({ children }) {
     return saved;
   }, []);
 
-  // Users (local for now)
   const saveUser = useCallback(
-    (payload) => {
-      updateLocal((prev) => {
-        const exists = prev.users.some((u) => u.id === payload.id);
-        const plan = prev.plans.find((p) => p.id === payload.planId);
-        const nextUser = {
-          ...payload,
-          planName: plan?.name || payload.planName || 'Free',
-          id: payload.id || uid('user')
-        };
-        const users = exists ? prev.users.map((u) => (u.id === payload.id ? { ...u, ...nextUser } : u)) : [...prev.users, nextUser];
-
-        let subscriptions = prev.subscriptions;
-        if (payload.planId) {
-          const subExists = subscriptions.some((s) => s.userId === nextUser.id);
-          if (subExists) {
-            subscriptions = subscriptions.map((s) =>
-              s.userId === nextUser.id
-                ? { ...s, planId: payload.planId, status: payload.status === 'suspended' ? s.status : s.status || 'active' }
-                : s
-            );
-          } else {
-            subscriptions = [
-              ...subscriptions,
-              {
-                id: uid('sub'),
-                userId: nextUser.id,
-                planId: payload.planId,
-                status: 'active',
-                renewDate: payload.planId === 'premium' ? new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) : null,
-                startedAt: new Date().toISOString().slice(0, 10)
-              }
-            ];
-          }
-        }
-
-        return { ...prev, users, subscriptions };
+    async (payload) => {
+      const saved = await upsertMember(payload, plans);
+      setUsers((prev) => {
+        const exists = prev.some((u) => u.id === saved.id);
+        return exists ? prev.map((u) => (u.id === saved.id ? { ...u, ...saved } : u)) : [...prev, saved];
       });
+
+      if (payload.planId) {
+        const { subscription } = await assignMemberPlan(saved.id, payload.planId, 'active');
+        setSubscriptions((prev) => {
+          const exists = prev.some((s) => s.userId === saved.id);
+          return exists ? prev.map((s) => (s.userId === saved.id ? subscription : s)) : [...prev, subscription];
+        });
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === saved.id
+              ? { ...u, planId: payload.planId, planName: plans.find((p) => p.id === payload.planId)?.name || u.planName }
+              : u
+          )
+        );
+      }
+
+      return saved;
     },
-    [updateLocal]
+    [plans]
   );
 
-  const setUserStatus = useCallback(
-    (userId, status) => {
-      updateLocal((prev) => ({
-        ...prev,
-        users: prev.users.map((u) => (u.id === userId ? { ...u, status } : u))
-      }));
-    },
-    [updateLocal]
-  );
+  const setUserStatus = useCallback(async (userId, status) => {
+    const saved = await updateMemberStatus(userId, status);
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...saved, planName: u.planName } : u)));
+    return saved;
+  }, []);
 
   const assignPlan = useCallback(
-    (userId, planId, status = 'active') => {
-      updateLocal((prev) => {
-        const plan = prev.plans.find((p) => p.id === planId);
-        const users = prev.users.map((u) => (u.id === userId ? { ...u, planId, planName: plan?.name || u.planName } : u));
-        const exists = prev.subscriptions.some((s) => s.userId === userId);
-        const subscriptions = exists
-          ? prev.subscriptions.map((s) =>
-              s.userId === userId
-                ? {
-                    ...s,
-                    planId,
-                    status,
-                    renewDate: planId === 'premium' ? new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) : null
-                  }
-                : s
-            )
-          : [
-              ...prev.subscriptions,
-              {
-                id: uid('sub'),
-                userId,
-                planId,
-                status,
-                renewDate: planId === 'premium' ? new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) : null,
-                startedAt: new Date().toISOString().slice(0, 10)
-              }
-            ];
-        return { ...prev, users, subscriptions };
+    async (userId, planId, status = 'active') => {
+      const { member, subscription } = await assignMemberPlan(userId, planId, status);
+      const planName = plans.find((p) => p.id === planId)?.name || member.planName;
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...member, planName } : u)));
+      setSubscriptions((prev) => {
+        const exists = prev.some((s) => s.userId === userId);
+        return exists ? prev.map((s) => (s.userId === userId ? subscription : s)) : [...prev, subscription];
       });
+      return { member, subscription };
     },
-    [updateLocal]
+    [plans]
   );
 
-  const updatePremiumPrice = useCallback(
-    (priceMonthly) => {
-      const amount = Number(priceMonthly);
-      if (Number.isNaN(amount) || amount < 0) return false;
-      const label = amount === 0 ? '$0/mo' : `$${amount.toFixed(2).replace(/\.00$/, '')}/mo`;
-      updateLocal((prev) => ({
-        ...prev,
-        plans: prev.plans.map((plan) => (plan.id === 'premium' ? { ...plan, priceMonthly: amount, priceLabel: label } : plan))
-      }));
-      return true;
-    },
-    [updateLocal]
-  );
+  const updatePremiumPrice = useCallback(async (priceMonthly) => {
+    const saved = await updatePlanPrice('premium', priceMonthly);
+    setPlans((prev) => prev.map((plan) => (plan.id === 'premium' ? saved : plan)));
+    return true;
+  }, []);
 
-  const saveNotification = useCallback(
-    (payload) => {
-      updateLocal((prev) => {
-        const exists = prev.notifications.some((n) => n.id === payload.id);
-        const next = {
-          status: 'draft',
-          createdAt: new Date().toISOString(),
-          sentAt: null,
-          ...payload,
-          id: payload.id || uid('notif')
-        };
-        const notifications = exists
-          ? prev.notifications.map((n) => (n.id === payload.id ? { ...n, ...next } : n))
-          : [next, ...prev.notifications];
-        return { ...prev, notifications };
-      });
-    },
-    [updateLocal]
-  );
+  const saveNotification = useCallback(async (payload) => {
+    const saved = await upsertNotification(payload);
+    setNotifications((prev) => {
+      const exists = prev.some((n) => n.id === saved.id);
+      return exists ? prev.map((n) => (n.id === saved.id ? saved : n)) : [saved, ...prev];
+    });
+    return saved;
+  }, []);
 
-  const sendNotification = useCallback(
-    (id) => {
-      updateLocal((prev) => ({
-        ...prev,
-        notifications: prev.notifications.map((n) => (n.id === id ? { ...n, status: 'sent', sentAt: new Date().toISOString() } : n))
-      }));
-    },
-    [updateLocal]
-  );
+  const sendNotification = useCallback(async (id) => {
+    const saved = await markNotificationSent(id);
+    setNotifications((prev) => prev.map((n) => (n.id === id ? saved : n)));
+    return saved;
+  }, []);
 
-  const saveSettings = useCallback(
-    (partial) => {
-      updateLocal((prev) => ({
-        ...prev,
-        settings: {
-          ...prev.settings,
-          ...partial,
-          featureFlags: { ...prev.settings.featureFlags, ...(partial.featureFlags || {}) }
-        }
-      }));
-    },
-    [updateLocal]
-  );
+  const saveSettings = useCallback(async (partial) => {
+    const saved = await saveAppSettings(partial);
+    setSettings(saved);
+    return saved;
+  }, []);
 
   const lessons = useMemo(() => flattenLessons(courses), [courses]);
 
   const stats = useMemo(() => {
-    const activeUsers = localState.users.filter((u) => u.status === 'active').length;
-    const premiumUsers = localState.users.filter((u) => u.planId === 'premium' && u.status === 'active').length;
+    const activeUsers = users.filter((u) => u.status === 'active').length;
+    const premiumUsers = users.filter((u) => u.planId === 'premium' && u.status === 'active').length;
     const publishedCourses = courses.filter((c) => c.status === 'published').length;
-    const awaitingUpload = lessons.filter((l) => !l.videoUrl).length;
+    const awaitingUpload = lessons.filter((l) => {
+      const status = l.videoStatus || (l.videoUrl ? 'ready' : 'awaiting');
+      return status !== 'ready';
+    }).length;
     return { activeUsers, premiumUsers, publishedCourses, awaitingUpload, totalLessons: lessons.length };
-  }, [localState.users, courses, lessons]);
+  }, [users, courses, lessons]);
+
+  const analytics = useMemo(() => buildAnalytics({ users, categories, courses }), [users, categories, courses]);
 
   const value = useMemo(
     () => ({
-      ...localState,
+      users,
+      plans,
+      subscriptions,
+      notifications,
+      settings,
       categories,
       courses,
       contentLoading,
+      membersLoading,
       contentError,
+      membersError,
       refreshCatalog,
+      refreshMembers,
       lessons,
       stats,
-      analytics: SEED_ANALYTICS,
+      analytics,
       levelNames: LEVEL_NAMES,
       saveCategory,
       deleteCategory,
@@ -418,7 +396,6 @@ export function AdminDataProvider({ children }) {
       deleteModule,
       saveLesson,
       deleteLesson,
-      markLessonUploaded,
       uploadLessonMedia,
       saveUser,
       setUserStatus,
@@ -426,18 +403,25 @@ export function AdminDataProvider({ children }) {
       updatePremiumPrice,
       saveNotification,
       sendNotification,
-      saveSettings,
-      resetData
+      saveSettings
     }),
     [
-      localState,
+      users,
+      plans,
+      subscriptions,
+      notifications,
+      settings,
       categories,
       courses,
       contentLoading,
+      membersLoading,
       contentError,
+      membersError,
       refreshCatalog,
+      refreshMembers,
       lessons,
       stats,
+      analytics,
       saveCategory,
       deleteCategory,
       saveCourse,
@@ -446,7 +430,6 @@ export function AdminDataProvider({ children }) {
       deleteModule,
       saveLesson,
       deleteLesson,
-      markLessonUploaded,
       uploadLessonMedia,
       saveUser,
       setUserStatus,
@@ -454,8 +437,7 @@ export function AdminDataProvider({ children }) {
       updatePremiumPrice,
       saveNotification,
       sendNotification,
-      saveSettings,
-      resetData
+      saveSettings
     ]
   );
 

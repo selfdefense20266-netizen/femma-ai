@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 
 const PASSWORD_STORE_KEY = 'fema-ai-member-passwords';
 
 async function sha256Hex(value: string) {
-  const encoded = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', encoded);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  // React Native has no Web Crypto `crypto.subtle` — use Expo Crypto instead.
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, value);
 }
 
 export async function hashMemberPassword(email: string, password: string) {

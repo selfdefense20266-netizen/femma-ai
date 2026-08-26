@@ -10,7 +10,7 @@ import {
   CreditCardOutlined,
   BarChartOutlined,
   BellOutlined,
-  // SettingOutlined,
+  SettingOutlined,
   LogoutOutlined
 } from '@ant-design/icons';
 
@@ -26,7 +26,7 @@ const icons = {
   CreditCardOutlined,
   BarChartOutlined,
   BellOutlined,
-  // SettingOutlined,
+  SettingOutlined,
   LogoutOutlined
 };
 
@@ -119,14 +119,13 @@ export const account = {
       url: '/notifications',
       icon: icons.BellOutlined
     },
-    // Settings temporarily hidden
-    // {
-    //   id: 'settings',
-    //   title: 'Settings',
-    //   type: 'item',
-    //   url: '/settings',
-    //   icon: icons.SettingOutlined
-    // },
+    {
+      id: 'settings',
+      title: 'Settings',
+      type: 'item',
+      url: '/settings',
+      icon: icons.SettingOutlined
+    },
     {
       id: 'logout',
       title: 'Logout',
