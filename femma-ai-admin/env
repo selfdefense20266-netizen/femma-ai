@@ -1,0 +1,10 @@
+VITE_APP_VERSION = v2.2.0
+GENERATE_SOURCEMAP = false
+
+## Public URL
+PUBLIC_URL = /
+VITE_APP_BASE_NAME = /
+
+## Supabase (fema-ai)
+VITE_SUPABASE_URL=https://toxynqgahykpzsbsmpqz.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRveHlucWdhaHlrcHpzYnNtcHF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2ODIyNDgsImV4cCI6MjEwMzI1ODI0OH0.RDsFTZjrxrkt5ta_EvX6kD4zcXavZcnfQMpK4uiws8c

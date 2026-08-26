@@ -5,10 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp, LEVEL_NAMES, LEVEL_COLORS } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 
 const SETTINGS_SECTIONS = [
   {
@@ -48,6 +48,8 @@ const SETTINGS_SECTIONS = [
 export default function ProfileScreen() {
   const colors = useColors();
   const { profile } = useApp();
+  const { logout, user } = useAuth();
+  const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : profile.name;
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
   const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -62,7 +64,7 @@ export default function ProfileScreen() {
         text: 'Log Out',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.clear();
+          await logout();
           router.replace('/welcome');
         },
       },
@@ -79,13 +81,13 @@ export default function ProfileScreen() {
         >
           <View style={styles.avatarSection}>
             <View style={[styles.avatar, { backgroundColor: levelColor }]}>
-              <Text style={styles.avatarLetter}>{profile.name[0]}</Text>
+              <Text style={styles.avatarLetter}>{(displayName || 'U')[0]}</Text>
             </View>
             <TouchableOpacity style={[styles.editAvatarBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Feather name="camera" size={14} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>
-          <Text style={[styles.profileName, { color: colors.foreground }]}>{profile.name}</Text>
+          <Text style={[styles.profileName, { color: colors.foreground }]}>{displayName}</Text>
           <View style={[styles.levelTag, { backgroundColor: levelColor + '20', borderColor: levelColor + '40' }]}>
             <Feather name="award" size={12} color={levelColor} />
             <Text style={[styles.levelTagText, { color: levelColor }]}>{levelName} · {profile.points.toLocaleString()} pts</Text>

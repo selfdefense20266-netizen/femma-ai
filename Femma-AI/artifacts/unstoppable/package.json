@@ -60,7 +60,9 @@
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/metro-runtime": "~57.0.13",
+    "@supabase/supabase-js": "2.112.4",
     "expo-camera": "~57.0.4",
-    "expo-video": "~57.0.2"
+    "expo-video": "~57.0.2",
+    "react-native-url-polyfill": "^4.0.0"
   }
 }

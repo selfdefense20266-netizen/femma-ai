@@ -1,0 +1,4 @@
+project_id = "toxynqgahykpzsbsmpqz"
+
+[functions.app-signup]
+verify_jwt = false
