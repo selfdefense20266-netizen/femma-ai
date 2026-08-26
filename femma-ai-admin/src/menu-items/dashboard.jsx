@@ -119,13 +119,14 @@ export const account = {
       url: '/notifications',
       icon: icons.BellOutlined
     },
-    {
-      id: 'settings',
-      title: 'Settings',
-      type: 'item',
-      url: '/settings',
-      icon: icons.SettingOutlined
-    },
+    // Settings temporarily hidden
+    // {
+    //   id: 'settings',
+    //   title: 'Settings',
+    //   type: 'item',
+    //   url: '/settings',
+    //   icon: icons.SettingOutlined
+    // },
     {
       id: 'logout',
       title: 'Logout',

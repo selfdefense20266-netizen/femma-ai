@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,7 +9,8 @@ import { useApp, LEVEL_NAMES, LEVEL_COLORS } from '@/context/AppContext';
 import ProgressRing from '@/components/ProgressRing';
 import BadgeCard, { type BadgeData } from '@/components/BadgeCard';
 import SectionHeader from '@/components/SectionHeader';
-import { getCourseLessons, getVideoCategory, getVideoCourse } from '@/data/videoLibrary';
+import { useCatalog } from '@/hooks/useCatalog';
+import { getCourseLessons, getVideoCategory, getVideoCourse } from '@/lib/catalog';
 
 const BADGES: BadgeData[] = [
   { id: 'b1', title: '7 Day Streak', description: '7 days in a row', icon: 'flame', color: '#FFD88A', earned: true, earnedDate: 'Aug 1' },
@@ -28,6 +29,7 @@ const WEEK_ACTIVE = [true, true, true, false, true, true, false];
 export default function ProgressScreen() {
   const colors = useColors();
   const { profile, completedLessonIds } = useApp();
+  const { data: catalog, isLoading } = useCatalog();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
   const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -37,15 +39,30 @@ export default function ProgressScreen() {
   const nextLevelPts = [0, 1000, 3000, 6000, 10000][profile.level] ?? 10000;
   const prevLevelPts = [0, 0, 1000, 3000, 6000][profile.level] ?? 0;
   const levelProgress = (profile.points - prevLevelPts) / (nextLevelPts - prevLevelPts);
-  const safetyLessonIds = new Set(getVideoCategory('safety')!.courses.flatMap(getCourseLessons).map(item => item.id));
-  const fitnessLessonIds = new Set(getVideoCategory('fitness')!.courses.flatMap(getCourseLessons).map(item => item.id));
-  const yogaLessonIds = new Set(getCourseLessons(getVideoCourse('yoga')!).map(item => item.id));
+
+  const safetyLessonIds = new Set(
+    catalog ? (getVideoCategory(catalog, 'self-defence')?.courses.flatMap(getCourseLessons).map((item) => item.id) ?? []) : []
+  );
+  const fitnessLessonIds = new Set(
+    catalog ? (getVideoCategory(catalog, 'fitness')?.courses.flatMap(getCourseLessons).map((item) => item.id) ?? []) : []
+  );
+  const yogaCourse = catalog ? getVideoCourse(catalog, 'fit-yoga') : undefined;
+  const yogaLessonIds = new Set(yogaCourse ? getCourseLessons(yogaCourse).map((item) => item.id) : []);
+
   const stats = [
-    { label: 'Fitness Lessons', value: String(completedLessonIds.filter(id => fitnessLessonIds.has(id)).length), icon: 'zap', color: '#F26BB5' },
-    { label: 'Yoga Sessions', value: String(completedLessonIds.filter(id => yogaLessonIds.has(id)).length), icon: 'wind', color: '#B9A7F2' },
-    { label: 'Safety Lessons', value: String(completedLessonIds.filter(id => safetyLessonIds.has(id)).length), icon: 'shield', color: '#77CDED' },
-    { label: 'Foods Scanned', value: '23', icon: 'camera', color: '#A9E4D2' },
+    { label: 'Fitness Lessons', value: String(completedLessonIds.filter((id) => fitnessLessonIds.has(id)).length), icon: 'zap', color: '#F26BB5' },
+    { label: 'Yoga Sessions', value: String(completedLessonIds.filter((id) => yogaLessonIds.has(id)).length), icon: 'wind', color: '#B9A7F2' },
+    { label: 'Safety Lessons', value: String(completedLessonIds.filter((id) => safetyLessonIds.has(id)).length), icon: 'shield', color: '#77CDED' },
+    { label: 'Total Completed', value: String(completedLessonIds.length), icon: 'check-circle', color: '#A9E4D2' },
   ];
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

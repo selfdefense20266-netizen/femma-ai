@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -7,18 +7,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/context/AppContext';
-import { getCourseLessons, getVideoLessonContext, type LibraryCategoryId } from '@/data/videoLibrary';
+import { getCourseLessons, libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
+import { useCatalogLesson } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
 
 type Props = { categoryId: LibraryCategoryId; lessonId: string };
 
 function UploadedVideo({ url }: { url: string }) {
-  const player = useVideoPlayer(url, instance => {
+  const player = useVideoPlayer(url, (instance) => {
     instance.loop = false;
   });
 
   return (
     <VideoView
+      key={url}
       player={player}
       style={styles.video}
       contentFit="contain"
@@ -39,7 +41,8 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
     savedCourseIds,
     toggleSavedCourse,
   } = useApp();
-  const context = getVideoLessonContext(lessonId);
+  const resolvedCategoryId = resolveCategoryId(categoryId);
+  const { context, isLoading, error, refetch } = useCatalogLesson(lessonId);
   const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
   const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
 
@@ -47,13 +50,22 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
     if (context?.lesson.id) setLastViewedLesson(context.lesson.id);
   }, [context?.lesson.id]);
 
-  if (!context || context.category.id !== categoryId) {
+  if (isLoading) {
     return (
-      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}> 
+      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={[styles.missingTitle, { color: colors.foreground }]}>Loading lesson…</Text>
+      </View>
+    );
+  }
+
+  if (error || !context || context.category.id !== resolvedCategoryId) {
+    return (
+      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
         <Feather name="video-off" size={34} color={colors.mutedForeground} />
         <Text style={[styles.missingTitle, { color: colors.foreground }]}>Lesson not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.missingButton, { backgroundColor: colors.primary }]}> 
-          <Text style={styles.actionText}>Go back</Text>
+        <TouchableOpacity onPress={() => (error ? refetch() : router.back())} style={[styles.missingButton, { backgroundColor: colors.primary }]}>
+          <Text style={styles.actionText}>{error ? 'Retry' : 'Go back'}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -63,11 +75,11 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
   const isComplete = completedLessonIds.includes(lesson.id);
   const isSaved = savedCourseIds.includes(course.id);
   const courseLessons = getCourseLessons(course);
-  const courseCompleted = courseLessons.filter(item => completedLessonIds.includes(item.id)).length;
+  const courseCompleted = courseLessons.filter((item) => completedLessonIds.includes(item.id)).length;
   const progress = Math.round((courseCompleted / courseLessons.length) * 100);
 
   const openLesson = (nextId: string) => {
-    router.replace(`/${categoryId}/player?lessonId=${encodeURIComponent(nextId)}` as never);
+    router.replace(libraryPath(resolvedCategoryId, undefined, nextId) as never);
   };
 
   const toggleComplete = () => {
@@ -190,7 +202,9 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: botPad + 15 }]}> 
         <TouchableOpacity
           activeOpacity={0.86}
-          onPress={() => nextLesson ? openLesson(nextLesson.id) : router.replace(`/${categoryId}/${course.id}` as never)}
+          onPress={() =>
+            nextLesson ? openLesson(nextLesson.id) : router.replace(libraryPath(resolvedCategoryId, course.id) as never)
+          }
           style={[styles.actionButton, { backgroundColor: course.color }]}
         >
           <Text style={styles.actionText}>{nextLesson ? 'Next lesson' : 'Back to course'}</Text>

@@ -38,9 +38,9 @@ export default function TodayScreen() {
   const handleMissionPress = (category: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     switch (category) {
-      case 'fitness': router.push('/fitness'); break;
+      case 'fitness': router.push('/library/fitness' as never); break;
       case 'yoga': router.push('/yoga'); break;
-      case 'safety': router.push('/safety'); break;
+      case 'safety': router.push('/library/self-defence' as never); break;
       case 'nutrition': router.push('/scan-food'); break;
       case 'recipe': router.push('/recipe'); break;
     }
@@ -132,10 +132,10 @@ export default function TodayScreen() {
           {/* Quick links */}
           <View style={styles.quickLinks}>
             {[
-              { label: 'Fitness', icon: 'zap', color: colors.pink, route: '/fitness' },
-              { label: 'Diet', icon: 'coffee', color: colors.lavender, route: '/nutrition' },
-              { label: 'Safety', icon: 'shield', color: colors.skyBlue, route: '/safety' },
-              { label: 'Cycle', icon: 'calendar', color: colors.coral, route: '/cycle' },
+              { label: 'Fitness', icon: 'zap', color: colors.pink, route: '/library/fitness' },
+              { label: 'Diet', icon: 'coffee', color: colors.lavender, route: '/library/diet-nutrition' },
+              { label: 'Safety', icon: 'shield', color: colors.skyBlue, route: '/library/self-defence' },
+              { label: 'Cycle', icon: 'calendar', color: colors.coral, route: '/library/cycle-pregnancy-health' },
             ].map(link => (
               <TouchableOpacity
                 key={link.label}

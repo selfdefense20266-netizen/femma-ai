@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Platform,
   ScrollView,
   StyleSheet,
@@ -16,29 +17,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
-
-type CourseModule = {
-  title: string;
-  detail: string;
-};
-
-type Course = {
-  id: string;
-  title: string;
-  meta: string;
-  icon: keyof typeof Feather.glyphMap;
-  color: string;
-  route: string;
-  modules: CourseModule[];
-  disclaimer?: string;
-};
-
-type Category = {
-  id: string;
-  label: string;
-  color: string;
-  courses: Course[];
-};
+import { useCatalog } from '@/hooks/useCatalog';
+import { getCourseLessons, libraryPath } from '@/lib/catalog';
 
 type Journey = {
   id: string;
@@ -57,231 +37,32 @@ const JOURNEYS: Journey[] = [
     title: 'New Mom Recovery',
     detail: 'Postpartum + Nutrition + Yoga',
     colors: ['#FF928F', '#F26BB5'],
-    route: '/cycle',
+    route: '/library/cycle-pregnancy-health',
   },
   {
     id: 'confidence-safety',
     eyebrow: 'ACTIVE JOURNEY',
     title: 'Confidence & Safety',
-    detail: 'Self-Defense + Confidence Drills',
+    detail: 'Self Defence courses',
     colors: ['#B9A7F2', '#F26BB5'],
-    route: '/safety',
+    route: '/library/self-defence',
     progress: 35,
   },
   {
     id: 'fat-loss',
-    eyebrow: '30 DAYS',
-    title: '30-Day Fat Loss Kickstart',
-    detail: 'Fat Loss + Diet + Meal Planner',
+    eyebrow: 'FITNESS',
+    title: 'Fitness Library',
+    detail: 'Strength, cardio, yoga & more',
     colors: ['#F26BB5', '#D94A9A'],
-    route: '/fitness',
+    route: '/library/fitness',
   },
   {
     id: 'cycle-aligned',
     eyebrow: 'LIFESTYLE',
     title: 'Cycle-Aligned Living',
-    detail: 'Cycle Sync + phase-matched fitness',
+    detail: 'Cycle, pregnancy & health paths',
     colors: ['#77CDED', '#B9A7F2'],
-    route: '/cycle',
-  },
-];
-
-const CATEGORIES: Category[] = [
-  {
-    id: 'safety',
-    label: 'SAFETY',
-    color: '#B9A7F2',
-    courses: [
-      {
-        id: 'self-defense',
-        title: 'Self-Defense',
-        meta: '3 Modules • 12 Lessons',
-        icon: 'shield',
-        color: '#B9A7F2',
-        route: '/safety/self-defense',
-        modules: [
-          { title: 'Foundations', detail: '4 lessons' },
-          { title: 'Core Techniques', detail: '4 lessons' },
-          { title: 'Real-World Application', detail: '4 lessons' },
-        ],
-        disclaimer:
-          'Educational content only. This course is not a substitute for in-person self-defense training.',
-      },
-      {
-        id: 'confidence-drills',
-        title: 'Confidence Drills',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'zap',
-        color: '#FFB7C5',
-        route: '/safety/confidence-drills',
-        modules: [
-          { title: 'Mindset Foundations', detail: '3 lessons' },
-          { title: 'Assertiveness Training', detail: '3 lessons' },
-          { title: 'Applied Confidence', detail: '3 lessons' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'fitness',
-    label: 'FITNESS',
-    color: '#F26BB5',
-    courses: [
-      {
-        id: 'fat-loss',
-        title: 'Fat Loss',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'activity',
-        color: '#F26BB5',
-        route: '/fitness/fat-loss',
-        modules: [
-          { title: 'Foundations', detail: '3 lessons' },
-          { title: 'Building Momentum', detail: '3 lessons' },
-          { title: 'Advanced', detail: '3 lessons' },
-        ],
-      },
-      {
-        id: 'sculpt',
-        title: 'Sculpt',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'target',
-        color: '#FF928F',
-        route: '/fitness/sculpt',
-        modules: [
-          { title: 'Foundations', detail: '3 lessons' },
-          { title: 'Building', detail: '3 lessons' },
-          { title: 'Advanced', detail: '3 lessons' },
-        ],
-      },
-      {
-        id: 'strength',
-        title: 'Strength',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'trending-up',
-        color: '#B9A7F2',
-        route: '/fitness/strength',
-        modules: [
-          { title: 'Foundations', detail: '3 lessons' },
-          { title: 'Building', detail: '3 lessons' },
-          { title: 'Advanced', detail: '3 lessons' },
-        ],
-      },
-      {
-        id: 'yoga',
-        title: 'Yoga',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'wind',
-        color: '#77CDED',
-        route: '/fitness/yoga',
-        modules: [
-          { title: 'Foundations', detail: '3 lessons' },
-          { title: 'Building', detail: '3 lessons' },
-          { title: 'Advanced', detail: '3 lessons' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'pregnancy-cycle',
-    label: 'PREGNANCY, POSTPARTUM & CYCLE',
-    color: '#FF928F',
-    courses: [
-      {
-        id: 'cycle-sync',
-        title: 'Cycle Sync',
-        meta: '3 Modules • 10 Lessons',
-        icon: 'refresh-cw',
-        color: '#B9A7F2',
-        route: '/cycle',
-        modules: [
-          { title: 'Understanding Your Cycle', detail: '2 lessons' },
-          { title: 'Phase-by-Phase Guide', detail: '4 lessons' },
-          { title: 'Applying It', detail: '4 lessons' },
-        ],
-      },
-      {
-        id: 'pregnancy',
-        title: 'Pregnancy',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'sun',
-        color: '#FF928F',
-        route: '/cycle',
-        modules: [
-          { title: 'First Trimester', detail: '3 lessons' },
-          { title: 'Second Trimester', detail: '3 lessons' },
-          { title: 'Third Trimester', detail: '3 lessons' },
-        ],
-        disclaimer:
-          'Get clearance from your doctor or midwife before starting or continuing an exercise program.',
-      },
-      {
-        id: 'postpartum',
-        title: 'Postpartum',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'heart',
-        color: '#FFB7C5',
-        route: '/cycle',
-        modules: [
-          { title: 'Early Recovery (0–6 weeks)', detail: '3 lessons' },
-          { title: 'Rebuilding (6–12 weeks)', detail: '3 lessons' },
-          { title: 'Returning to Fitness (12+ weeks)', detail: '3 lessons' },
-        ],
-        disclaimer:
-          'Get clearance from your doctor or midwife before starting or continuing an exercise program.',
-      },
-    ],
-  },
-  {
-    id: 'nutrition',
-    label: 'NUTRITION',
-    color: '#6FCBAB',
-    courses: [
-      {
-        id: 'diet',
-        title: 'Diet',
-        meta: '3 Modules • 9 Lessons',
-        icon: 'coffee',
-        color: '#6FCBAB',
-        route: '/nutrition',
-        modules: [
-          { title: 'Nutrition Basics', detail: '3 lessons' },
-          { title: 'Diet Approaches', detail: '3 lessons' },
-          { title: 'Sustainable Habits', detail: '3 lessons' },
-        ],
-      },
-      {
-        id: 'meal-scanner',
-        title: 'Meal Scanner',
-        meta: '4 Tutorials',
-        icon: 'camera',
-        color: '#FFD88A',
-        route: '/scan-food',
-        modules: [{ title: 'Feature Tutorials', detail: '4 videos' }],
-      },
-      {
-        id: 'meal-planner',
-        title: 'Meal Planner',
-        meta: '4 Tutorials',
-        icon: 'calendar',
-        color: '#F26BB5',
-        route: '/nutrition',
-        modules: [{ title: 'Feature Tutorials', detail: '4 videos' }],
-      },
-      {
-        id: 'recipes',
-        title: 'Recipes',
-        meta: '4 Collections • 16+ Videos',
-        icon: 'book-open',
-        color: '#77CDED',
-        route: '/recipe',
-        modules: [
-          { title: 'Breakfast', detail: '4+ videos' },
-          { title: 'Lunch & Dinner', detail: '4+ videos' },
-          { title: 'Snacks', detail: '4+ videos' },
-          { title: 'Healthy Swaps & Treats', detail: '4+ videos' },
-        ],
-      },
-    ],
+    route: '/library/cycle-pregnancy-health',
   },
 ];
 
@@ -292,61 +73,114 @@ function vibrate() {
 export default function ExploreScreen() {
   const colors = useColors();
   const { savedCourseIds } = useApp();
+  const { data: catalog, isLoading, error, refetch } = useCatalog();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === 'web' ? 58 : insets.top + 12;
   const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
   const [query, setQuery] = useState('');
-  const [expandedCourse, setExpandedCourse] = useState('self-defense');
+  const [expandedCourse, setExpandedCourse] = useState('');
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+
+  const categories = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.categories.map((category) => ({
+      id: category.id,
+      label: category.title.toUpperCase(),
+      color: category.color,
+      courses: category.courses.map((course) => {
+        const lessons = getCourseLessons(course);
+        return {
+          id: course.id,
+          title: course.title,
+          meta: `${course.modules.length} Modules • ${lessons.length} Lessons`,
+          icon: course.icon,
+          color: course.color,
+          route: libraryPath(category.id, course.id),
+          modules: course.modules.map((module) => ({
+            title: module.title,
+            detail: `${module.lessons.length} lessons`,
+          })),
+          disclaimer: course.disclaimer,
+        };
+      }),
+    }));
+  }, [catalog]);
 
   const filteredCategories = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return CATEGORIES.map((category) => ({
-      ...category,
-      courses: category.courses.filter((course) => {
-        if (showSavedOnly && !savedCourseIds.includes(course.id)) return false;
-        if (!normalized) return true;
-        return [course.title, course.meta, ...course.modules.map((module) => module.title)]
-          .join(' ')
-          .toLowerCase()
-          .includes(normalized);
-      }),
-    })).filter((category) => category.courses.length > 0);
-  }, [query, savedCourseIds, showSavedOnly]);
+    return categories
+      .map((category) => ({
+        ...category,
+        courses: category.courses.filter((course) => {
+          if (showSavedOnly && !savedCourseIds.includes(course.id)) return false;
+          if (!normalized) return true;
+          return [course.title, course.meta, ...course.modules.map((module) => module.title)]
+            .join(' ')
+            .toLowerCase()
+            .includes(normalized);
+        }),
+      }))
+      .filter((category) => category.courses.length > 0);
+  }, [categories, query, savedCourseIds, showSavedOnly]);
 
   const toggleCourse = (courseId: string) => {
     vibrate();
     setExpandedCourse((current) => (current === courseId ? '' : courseId));
   };
 
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={{ color: colors.mutedForeground, fontFamily: 'Manrope_600SemiBold', marginTop: 10 }}>
+          Loading courses…
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.foreground, fontFamily: 'Manrope_700Bold' }}>Could not load catalog</Text>
+        <TouchableOpacity
+          onPress={() => refetch()}
+          style={{ marginTop: 12, padding: 12, backgroundColor: colors.primary, borderRadius: 12 }}
+        >
+          <Text style={{ color: '#fff', fontFamily: 'Manrope_700Bold' }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: botPad + 110 }}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 110 }}>
         <View style={[styles.header, { paddingTop: topPad }]}>
           <View style={styles.titleRow}>
             <Text style={[styles.title, { color: colors.foreground }]}>Explore</Text>
             <TouchableOpacity
               accessibilityLabel="Saved courses"
-              onPress={() => setShowSavedOnly(current => !current)}
-              style={[styles.bookmarkButton, {
-                backgroundColor: showSavedOnly ? `${colors.primary}18` : colors.card,
-                borderColor: showSavedOnly ? colors.primary : colors.border,
-              }]}
+              onPress={() => setShowSavedOnly((current) => !current)}
+              style={[
+                styles.bookmarkButton,
+                {
+                  backgroundColor: showSavedOnly ? `${colors.primary}18` : colors.card,
+                  borderColor: showSavedOnly ? colors.primary : colors.border,
+                },
+              ]}
             >
               <Feather name="bookmark" size={20} color={showSavedOnly ? colors.primary : colors.foreground} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Your journey from beginner to unstoppable.
+            Live courses from your Fema AI catalog.
           </Text>
           <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Feather name="search" size={18} color={colors.mutedForeground} />
             <TextInput
               style={[styles.searchInput, { color: colors.foreground }]}
-              placeholder="Search courses, recipes, or tools…"
+              placeholder="Search courses or modules…"
               placeholderTextColor={colors.mutedForeground}
               value={query}
               onChangeText={setQuery}
@@ -365,11 +199,7 @@ export default function ExploreScreen() {
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Guided Journeys</Text>
               <Text style={[styles.swipeLabel, { color: colors.mutedForeground }]}>SWIPE</Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.journeyList}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.journeyList}>
               {JOURNEYS.map((journey) => (
                 <TouchableOpacity
                   key={journey.id}
@@ -391,15 +221,13 @@ export default function ExploreScreen() {
                       </Text>
                       {journey.progress != null && (
                         <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
-                          <View style={[styles.progressFill, { width: `${journey.progress}%`, backgroundColor: colors.primary }]} />
+                          <View
+                            style={[styles.progressFill, { width: `${journey.progress}%`, backgroundColor: colors.primary }]}
+                          />
                         </View>
                       )}
                     </View>
-                    <Feather
-                      name={journey.progress != null ? 'play' : 'chevron-right'}
-                      size={17}
-                      color={colors.primary}
-                    />
+                    <Feather name={journey.progress != null ? 'play' : 'chevron-right'} size={17} color={colors.primary} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -433,11 +261,7 @@ export default function ExploreScreen() {
                     key={course.id}
                     style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                   >
-                    <TouchableOpacity
-                      activeOpacity={0.82}
-                      onPress={() => toggleCourse(course.id)}
-                      style={styles.courseHeader}
-                    >
+                    <TouchableOpacity activeOpacity={0.82} onPress={() => toggleCourse(course.id)} style={styles.courseHeader}>
                       <View style={[styles.courseIcon, { backgroundColor: `${course.color}18` }]}>
                         <Feather name={course.icon} size={19} color={course.color} />
                       </View>
@@ -456,9 +280,8 @@ export default function ExploreScreen() {
 
                     {isExpanded && (
                       <View style={[styles.moduleList, { borderTopColor: colors.border }]}>
-                        {course.modules.map((module, moduleIndex) => (
+                        {course.modules.length === 0 ? (
                           <TouchableOpacity
-                            key={`${course.id}-${module.title}`}
                             activeOpacity={0.75}
                             style={styles.moduleRow}
                             onPress={() => {
@@ -466,22 +289,35 @@ export default function ExploreScreen() {
                               router.push(course.route as never);
                             }}
                           >
-                            <View style={[styles.moduleNumber, { backgroundColor: `${course.color}18` }]}>
-                              <Text style={[styles.moduleNumberText, { color: course.color }]}>{moduleIndex + 1}</Text>
-                            </View>
-                            <Text style={[styles.moduleTitle, { color: colors.foreground }]}>{module.title}</Text>
-                            <Text style={[styles.moduleDetail, { color: colors.mutedForeground }]}>{module.detail}</Text>
+                            <Text style={[styles.moduleTitle, { color: colors.foreground, flex: 1 }]}>Open course</Text>
                             <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
                           </TouchableOpacity>
-                        ))}
-                        {course.disclaimer && (
+                        ) : (
+                          course.modules.map((module, moduleIndex) => (
+                            <TouchableOpacity
+                              key={`${course.id}-${module.title}`}
+                              activeOpacity={0.75}
+                              style={styles.moduleRow}
+                              onPress={() => {
+                                vibrate();
+                                router.push(course.route as never);
+                              }}
+                            >
+                              <View style={[styles.moduleNumber, { backgroundColor: `${course.color}18` }]}>
+                                <Text style={[styles.moduleNumberText, { color: course.color }]}>{moduleIndex + 1}</Text>
+                              </View>
+                              <Text style={[styles.moduleTitle, { color: colors.foreground }]}>{module.title}</Text>
+                              <Text style={[styles.moduleDetail, { color: colors.mutedForeground }]}>{module.detail}</Text>
+                              <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
+                            </TouchableOpacity>
+                          ))
+                        )}
+                        {course.disclaimer ? (
                           <View style={[styles.disclaimer, { backgroundColor: `${course.color}10` }]}>
                             <Feather name="info" size={14} color={course.color} />
-                            <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>
-                              {course.disclaimer}
-                            </Text>
+                            <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>{course.disclaimer}</Text>
                           </View>
-                        )}
+                        ) : null}
                       </View>
                     )}
                   </View>
@@ -495,8 +331,12 @@ export default function ExploreScreen() {
               <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
                 <Feather name="search" size={22} color={colors.mutedForeground} />
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{showSavedOnly ? 'No saved courses yet' : 'No courses found'}</Text>
-              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>{showSavedOnly ? 'Open a course and tap the bookmark to save it.' : 'Try a course, module, or tool name.'}</Text>
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+                {showSavedOnly ? 'No saved courses yet' : 'No courses found'}
+              </Text>
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                {showSavedOnly ? 'Open a course and tap the bookmark to save it.' : 'Try another search term.'}
+              </Text>
             </View>
           )}
         </View>
@@ -507,6 +347,7 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  center: { alignItems: 'center', justifyContent: 'center' },
   header: { paddingHorizontal: 20, paddingBottom: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 30, lineHeight: 38, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.6 },
@@ -532,78 +373,47 @@ const styles = StyleSheet.create({
   journeysSection: { marginTop: 24 },
   sectionTitleRow: {
     paddingHorizontal: 20,
-    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  sectionTitle: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.2 },
-  swipeLabel: { fontSize: 9.5, fontFamily: 'Manrope_800ExtraBold', letterSpacing: 1.1 },
-  journeyList: { paddingHorizontal: 20, paddingBottom: 8, gap: 12 },
-  journeyCard: {
-    width: 280,
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: 'hidden',
-    shadowColor: '#F26BB5',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  journeyHero: { height: 108, padding: 15, justifyContent: 'flex-end' },
-  journeyEyebrow: {
-    color: 'rgba(255,255,255,0.88)',
-    fontSize: 9,
-    fontFamily: 'Manrope_800ExtraBold',
-    letterSpacing: 1,
-    marginBottom: 3,
-  },
-  journeyTitle: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
-  journeyFooter: { minHeight: 48, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sectionTitle: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold' },
+  swipeLabel: { fontSize: 9.5, letterSpacing: 1, fontFamily: 'Manrope_800ExtraBold' },
+  journeyList: { paddingHorizontal: 20, gap: 12 },
+  journeyCard: { width: 250, borderRadius: 18, borderWidth: 1, overflow: 'hidden' },
+  journeyHero: { height: 110, padding: 14, justifyContent: 'flex-end' },
+  journeyEyebrow: { color: 'rgba(255,255,255,0.75)', fontSize: 9, letterSpacing: 1, fontFamily: 'Manrope_800ExtraBold' },
+  journeyTitle: { color: '#FFFFFF', fontSize: 18, fontFamily: 'Manrope_800ExtraBold', marginTop: 4 },
+  journeyFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   journeyFooterText: { flex: 1 },
-  journeyDetail: { fontSize: 10.5, fontFamily: 'Manrope_600SemiBold' },
-  progressTrack: { height: 4, borderRadius: 4, overflow: 'hidden', marginTop: 6 },
+  journeyDetail: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
+  progressTrack: { height: 4, borderRadius: 4, overflow: 'hidden', marginTop: 8 },
   progressFill: { height: '100%', borderRadius: 4 },
-  curriculumHeader: { paddingHorizontal: 20, marginTop: 24, marginBottom: 16 },
-  curriculumHint: { fontSize: 11.5, fontFamily: 'Manrope_500Medium', marginTop: 2 },
-  categories: { paddingHorizontal: 20 },
-  categorySection: { marginBottom: 24 },
-  categoryHeading: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  categoryLabel: { flexShrink: 1, fontSize: 11.5, fontFamily: 'Manrope_800ExtraBold', letterSpacing: 0.9 },
-  categoryCount: { fontSize: 10.5, fontFamily: 'Manrope_600SemiBold', textTransform: 'capitalize' },
-  courseCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 10,
-    overflow: 'hidden',
-    shadowColor: '#17181C',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.025,
-    shadowRadius: 7,
-    elevation: 1,
-  },
-  courseHeader: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13 },
-  courseIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  curriculumHeader: { paddingHorizontal: 20, marginTop: 28, marginBottom: 12 },
+  curriculumHint: { fontSize: 11, fontFamily: 'Manrope_500Medium', marginTop: 2 },
+  categories: { paddingHorizontal: 20, gap: 18 },
+  categorySection: { gap: 10 },
+  categoryHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  categoryLabel: { fontSize: 12, letterSpacing: 1, fontFamily: 'Manrope_800ExtraBold' },
+  categoryCount: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
+  courseCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  courseHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
+  courseIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   courseText: { flex: 1 },
-  courseTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
-  courseMeta: { fontSize: 10.8, fontFamily: 'Manrope_600SemiBold', marginTop: 2 },
-  expandButton: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  moduleList: { borderTopWidth: 1, paddingHorizontal: 13, paddingTop: 7, paddingBottom: 11 },
-  moduleRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  moduleNumber: { width: 24, height: 24, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  moduleNumberText: { fontSize: 10.5, fontFamily: 'Manrope_800ExtraBold' },
-  moduleTitle: { flex: 1, fontSize: 12.2, fontFamily: 'Manrope_600SemiBold' },
-  moduleDetail: { fontSize: 10.2, fontFamily: 'Manrope_500Medium' },
-  disclaimer: { flexDirection: 'row', gap: 8, borderRadius: 12, padding: 10, marginTop: 5, alignItems: 'flex-start' },
-  disclaimerText: { flex: 1, fontSize: 9.6, lineHeight: 14, fontFamily: 'Manrope_500Medium' },
-  emptyState: { alignItems: 'center', paddingVertical: 52 },
-  emptyIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  courseTitle: { fontSize: 14.5, fontFamily: 'Manrope_700Bold' },
+  courseMeta: { fontSize: 10.5, fontFamily: 'Manrope_500Medium', marginTop: 2 },
+  expandButton: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  moduleList: { borderTopWidth: 1, paddingHorizontal: 12, paddingBottom: 10 },
+  moduleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
+  moduleNumber: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  moduleNumberText: { fontSize: 11, fontFamily: 'Manrope_800ExtraBold' },
+  moduleTitle: { flex: 1, fontSize: 12, fontFamily: 'Manrope_600SemiBold' },
+  moduleDetail: { fontSize: 10, fontFamily: 'Manrope_500Medium' },
+  disclaimer: { flexDirection: 'row', gap: 8, borderRadius: 12, padding: 10, marginTop: 4 },
+  disclaimerText: { flex: 1, fontSize: 10, lineHeight: 15, fontFamily: 'Manrope_500Medium' },
+  emptyState: { alignItems: 'center', paddingVertical: 40 },
+  emptyIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   emptyTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope_500Medium', marginTop: 3 },
+  emptyText: { fontSize: 11, fontFamily: 'Manrope_500Medium', marginTop: 2 },
 });

@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/context/AppContext';
-import { getCourseLessons, getVideoCourse, type LibraryCategoryId } from '@/data/videoLibrary';
+import { getCourseLessons, libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
+import { useCatalogCourse } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
 
 type Props = { categoryId: LibraryCategoryId; courseId: string };
@@ -15,24 +16,34 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { completedLessonIds, savedCourseIds, toggleSavedCourse } = useApp();
-  const course = getVideoCourse(courseId);
+  const resolvedCategoryId = resolveCategoryId(categoryId);
+  const { course, isLoading, error, refetch } = useCatalogCourse(courseId);
   const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
   const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
   const [collapsedModules, setCollapsedModules] = useState<string[]>([]);
 
-  const lessons = useMemo(() => course ? getCourseLessons(course) : [], [course]);
-  const completedCount = lessons.filter(item => completedLessonIds.includes(item.id)).length;
-  const uploadedCount = lessons.filter(item => Boolean(item.videoUrl)).length;
+  const lessons = useMemo(() => (course ? getCourseLessons(course) : []), [course]);
+  const completedCount = lessons.filter((item) => completedLessonIds.includes(item.id)).length;
+  const uploadedCount = lessons.filter((item) => Boolean(item.videoUrl)).length;
   const progress = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
-  const firstIncomplete = lessons.find(item => !completedLessonIds.includes(item.id)) ?? lessons[0];
+  const firstIncomplete = lessons.find((item) => !completedLessonIds.includes(item.id)) ?? lessons[0];
 
-  if (!course || course.categoryId !== categoryId) {
+  if (isLoading) {
     return (
-      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}> 
+      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={[styles.missingTitle, { color: colors.foreground }]}>Loading course…</Text>
+      </View>
+    );
+  }
+
+  if (error || !course || course.categoryId !== resolvedCategoryId) {
+    return (
+      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
         <Feather name="alert-circle" size={32} color={colors.mutedForeground} />
         <Text style={[styles.missingTitle, { color: colors.foreground }]}>Course not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.missingButton, { backgroundColor: colors.primary }]}> 
-          <Text style={styles.primaryButtonText}>Go back</Text>
+        <TouchableOpacity onPress={() => (error ? refetch() : router.back())} style={[styles.missingButton, { backgroundColor: colors.primary }]}>
+          <Text style={styles.primaryButtonText}>{error ? 'Retry' : 'Go back'}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -41,7 +52,7 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const isSaved = savedCourseIds.includes(course.id);
   const openLesson = (lessonId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-    router.push(`/${categoryId}/player?lessonId=${encodeURIComponent(lessonId)}` as never);
+    router.push(libraryPath(resolvedCategoryId, undefined, lessonId) as never);
   };
 
   const toggleModule = (moduleId: string) => {
@@ -73,7 +84,7 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
           <View style={styles.heroIcon}>
             <Feather name={course.icon} size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.heroEyebrow}>{categoryId.toUpperCase()} COURSE</Text>
+          <Text style={styles.heroEyebrow}>{resolvedCategoryId.replace(/-/g, ' ').toUpperCase()} COURSE</Text>
           <Text style={styles.heroTitle}>{course.title}</Text>
           <Text style={styles.heroDescription}>{course.description}</Text>
           <View style={styles.heroMeta}>
@@ -97,7 +108,9 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
             </View>
             <View style={styles.uploadStatus}>
               <Feather name={uploadedCount === lessons.length ? 'check-circle' : 'upload-cloud'} size={14} color={uploadedCount ? course.color : colors.mutedForeground} />
-              <Text style={[styles.uploadStatusText, { color: colors.mutedForeground }]}>{uploadedCount} of {lessons.length} videos uploaded</Text>
+              <Text style={[styles.uploadStatusText, { color: colors.mutedForeground }]}>
+                {uploadedCount} of {lessons.length} videos ready
+              </Text>
             </View>
           </View>
 
@@ -147,7 +160,9 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
                             <View style={styles.lessonMetaRow}>
                               <Text style={[styles.lessonMeta, { color: colors.mutedForeground }]}>{item.durationMinutes} min</Text>
                               <View style={[styles.lessonMetaDot, { backgroundColor: colors.border }]} />
-                              <Text style={[styles.lessonMeta, { color: item.videoUrl ? course.color : colors.mutedForeground }]}>{item.videoUrl ? 'Ready to watch' : 'Video slot ready'}</Text>
+                              <Text style={[styles.lessonMeta, { color: item.videoUrl ? course.color : colors.mutedForeground }]}>
+                                {item.videoUrl ? 'Ready to watch' : 'Awaiting upload'}
+                              </Text>
                             </View>
                           </View>
                           <Feather name="chevron-right" size={17} color={colors.mutedForeground} />
