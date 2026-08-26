@@ -65,22 +65,97 @@ const CATEGORY_ALIASES: Record<string, string> = {
 };
 
 const ICON_ALIASES: Record<string, keyof typeof Feather.glyphMap> = {
-  dumbbell: 'activity',
   apple: 'shopping-bag',
-  book: 'book',
+  dumbbell: 'activity',
   shield: 'shield',
   heart: 'heart',
+  baby: 'smile',
+  barbell: 'activity',
+  body: 'user',
+  bolt: 'zap',
+  book: 'book',
+  bookmark: 'bookmark',
+  calendar: 'calendar',
+  cart: 'shopping-cart',
+  circle: 'circle',
+  droplet: 'droplet',
+  fight: 'crosshair',
+  fist: 'box',
+  hand: 'users',
+  'heart-pulse': 'activity',
+  kick: 'triangle',
+  lotus: 'sunrise',
+  people: 'users',
+  run: 'trending-up',
+  scale: 'bar-chart-2',
+  scan: 'camera',
+  spa: 'wind',
+  sparkles: 'star',
+  stretch: 'move',
+  target: 'target',
+  utensils: 'coffee',
   zap: 'zap',
   activity: 'activity',
   wind: 'wind',
-  target: 'target',
+};
+
+/** Unique Feather icons per course id (avoids duplicates within a category). */
+const COURSE_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
+  'cph-menstrual-cycle': 'calendar',
+  'cph-pregnancy': 'heart',
+  'cph-postpartum': 'smile',
+  'cph-recovery-wellness': 'sunrise',
+  'dn-meal-scanner': 'camera',
+  'dn-ai-meal-planner': 'cpu',
+  'dn-recipes': 'coffee',
+  'dn-nutrition-basics': 'book',
+  'dn-nutrition-by-goal': 'target',
+  'dn-grocery-planner': 'shopping-cart',
+  'dn-hydration': 'droplet',
+  'dn-saved-meals': 'bookmark',
+  'fit-foundations': 'flag',
+  'fit-strength': 'activity',
+  'fit-cardio': 'heart',
+  'fit-hiit': 'zap',
+  'fit-yoga': 'wind',
+  'fit-pilates': 'aperture',
+  'fit-core': 'circle',
+  'fit-mobility': 'move',
+  'fit-weight-loss': 'trending-down',
+  'fit-endurance': 'trending-up',
+  'sd-foundations': 'shield',
+  'sd-boxing': 'box',
+  'sd-jiu-jitsu': 'git-merge',
+  'sd-taekwondo': 'triangle',
+  'sd-karate': 'hexagon',
+  'sd-mma': 'crosshair',
+};
+
+const CATEGORY_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
+  'self-defence': 'shield',
+  fitness: 'activity',
+  'diet-nutrition': 'shopping-bag',
+  'cycle-pregnancy-health': 'heart',
 };
 
 function toFeatherIcon(raw?: string | null): keyof typeof Feather.glyphMap {
-  const key = String(raw || 'book').toLowerCase();
+  const key = String(raw || 'book').trim().toLowerCase();
   if (ICON_ALIASES[key]) return ICON_ALIASES[key];
-  // Feather accepts many names; fall back safely if unknown
-  return (key as keyof typeof Feather.glyphMap) || 'book';
+
+  const glyphMap = Feather.glyphMap as Record<string, number>;
+  if (glyphMap[key] != null) {
+    return key as keyof typeof Feather.glyphMap;
+  }
+
+  return 'book-open';
+}
+
+function courseIcon(courseId: string, raw?: string | null): keyof typeof Feather.glyphMap {
+  return COURSE_ICONS[courseId] || toFeatherIcon(raw);
+}
+
+function categoryIcon(categoryId: string, raw?: string | null): keyof typeof Feather.glyphMap {
+  return CATEGORY_ICONS[categoryId] || toFeatherIcon(raw);
 }
 
 function lighten(hex: string, amount = 0.28): string {
@@ -160,7 +235,7 @@ function mapCourse(row: any, moduleRows: any[], lessonRows: any[]): VideoCourse 
     title: row.title,
     shortTitle: row.short_title || row.title,
     description: row.description || '',
-    icon: toFeatherIcon(row.icon),
+    icon: courseIcon(row.id, row.icon),
     color,
     gradient: gradientFor(color),
     level: row.level || 'All levels',
@@ -177,7 +252,7 @@ function mapCategory(row: any, courses: VideoCourse[]): VideoCategory {
     title: row.title,
     subtitle: row.subtitle || '',
     description: row.description || '',
-    icon: toFeatherIcon(row.icon),
+    icon: categoryIcon(row.id, row.icon),
     color,
     gradient: gradientFor(color),
     courses: courses.filter((c) => c.categoryId === row.id),
