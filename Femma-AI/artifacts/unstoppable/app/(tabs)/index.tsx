@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp, LEVEL_NAMES, CYCLE_PHASE_INFO, LEVEL_COLORS } from '@/context/AppContext';
+import { useCatalog } from '@/hooks/useCatalog';
+import { focusQuickLink } from '@/lib/dailyMissions';
 import ProgressRing from '@/components/ProgressRing';
 import MissionCard from '@/components/MissionCard';
 
@@ -21,22 +23,52 @@ const MOTIVATIONAL = [
 
 export default function TodayScreen() {
   const colors = useColors();
-  const { profile, missions, completeMission, missionsCompleted, totalMissions } = useApp();
+  const {
+    profile,
+    missions,
+    completeMission,
+    missionsCompleted,
+    totalMissions,
+    onboardingCompleted,
+    syncMissions,
+  } = useApp();
+  const { data: catalog } = useCatalog();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
 
-  const progress = missionsCompleted / totalMissions;
+  useEffect(() => {
+    if (!onboardingCompleted) return;
+    syncMissions(catalog);
+  }, [
+    catalog,
+    onboardingCompleted,
+    profile.goal,
+    profile.fitnessLevel,
+    profile.dailyTime,
+    profile.foodPreference,
+    profile.journeyDay,
+    profile.cyclePhase,
+    profile.isPregnant,
+    syncMissions,
+  ]);
+
+  const progress = totalMissions > 0 ? missionsCompleted / totalMissions : 0;
   const levelName = LEVEL_NAMES[profile.level];
   const levelColor = LEVEL_COLORS[profile.level];
   const phaseInfo = CYCLE_PHASE_INFO[profile.cyclePhase];
   const motivational = MOTIVATIONAL[profile.journeyDay % MOTIVATIONAL.length];
+  const trainingLink = focusQuickLink(profile.goal);
 
   const getHour = () => new Date().getHours();
   const greeting = getHour() < 12 ? 'Good morning' : getHour() < 17 ? 'Good afternoon' : 'Good evening';
 
-  const handleMissionPress = (category: string) => {
+  const handleMissionPress = (href?: string, category?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (href) {
+      router.push(href as never);
+      return;
+    }
     switch (category) {
       case 'fitness': router.push('/library/fitness' as never); break;
       case 'yoga': router.push('/yoga'); break;
@@ -55,7 +87,7 @@ export default function TodayScreen() {
         {/* Header */}
         <LinearGradient
           colors={[colors.softLavender, colors.background]}
-          style={[styles.headerGradient, { paddingTop: topPad + 12 }]}
+          style={[styles.headerGradient, { paddingTop: topPad }]}
         >
           <View style={styles.headerRow}>
             <View>
@@ -132,7 +164,7 @@ export default function TodayScreen() {
           {/* Quick links */}
           <View style={styles.quickLinks}>
             {[
-              { label: 'Fitness', icon: 'zap', color: colors.pink, route: '/library/fitness' },
+              { label: trainingLink.label, icon: trainingLink.icon, color: colors.pink, route: trainingLink.route },
               { label: 'Diet', icon: 'coffee', color: colors.lavender, route: '/library/diet-nutrition' },
               { label: 'Safety', icon: 'shield', color: colors.skyBlue, route: '/library/self-defence' },
               { label: 'Cycle', icon: 'calendar', color: colors.coral, route: '/library/cycle-pregnancy-health' },
@@ -155,16 +187,28 @@ export default function TodayScreen() {
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Today's Missions</Text>
               <View style={[styles.completedBadge, { backgroundColor: missionsCompleted === totalMissions ? colors.mint + '30' : colors.muted }]}>
                 <Text style={[styles.completedText, { color: missionsCompleted === totalMissions ? '#2d8a6b' : colors.mutedForeground }]}>
-                  {missionsCompleted}/{totalMissions} done
+                  {missionsCompleted === totalMissions ? 'Done for today' : `${missionsCompleted}/${totalMissions} done`}
                 </Text>
               </View>
             </View>
+
+            {missionsCompleted === totalMissions && totalMissions > 0 ? (
+              <View style={[styles.doneCard, { backgroundColor: colors.mint + '18', borderColor: colors.mint + '50' }]}>
+                <View style={[styles.doneIcon, { backgroundColor: colors.mint }]}>
+                  <Feather name="check" size={22} color="#FFFFFF" />
+                </View>
+                <Text style={[styles.doneTitle, { color: colors.foreground }]}>You did it. Done for today.</Text>
+                <Text style={[styles.doneText, { color: colors.mutedForeground }]}>
+                  All {totalMissions} missions complete. That consistency is how unstoppable confidence is built. Rest well — tomorrow's plan is waiting.
+                </Text>
+              </View>
+            ) : null}
 
             {missions.map((mission, i) => (
               <Animated.View key={mission.id} entering={FadeInDown.delay(200 + i * 80).duration(400)}>
                 <MissionCard
                   mission={mission}
-                  onPress={() => handleMissionPress(mission.category)}
+                  onPress={() => handleMissionPress(mission.href, mission.category)}
                   onComplete={() => completeMission(mission.id)}
                 />
               </Animated.View>
@@ -229,6 +273,10 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   completedBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
   completedText: { fontSize: 12, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
+  doneCard: { borderRadius: 18, borderWidth: 1, padding: 18, alignItems: 'center', gap: 8, marginBottom: 14 },
+  doneIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  doneTitle: { fontSize: 17, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', textAlign: 'center' },
+  doneText: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 20, textAlign: 'center' },
   aiCoachCard: { borderRadius: 20, padding: 20, marginTop: 4 },
   aiCoachContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   aiCoachLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontFamily: 'Manrope_600SemiBold', marginBottom: 4, letterSpacing: 0.5 },

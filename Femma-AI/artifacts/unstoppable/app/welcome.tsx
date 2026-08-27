@@ -13,8 +13,8 @@ export default function WelcomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { contentMaxWidth, padX, isCompact, isShort, headlineSize, headlineLineHeight, logoSize, height } = useResponsive();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
 
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(40);

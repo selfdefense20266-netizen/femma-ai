@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { useApp } from '@/context/AppContext';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const LEVELS = [
@@ -17,15 +18,26 @@ const TIMES = ['15 min', '20–30 min', '30–45 min', '45–60 min', '60+ min']
 
 export default function ExperienceStep() {
   const colors = useColors();
+  const { updateProfile } = useApp();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [level, setLevel] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const timeSectionY = useRef(0);
+
+  const selectLevel = (id: string) => {
+    Haptics.selectionAsync();
+    setLevel(id);
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(timeSectionY.current - 12, 0), animated: true });
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+      <View style={[styles.header, { paddingTop: topPad }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
@@ -38,13 +50,19 @@ export default function ExperienceStep() {
         <Text style={[styles.question, { color: colors.foreground }]}>Your fitness experience</Text>
       </View>
 
-      <View style={styles.body}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={[styles.body, { paddingBottom: botPad + 108 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Current fitness level</Text>
         {LEVELS.map((l, i) => (
           <Animated.View key={l.id} entering={FadeInDown.delay(i * 80).duration(400)}>
             <TouchableOpacity
               style={[styles.option, { backgroundColor: level === l.id ? colors.primary + '12' : colors.card, borderColor: level === l.id ? colors.primary : colors.border }]}
-              onPress={() => { Haptics.selectionAsync(); setLevel(l.id); }}
+              onPress={() => selectLevel(l.id)}
               activeOpacity={0.8}
             >
               <View style={[styles.optionIcon, { backgroundColor: level === l.id ? colors.primary + '20' : colors.muted }]}>
@@ -59,26 +77,40 @@ export default function ExperienceStep() {
           </Animated.View>
         ))}
 
-        <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 20 }]}>Time available per day</Text>
-        <View style={styles.timesGrid}>
-          {TIMES.map(t => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.timeChip, { backgroundColor: time === t ? colors.primary : colors.muted, borderColor: time === t ? colors.primary : colors.border }]}
-              onPress={() => { Haptics.selectionAsync(); setTime(t); }}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.timeText, { color: time === t ? '#FFFFFF' : colors.mutedForeground }]}>{t}</Text>
-            </TouchableOpacity>
-          ))}
+        <View
+          onLayout={(event) => {
+            timeSectionY.current = event.nativeEvent.layout.y;
+          }}
+        >
+          <Text style={[styles.sectionLabel, { color: colors.foreground, marginTop: 20 }]}>Time available per day</Text>
+          <View style={styles.timesGrid}>
+            {TIMES.map(t => (
+              <TouchableOpacity
+                key={t}
+                style={[styles.timeChip, { backgroundColor: time === t ? colors.primary : colors.muted, borderColor: time === t ? colors.primary : colors.border }]}
+                onPress={() => { Haptics.selectionAsync(); setTime(t); }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.timeText, { color: time === t ? '#FFFFFF' : colors.mutedForeground }]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: botPad + 24 }]}>
+      <View style={[styles.footer, { paddingBottom: botPad + 16, backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={[styles.nextBtn, { backgroundColor: level && time ? colors.primary : colors.muted }]}
           disabled={!level || !time}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/onboarding/lifestyle'); }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            const selectedLevel = LEVELS.find((item) => item.id === level);
+            updateProfile({
+              fitnessLevel: selectedLevel?.label || level || '',
+              dailyTime: time || '',
+            });
+            router.push('/onboarding/lifestyle');
+          }}
           activeOpacity={0.85}
         >
           <Text style={[styles.nextBtnText, { color: level && time ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
@@ -91,12 +123,13 @@ export default function ExperienceStep() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingBottom: 20, gap: 10 },
+  header: { paddingHorizontal: 24, paddingBottom: 16, gap: 10 },
   progressBar: { flexDirection: 'row', gap: 6, marginTop: 4 },
   progressDot: { height: 4, flex: 1, borderRadius: 2 },
   stepLabel: { fontSize: 12, fontFamily: 'Manrope_600SemiBold' },
   question: { fontSize: 26, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', lineHeight: 34 },
-  body: { flex: 1, paddingHorizontal: 24, gap: 10 },
+  scroll: { flex: 1 },
+  body: { paddingHorizontal: 24, gap: 10 },
   sectionLabel: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold', marginBottom: 4 },
   option: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1.5, gap: 12 },
   optionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
@@ -106,7 +139,7 @@ const styles = StyleSheet.create({
   timesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   timeChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 100, borderWidth: 1.5 },
   timeText: { fontSize: 13, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
-  footer: { paddingHorizontal: 24, paddingTop: 12 },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12 },
   nextBtn: { height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   nextBtnText: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
 });

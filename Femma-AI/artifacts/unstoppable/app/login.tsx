@@ -20,8 +20,8 @@ export default function LoginScreen() {
   const { contentMaxWidth, padX, isCompact } = useResponsive();
   const { login } = useAuth();
   const { updateProfile } = useApp();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

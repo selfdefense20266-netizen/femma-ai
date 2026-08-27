@@ -100,11 +100,12 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
     setLastViewedLesson,
     savedCourseIds,
     toggleSavedCourse,
+    completeMission,
   } = useApp();
   const resolvedCategoryId = resolveCategoryId(categoryId);
   const { context, isLoading, error, refetch } = useCatalogLesson(lessonId);
-  const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const savedWatch = lessonWatchProgress[lessonId] ?? 0;
   const [watchPercent, setWatchPercent] = useState(() =>
     completedLessonIds.includes(lessonId) ? 100 : savedWatch
@@ -138,8 +139,11 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
       autoCompletedRef.current = true;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
       setLessonComplete(context.lesson.id, true);
+      if (!completeMission(context.lesson.id) && !completeMission(context.course.id)) {
+        completeMission(resolvedCategoryId);
+      }
     },
-    [completedLessonIds, context?.lesson.id, setLessonComplete, setLessonWatchProgress]
+    [completedLessonIds, context?.lesson.id, resolvedCategoryId, completeMission, setLessonComplete, setLessonWatchProgress]
   );
 
   if (isLoading) {
@@ -181,7 +185,13 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
 
   const toggleComplete = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    setLessonComplete(lesson.id, !isComplete);
+    const nextComplete = !isComplete;
+    setLessonComplete(lesson.id, nextComplete);
+    if (nextComplete) {
+      if (!completeMission(lesson.id) && !completeMission(course.id)) {
+        completeMission(resolvedCategoryId);
+      }
+    }
   };
 
   return (

@@ -11,7 +11,7 @@ export default function LibraryIndex() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { data, isLoading, error, refetch } = useCatalog();
-  const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
+  const topPad = insets.top + 8;
 
   if (isLoading) {
     return (

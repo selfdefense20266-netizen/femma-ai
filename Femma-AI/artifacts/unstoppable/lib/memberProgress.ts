@@ -38,27 +38,26 @@ function asWatchMap(value: unknown): Record<string, number> {
   return out;
 }
 
-export async function resolveMemberId(): Promise<string | null> {
+export async function resolveMemberId(emailHint?: string): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return null;
-
-  const authId = data.user.id;
-  const email = (data.user.email || '').toLowerCase();
+  const { data } = await supabase.auth.getUser();
+  const email = (data.user?.email || emailHint || '').toLowerCase();
 
   if (email) {
     const byEmail = await supabase.from('members').select('id').eq('email', email).maybeSingle();
     if (!byEmail.error && byEmail.data?.id) return byEmail.data.id as string;
   }
 
+  const authId = data.user?.id;
+  if (!authId) return null;
+
   const byId = await supabase.from('members').select('id').eq('id', authId).maybeSingle();
   if (!byId.error && byId.data?.id) return byId.data.id as string;
-
   return authId;
 }
 
-export async function fetchMemberProgress(): Promise<MemberProgressSnapshot | null> {
-  const memberId = await resolveMemberId();
+export async function fetchMemberProgress(emailHint?: string): Promise<MemberProgressSnapshot | null> {
+  const memberId = await resolveMemberId(emailHint);
   if (!memberId) return null;
 
   const { data, error } = await supabase
@@ -119,6 +118,8 @@ function mergeProfile(local: UserProfile, remote: Partial<UserProfile> | null | 
     fitnessLevel: remote.fitnessLevel || local.fitnessLevel,
     environment: remote.environment || local.environment,
     planName: remote.planName || local.planName,
+    dailyTime: remote.dailyTime || local.dailyTime,
+    foodPreference: remote.foodPreference || local.foodPreference,
     points: Math.max(localPoints || 0, Number.isFinite(remotePoints) ? remotePoints : 0),
     streak: Math.max(Number(local.streak || 0), Number(remote.streak || 0)),
     journeyDay: Math.max(Number(local.journeyDay || 0), Number(remote.journeyDay || 0)),
@@ -133,6 +134,19 @@ function mergeProfile(local: UserProfile, remote: Partial<UserProfile> | null | 
 function mergeMissions(local: Mission[], remote: Mission[]): Mission[] {
   if (!remote.length) return local;
   if (!local.length) return remote;
+
+  const overlap = local.some((item) => remote.some((other) => other.id === item.id));
+  if (!overlap) {
+    const localPreferred = local.some((item) => item.href || item.id.startsWith('train-'));
+    const source = localPreferred ? local : remote;
+    const other = source === local ? remote : local;
+    const completedCategories = new Set(other.filter((item) => item.completed).map((item) => item.category));
+    return source.map((item) => ({
+      ...item,
+      completed: item.completed || completedCategories.has(item.category),
+    }));
+  }
+
   const byId = new Map(local.map((m) => [m.id, m]));
   for (const mission of remote) {
     const existing = byId.get(mission.id);
@@ -143,6 +157,11 @@ function mergeMissions(local: Mission[], remote: Mission[]): Mission[] {
     byId.set(mission.id, {
       ...existing,
       ...mission,
+      title: existing.href ? existing.title : mission.title,
+      href: existing.href || mission.href,
+      label: existing.label || mission.label,
+      courseId: existing.courseId || mission.courseId,
+      lessonId: existing.lessonId || mission.lessonId,
       completed: Boolean(existing.completed || mission.completed),
     });
   }
@@ -165,16 +184,20 @@ export function mergeProgressSnapshots(
   };
 }
 
-export async function saveMemberProgress(snapshot: MemberProgressSnapshot): Promise<boolean> {
-  const memberId = await resolveMemberId();
+export async function saveMemberProgress(
+  snapshot: MemberProgressSnapshot,
+  emailHint?: string
+): Promise<boolean> {
+  const memberId = await resolveMemberId(emailHint);
   if (!memberId) return false;
 
   const { data: authData } = await supabase.auth.getUser();
-  const email = (authData.user?.email || '').toLowerCase();
+  const email = (authData.user?.email || emailHint || '').toLowerCase();
   if (email) {
     const existing = await supabase.from('members').select('id').eq('id', memberId).maybeSingle();
     if (!existing.data) {
       const name =
+        snapshot.profile.name ||
         `${authData.user?.user_metadata?.first_name || ''} ${authData.user?.user_metadata?.last_name || ''}`.trim() ||
         email.split('@')[0];
       await supabase.from('members').upsert(
@@ -183,13 +206,35 @@ export async function saveMemberProgress(snapshot: MemberProgressSnapshot): Prom
           email,
           name,
           status: 'active',
-          points: snapshot.profile.points,
-          streak: snapshot.profile.streak,
-          level: snapshot.profile.level,
         },
         { onConflict: 'email' }
       );
     }
+  }
+
+  const completedCount = snapshot.completedLessonIds.length;
+  const { error: memberError } = await supabase
+    .from('members')
+    .update({
+      name: snapshot.profile.name || undefined,
+      points: snapshot.profile.points,
+      streak: snapshot.profile.streak,
+      level: snapshot.profile.level,
+      journey_day: snapshot.profile.journeyDay,
+      goal: snapshot.profile.goal,
+      fitness_level: snapshot.profile.fitnessLevel,
+      environment: snapshot.profile.environment,
+      cycle_phase: snapshot.profile.cyclePhase,
+      cycle_day: snapshot.profile.cycleDay,
+      is_pregnant: snapshot.profile.isPregnant,
+      pregnancy_week: snapshot.profile.pregnancyWeek,
+      completed_lessons: completedCount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', memberId);
+
+  if (memberError) {
+    console.warn('Failed to save member onboarding', memberError.message);
   }
 
   const row = {
@@ -207,29 +252,8 @@ export async function saveMemberProgress(snapshot: MemberProgressSnapshot): Prom
   const { error } = await supabase.from('member_progress').upsert(row, { onConflict: 'member_id' });
   if (error) {
     console.warn('Failed to save member progress', error.message);
-    return false;
+    return !memberError;
   }
 
-  // Mirror key stats onto members for admin Progress/analytics views.
-  const completedCount = snapshot.completedLessonIds.length;
-  await supabase
-    .from('members')
-    .update({
-      points: snapshot.profile.points,
-      streak: snapshot.profile.streak,
-      level: snapshot.profile.level,
-      journey_day: snapshot.profile.journeyDay,
-      goal: snapshot.profile.goal,
-      fitness_level: snapshot.profile.fitnessLevel,
-      environment: snapshot.profile.environment,
-      cycle_phase: snapshot.profile.cyclePhase,
-      cycle_day: snapshot.profile.cycleDay,
-      is_pregnant: snapshot.profile.isPregnant,
-      pregnancy_week: snapshot.profile.pregnancyWeek,
-      completed_lessons: completedCount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', memberId);
-
-  return true;
+  return !memberError;
 }

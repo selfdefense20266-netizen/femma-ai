@@ -1,4 +1,14 @@
 import { useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+export function useScreenPad() {
+  'use no memo';
+  const insets = useSafeAreaInsets();
+  return {
+    topPad: insets.top + 8,
+    botPad: Math.max(insets.bottom, 12),
+  };
+}
 
 export function useResponsive() {
   const { width, height } = useWindowDimensions();

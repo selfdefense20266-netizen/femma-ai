@@ -27,8 +27,8 @@ export default function CycleScreen() {
   const colors = useColors();
   const { profile } = useApp();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
 
   const phaseInfo = CYCLE_PHASE_INFO[profile.cyclePhase];
 
@@ -43,7 +43,7 @@ export default function CycleScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient colors={[colors.coral + '30', colors.background]} style={styles.headerGrad}>
-        <View style={[styles.header, { paddingTop: topPad + 12 }]}>
+        <View style={[styles.header, { paddingTop: topPad }]}>
           <TouchableOpacity onPress={() => router.back()}>
             <Feather name="arrow-left" size={22} color={colors.foreground} />
           </TouchableOpacity>

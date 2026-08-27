@@ -29,53 +29,70 @@ export default function MissionCard({ mission, onPress, onComplete }: Props) {
   };
 
   return (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card, borderColor: mission.completed ? mission.accentColor + '30' : colors.border }]}
-      onPress={onPress}
-      activeOpacity={0.8}
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: mission.completed ? mission.accentColor + '40' : colors.border,
+          opacity: mission.completed ? 0.78 : 1,
+        },
+      ]}
     >
-      {/* Accent stripe */}
       <View style={[styles.stripe, { backgroundColor: mission.accentColor }]} />
 
-      <View style={[styles.iconWrap, { backgroundColor: mission.accentColor + '18' }]}>
-        <Feather name={mission.icon as any} size={20} color={mission.accentColor} />
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <Text style={[styles.category, { color: mission.accentColor }]}>
-            {CATEGORY_LABELS[mission.category]}
-          </Text>
-          {mission.duration > 0 && (
-            <View style={[styles.durationBadge, { backgroundColor: colors.muted }]}>
-              <Feather name="clock" size={10} color={colors.mutedForeground} />
-              <Text style={[styles.durationText, { color: colors.mutedForeground }]}>{mission.duration} min</Text>
-            </View>
-          )}
+      <TouchableOpacity style={styles.main} onPress={onPress} activeOpacity={0.8}>
+        <View style={[styles.iconWrap, { backgroundColor: mission.accentColor + '18' }]}>
+          <Feather name={mission.icon as any} size={20} color={mission.accentColor} />
         </View>
-        <Text style={[styles.title, { color: mission.completed ? colors.mutedForeground : colors.foreground }]} numberOfLines={2}>
-          {mission.title}
-        </Text>
-        {(mission.calories > 0 || mission.difficulty) && (
-          <View style={styles.metaRow}>
-            {mission.difficulty ? (
-              <Text style={[styles.meta, { color: colors.mutedForeground }]}>{mission.difficulty}</Text>
-            ) : null}
-            {mission.calories > 0 && (
-              <Text style={[styles.meta, { color: colors.mutedForeground }]}>{mission.calories} kcal</Text>
+
+        <View style={styles.content}>
+          <View style={styles.topRow}>
+            <Text style={[styles.category, { color: mission.accentColor }]}>
+              {mission.label || CATEGORY_LABELS[mission.category] || 'Mission'}
+            </Text>
+            {mission.duration > 0 && (
+              <View style={[styles.durationBadge, { backgroundColor: colors.muted }]}>
+                <Feather name="clock" size={10} color={colors.mutedForeground} />
+                <Text style={[styles.durationText, { color: colors.mutedForeground }]}>{mission.duration} min</Text>
+              </View>
             )}
           </View>
-        )}
-      </View>
+          <Text style={[styles.title, { color: mission.completed ? colors.mutedForeground : colors.foreground }]} numberOfLines={2}>
+            {mission.title}
+          </Text>
+          {mission.calories > 0 || mission.difficulty ? (
+            <View style={styles.metaRow}>
+              {mission.difficulty ? (
+                <Text style={[styles.meta, { color: colors.mutedForeground }]}>{mission.difficulty}</Text>
+              ) : null}
+              {mission.calories > 0 ? (
+                <Text style={[styles.meta, { color: colors.mutedForeground }]}>{mission.calories} kcal</Text>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.checkBtn, { backgroundColor: mission.completed ? mission.accentColor : colors.muted, borderColor: mission.completed ? mission.accentColor : colors.border }]}
+        style={[
+          styles.checkBtn,
+          {
+            backgroundColor: mission.completed ? mission.accentColor : colors.card,
+            borderColor: mission.completed ? mission.accentColor : colors.border,
+          },
+        ]}
         onPress={handleComplete}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        accessibilityLabel={mission.completed ? 'Mission completed' : 'Mark mission done'}
       >
-        {mission.completed && <Feather name="check" size={16} color="#FFFFFF" />}
+        {mission.completed ? (
+          <Feather name="check" size={16} color="#FFFFFF" />
+        ) : (
+          <View style={[styles.emptyCheck, { borderColor: colors.mutedForeground }]} />
+        )}
       </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -86,10 +103,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     marginBottom: 10,
-    paddingVertical: 14,
-    paddingRight: 16,
+    paddingVertical: 8,
+    paddingRight: 12,
     paddingLeft: 8,
-    gap: 12,
     overflow: 'hidden',
   },
   stripe: {
@@ -102,13 +118,20 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
   },
+  main: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+    paddingLeft: 8,
+  },
   iconWrap: {
     width: 44,
     height: 44,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
   content: {
     flex: 1,
@@ -159,5 +182,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyCheck: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1.5,
   },
 });

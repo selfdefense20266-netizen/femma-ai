@@ -18,8 +18,8 @@ export default function LibraryHubScreen({ categoryId }: Props) {
   const insets = useSafeAreaInsets();
   const { completedLessonIds, lessonWatchProgress, lastViewedLessonId, savedCourseIds } = useApp();
   const { category, categoryId: resolvedId, isLoading, error, refetch } = useCatalogCategory(categoryId);
-  const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [query, setQuery] = useState('');
   const [savedOnly, setSavedOnly] = useState(false);
 

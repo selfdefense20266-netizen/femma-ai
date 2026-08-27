@@ -73,7 +73,7 @@ export default function CoachScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { profile } = useApp();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = insets.top + 8;
   const botPad = Platform.OS === 'web' ? 84 : insets.bottom + 60;
 
   const [messages, setMessages] = useState<Message[]>([
@@ -132,7 +132,7 @@ export default function CoachScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topPad + 8, borderBottomColor: colors.border, backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: topPad, borderBottomColor: colors.border, backgroundColor: colors.background }]}>
         <LinearGradient colors={[colors.deepPink, colors.lavender]} style={styles.headerAvatar}>
           <Feather name="heart" size={18} color="#FFF" />
         </LinearGradient>

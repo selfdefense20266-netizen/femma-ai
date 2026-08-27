@@ -94,8 +94,8 @@ export default function ExploreScreen() {
   const { savedCourseIds, completedLessonIds, lessonWatchProgress } = useApp();
   const { data: catalog, isLoading, error, refetch } = useCatalog();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 58 : insets.top + 12;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [query, setQuery] = useState('');
   const [expandedCourse, setExpandedCourse] = useState('');
   const [showSavedOnly, setShowSavedOnly] = useState(false);

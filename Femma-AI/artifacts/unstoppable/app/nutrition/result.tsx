@@ -13,8 +13,8 @@ export default function NutritionResultScreen() {
   const colors = useColors();
   const { completeMission } = useApp();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [serving, setServing] = useState(1);
 
   const scan = getLastMealScan();
@@ -47,7 +47,7 @@ export default function NutritionResultScreen() {
   if (!scan) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { paddingTop: topPad + 12 }]}>
+        <View style={[styles.header, { paddingTop: topPad }]}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Feather name="x" size={22} color={colors.foreground} />
           </TouchableOpacity>
@@ -74,7 +74,7 @@ export default function NutritionResultScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPad + 12 }]}>
+      <View style={[styles.header, { paddingTop: topPad }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="x" size={22} color={colors.foreground} />
         </TouchableOpacity>
@@ -210,7 +210,7 @@ export default function NutritionResultScreen() {
                 style={[styles.mealBtn, { backgroundColor: colors.primary, flex: 1 }]}
                 onPress={() => {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  completeMission('4');
+                  completeMission('nutrition');
                   router.replace('/(tabs)');
                 }}
                 activeOpacity={0.85}

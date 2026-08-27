@@ -1,29 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { useApp } from '@/context/AppContext';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const GOALS = [
   { id: 'weight_loss', label: 'Weight Loss', icon: 'trending-down', desc: 'Burn fat, feel lighter' },
   { id: 'tone', label: 'Tone & Sculpt', icon: 'activity', desc: 'Define and strengthen' },
   { id: 'muscle', label: 'Build Muscle', icon: 'zap', desc: 'Get stronger every week' },
+  { id: 'boxing', label: 'Boxing', icon: 'target', desc: 'Footwork, punches, fight fitness' },
+  { id: 'selfdefense', label: 'Learn Self-Defense', icon: 'shield', desc: 'Feel safe anywhere' },
+  { id: 'hiit', label: 'HIIT', icon: 'zap', desc: 'Short, high-energy intervals' },
+  { id: 'yoga', label: 'Yoga', icon: 'wind', desc: 'Strength, breath, and flow' },
   { id: 'confidence', label: 'Build Confidence', icon: 'star', desc: 'Inside and out' },
   { id: 'pregnancy', label: 'Pregnancy Wellness', icon: 'heart', desc: 'Safe & supported' },
   { id: 'postpartum', label: 'Postpartum Recovery', icon: 'sunrise', desc: 'Gentle return to strength' },
-  { id: 'selfdefense', label: 'Learn Self-Defense', icon: 'shield', desc: 'Feel safe anywhere' },
-  { id: 'flexibility', label: 'Improve Flexibility', icon: 'wind', desc: 'Move freely and deeply' },
+  { id: 'flexibility', label: 'Improve Flexibility', icon: 'move', desc: 'Move freely and deeply' },
   { id: 'stress', label: 'Reduce Stress', icon: 'cloud', desc: 'Calm your mind and body' },
 ];
 
 export default function GoalStep() {
   const colors = useColors();
+  const { updateProfile } = useApp();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [selected, setSelected] = useState<string | null>(null);
 
   const select = (id: string) => {
@@ -33,7 +38,7 @@ export default function GoalStep() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+      <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.progressBar}>
           {[1, 2, 3, 4].map(i => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i === 1 ? colors.primary : colors.border }]} />
@@ -41,7 +46,7 @@ export default function GoalStep() {
         </View>
         <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 1 of 4</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>What's your primary goal?</Text>
-        <Text style={[styles.subtext, { color: colors.mutedForeground }]}>We'll build your personalized plan around this.</Text>
+        <Text style={[styles.subtext, { color: colors.mutedForeground }]}>We'll build today's missions around this — boxing, yoga, strength, and more.</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
@@ -70,7 +75,12 @@ export default function GoalStep() {
         <TouchableOpacity
           style={[styles.nextBtn, { backgroundColor: selected ? colors.primary : colors.muted }]}
           disabled={!selected}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/onboarding/experience'); }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            const goal = GOALS.find((item) => item.id === selected);
+            updateProfile({ goal: goal?.label || selected || '' });
+            router.push('/onboarding/experience');
+          }}
           activeOpacity={0.85}
         >
           <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>

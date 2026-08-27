@@ -19,8 +19,8 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const { completedLessonIds, lessonWatchProgress, savedCourseIds, toggleSavedCourse } = useApp();
   const resolvedCategoryId = resolveCategoryId(categoryId);
   const { course, isLoading, error, refetch } = useCatalogCourse(courseId);
-  const topPad = Platform.OS === 'web' ? 58 : insets.top + 8;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [collapsedModules, setCollapsedModules] = useState<string[]>([]);
 
   const lessons = useMemo(() => (course ? getCourseLessons(course) : []), [course]);

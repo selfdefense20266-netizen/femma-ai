@@ -51,8 +51,8 @@ export default function ProfileScreen() {
   const { logout, user } = useAuth();
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : profile.name;
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
 
   const levelName = LEVEL_NAMES[profile.level];
   const levelColor = LEVEL_COLORS[profile.level];
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <LinearGradient
           colors={[colors.softLavender, colors.background]}
-          style={[styles.profileHeader, { paddingTop: topPad + 16 }]}
+          style={[styles.profileHeader, { paddingTop: topPad }]}
         >
           <View style={styles.avatarSection}>
             <View style={[styles.avatar, { backgroundColor: levelColor }]}>

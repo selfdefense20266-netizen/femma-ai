@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { useApp } from '@/context/AppContext';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const CYCLE_OPTIONS = [
@@ -16,14 +17,15 @@ const CYCLE_OPTIONS = [
 
 export default function CycleStep() {
   const colors = useColors();
+  const { updateProfile } = useApp();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+      <View style={[styles.header, { paddingTop: topPad }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
@@ -37,7 +39,12 @@ export default function CycleStep() {
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>Your data stays private and is only used to personalize your plan.</Text>
       </View>
 
-      <View style={styles.body}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.body, { paddingBottom: botPad + 108 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {CYCLE_OPTIONS.map((opt, i) => (
           <Animated.View key={opt.id} entering={FadeInDown.delay(i * 80).duration(400)}>
             <TouchableOpacity
@@ -56,13 +63,23 @@ export default function CycleStep() {
             </TouchableOpacity>
           </Animated.View>
         ))}
-      </View>
+      </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: botPad + 24 }]}>
         <TouchableOpacity
           style={[styles.nextBtn, { backgroundColor: selected ? colors.primary : colors.muted }]}
           disabled={!selected}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/onboarding/plan'); }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            if (selected === 'pregnant') {
+              updateProfile({ cyclePhase: 'none', isPregnant: true, pregnancyWeek: 1, cycleDay: 0 });
+            } else if (selected === 'track') {
+              updateProfile({ cyclePhase: 'follicular', isPregnant: false, pregnancyWeek: 0, cycleDay: 1 });
+            } else {
+              updateProfile({ cyclePhase: 'none', isPregnant: false, pregnancyWeek: 0, cycleDay: 0 });
+            }
+            router.push('/onboarding/plan');
+          }}
           activeOpacity={0.85}
         >
           <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Build My Plan</Text>
@@ -81,13 +98,14 @@ const styles = StyleSheet.create({
   stepLabel: { fontSize: 12, fontFamily: 'Manrope_600SemiBold' },
   question: { fontSize: 26, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', lineHeight: 34 },
   subtext: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19 },
-  body: { flex: 1, paddingHorizontal: 24, gap: 10, paddingTop: 8 },
+  scroll: { flex: 1 },
+  body: { paddingHorizontal: 24, gap: 10, paddingTop: 8 },
   option: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1.5, gap: 14 },
   optionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   optionText: { flex: 1 },
   optionLabel: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   optionDesc: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
-  footer: { paddingHorizontal: 24, paddingTop: 12 },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12 },
   nextBtn: { height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   nextBtnText: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
 });

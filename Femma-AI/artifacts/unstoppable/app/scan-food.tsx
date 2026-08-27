@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, Image } from 'react-native';
-import { router } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,24 +9,15 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
-import { getLastMealScan, scanMealFromBase64, setLastMealScan, type MealScanResult } from '@/lib/mealScan';
-
-type HistoryItem = {
-  id: string;
-  name: string;
-  score: number;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  time: string;
-};
-
-const DEFAULT_HISTORY: HistoryItem[] = [
-  { id: 's1', name: 'Greek Yogurt', score: 92, calories: 130, protein: 17, carbs: 9, fat: 0, time: '8:32 AM' },
-  { id: 's2', name: 'Avocado Toast', score: 78, calories: 320, protein: 8, carbs: 38, fat: 16, time: 'Yesterday' },
-  { id: 's3', name: 'Protein Bar', score: 65, calories: 210, protein: 20, carbs: 22, fat: 7, time: 'Yesterday' },
-];
+import { useAuth } from '@/context/AuthContext';
+import { getLastMealScan, scanMealFromBase64, setLastMealScan } from '@/lib/mealScan';
+import {
+  formatScanTime,
+  loadMealScans,
+  saveMealScan,
+  todayNutritionTotals,
+  type SavedMealScan,
+} from '@/lib/mealScanHistory';
 
 function ScoreColor(score: number, colors: any) {
   if (score >= 80) return colors.mint;
@@ -44,16 +35,42 @@ function guessMime(uri: string) {
 export default function ScanScreen() {
   const colors = useColors();
   const { profile } = useApp();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
   const [scanning, setScanning] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>(DEFAULT_HISTORY);
+  const [history, setHistory] = useState<SavedMealScan[]>([]);
   const [error, setError] = useState('');
 
   const scanLineAnim = useSharedValue(0);
   const scanLineStyle = useAnimatedStyle(() => ({ transform: [{ translateY: scanLineAnim.value }] }));
+  const todayTotals = useMemo(() => todayNutritionTotals(history), [history]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const rows = await loadMealScans(user?.email);
+        if (!active) return;
+        if (rows.length) {
+          setHistory(rows);
+          return;
+        }
+        const last = getLastMealScan();
+        if (last?.name) {
+          const saved = await saveMealScan(last, user?.email);
+          if (active) setHistory(saved);
+          return;
+        }
+        setHistory([]);
+      })();
+      return () => {
+        active = false;
+      };
+    }, [user?.email])
+  );
 
   const goalHint = useMemo(() => {
     const goal = profile?.goal || '';
@@ -88,21 +105,15 @@ export default function ScanScreen() {
         goal: goalHint,
       });
 
-      const item: HistoryItem = {
-        id: `scan-${Date.now()}`,
-        name: result.name || 'Scanned meal',
-        score: Number(result.score) || 0,
-        calories: Number(result.calories) || 0,
-        protein: Number(result.protein_g) || 0,
-        carbs: Number(result.carbs_g) || 0,
-        fat: Number(result.fat_g) || 0,
-        time: 'Just now',
-      };
-      setHistory((prev) => [item, ...prev].slice(0, 8));
+      const rows = await saveMealScan(result, user?.email);
+      setHistory(rows);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.push('/nutrition/result' as any);
+      router.push('/nutrition/result' as never);
     } catch (err: any) {
-      const message = err?.message || 'Unable to analyze that food photo.';
+      const raw = String(err?.message || '');
+      const message = /failed to send a request|failed to fetch|network/i.test(raw)
+        ? 'Could not reach the meal scanner. Try a smaller photo, or check your connection.'
+        : raw || 'Unable to analyze that food photo.';
       setError(message);
       Alert.alert('Scan failed', message);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -121,7 +132,7 @@ export default function ScanScreen() {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      quality: 0.7,
+      quality: 0.5,
       base64: true,
     });
 
@@ -139,7 +150,7 @@ export default function ScanScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      quality: 0.7,
+      quality: 0.5,
       base64: true,
     });
 
@@ -148,33 +159,14 @@ export default function ScanScreen() {
     }
   };
 
-  const openHistory = (item: HistoryItem) => {
-    const last = getLastMealScan();
-    if (last && last.name === item.name) {
-      router.push('/nutrition/result' as any);
-      return;
-    }
-    // Reconstruct a minimal result for older history rows
-    const fallback: MealScanResult = {
-      name: item.name,
-      score: item.score,
-      calories: item.calories,
-      protein_g: item.protein,
-      carbs_g: item.carbs,
-      fat_g: item.fat,
-      summary: 'Saved from a previous scan.',
-      tips: [],
-      tags: [],
-      ingredients: [],
-      alternatives: [],
-    };
-    setLastMealScan(fallback);
-    router.push('/nutrition/result' as any);
+  const openHistory = (item: SavedMealScan) => {
+    setLastMealScan(item.result);
+    router.push('/nutrition/result' as never);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+      <View style={[styles.header, { paddingTop: topPad }]}>
         <TouchableOpacity
           style={{ marginBottom: 10, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
           onPress={() => router.back()}
@@ -272,10 +264,10 @@ export default function ScanScreen() {
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Today's Nutrition</Text>
               <View style={styles.macroRow}>
                 {[
-                  { label: 'Calories', value: '1,240', unit: '/ 1,800', color: colors.pink },
-                  { label: 'Protein', value: '68g', unit: '/ 120g', color: colors.skyBlue },
-                  { label: 'Carbs', value: '142g', unit: '/ 200g', color: colors.warmYellow },
-                  { label: 'Fat', value: '38g', unit: '/ 60g', color: colors.lavender },
+                  { label: 'Calories', value: String(Math.round(todayTotals.calories)), unit: '/ 1,800', color: colors.pink },
+                  { label: 'Protein', value: `${Math.round(todayTotals.protein)}g`, unit: '/ 120g', color: colors.skyBlue },
+                  { label: 'Carbs', value: `${Math.round(todayTotals.carbs)}g`, unit: '/ 200g', color: colors.warmYellow },
+                  { label: 'Fat', value: `${Math.round(todayTotals.fat)}g`, unit: '/ 60g', color: colors.lavender },
                 ].map((m) => (
                   <View key={m.label} style={styles.macroItem}>
                     <Text style={[styles.macroValue, { color: m.color }]}>{m.value}</Text>
@@ -288,29 +280,35 @@ export default function ScanScreen() {
           </Animated.View>
 
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Scans</Text>
-          {history.map((item, i) => {
-            const sc = ScoreColor(item.score, colors);
-            return (
-              <Animated.View key={item.id} entering={FadeInDown.delay(200 + i * 80).duration(400)}>
-                <TouchableOpacity
-                  style={[styles.historyItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => openHistory(item)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.scoreCircle, { backgroundColor: sc + '20', borderColor: sc + '50' }]}>
-                    <Text style={[styles.scoreNum, { color: sc }]}>{item.score}</Text>
-                  </View>
-                  <View style={styles.historyInfo}>
-                    <Text style={[styles.historyName, { color: colors.foreground }]}>{item.name}</Text>
-                    <Text style={[styles.historyMeta, { color: colors.mutedForeground }]}>
-                      {item.calories} kcal · {item.protein}g protein
-                    </Text>
-                  </View>
-                  <Text style={[styles.historyTime, { color: colors.mutedForeground }]}>{item.time}</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
+          {history.length === 0 ? (
+            <Text style={[styles.empty, { color: colors.mutedForeground }]}>
+              No scans yet. Take or upload a photo to log a real meal.
+            </Text>
+          ) : (
+            history.map((item, i) => {
+              const sc = ScoreColor(Number(item.result.score) || 0, colors);
+              return (
+                <Animated.View key={item.id} entering={FadeInDown.delay(200 + i * 80).duration(400)}>
+                  <TouchableOpacity
+                    style={[styles.historyItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => openHistory(item)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.scoreCircle, { backgroundColor: sc + '20', borderColor: sc + '50' }]}>
+                      <Text style={[styles.scoreNum, { color: sc }]}>{Math.round(Number(item.result.score) || 0)}</Text>
+                    </View>
+                    <View style={styles.historyInfo}>
+                      <Text style={[styles.historyName, { color: colors.foreground }]}>{item.result.name}</Text>
+                      <Text style={[styles.historyMeta, { color: colors.mutedForeground }]}>
+                        {Math.round(Number(item.result.calories) || 0)} kcal · {Math.round(Number(item.result.protein_g) || 0)}g protein
+                      </Text>
+                    </View>
+                    <Text style={[styles.historyTime, { color: colors.mutedForeground }]}>{formatScanTime(item.scannedAt)}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </View>
@@ -350,4 +348,5 @@ const styles = StyleSheet.create({
   historyName: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   historyMeta: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
   historyTime: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
+  empty: { fontSize: 14, fontFamily: 'Manrope_400Regular', lineHeight: 20, paddingVertical: 4 },
 });

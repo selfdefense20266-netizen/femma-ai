@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -8,27 +8,26 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
-
-const SCHEDULE = [
-  { day: 'Mon', items: ['Lower Body Sculpt', 'Food Scan'] },
-  { day: 'Tue', items: ['Stress Relief Yoga', 'Wrist Escape'] },
-  { day: 'Wed', items: ['Full Body Burn', 'Food Scan'] },
-  { day: 'Thu', items: ['Breathwork', 'Self-Defense Drill'] },
-  { day: 'Fri', items: ['Upper Body Sculpt', 'Food Scan'] },
-  { day: 'Sat', items: ['Recovery Yoga', 'Progress Review'] },
-  { day: 'Sun', items: ['Rest Day', 'Meal Prep Planning'] },
-];
+import { useAuth } from '@/context/AuthContext';
+import { planNameForGoal, weekPreview } from '@/lib/dailyMissions';
 
 export default function RevealScreen() {
   const colors = useColors();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, profile } = useApp();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
+  const planName = planNameForGoal(profile.goal);
+  const schedule = weekPreview(profile.goal);
 
   const handleStart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    completeOnboarding({ planName: 'Confidence Builder Plan', journeyDay: 1 });
+    completeOnboarding({
+      planName,
+      journeyDay: 1,
+      name: user ? `${user.firstName} ${user.lastName}`.trim() : '',
+    });
     router.replace('/(tabs)');
   };
 
@@ -43,9 +42,9 @@ export default function RevealScreen() {
                 <Feather name="star" size={14} color={colors.primary} />
                 <Text style={[styles.planBadgeText, { color: colors.primary }]}>Your AI Plan Is Ready</Text>
               </View>
-              <Text style={[styles.heroTitle, { color: colors.foreground }]}>Confidence{'\n'}Builder Plan</Text>
+              <Text style={[styles.heroTitle, { color: colors.foreground }]}>{planName.replace(' Plan', '')}{'\n'}Plan</Text>
               <Text style={[styles.heroSubtitle, { color: colors.mutedForeground }]}>
-                Personalized 8-week transformation journey built just for you.
+                Personalized 8-week journey built around {profile.goal ? profile.goal.toLowerCase() : 'your goals'}.
               </Text>
             </Animated.View>
 
@@ -68,7 +67,7 @@ export default function RevealScreen() {
         {/* Weekly Schedule */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Your Week 1 Schedule</Text>
-          {SCHEDULE.map((day, i) => (
+          {schedule.map((day, i) => (
             <Animated.View key={day.day} entering={FadeInDown.delay(500 + i * 60).duration(400)}>
               <View style={[styles.scheduleRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={[styles.dayBadge, { backgroundColor: i === 0 ? colors.primary : colors.muted }]}>

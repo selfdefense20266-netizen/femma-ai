@@ -8,6 +8,8 @@ import {
   saveMemberProgress,
   type MemberProgressSnapshot,
 } from '@/lib/memberProgress';
+import { buildDailyMissions, mergeMissionCompletion, missionsNeedRefresh, planNameForGoal } from '@/lib/dailyMissions';
+import type { CatalogBundle } from '@/lib/catalog';
 
 export type MissionCategory = 'fitness' | 'yoga' | 'safety' | 'nutrition' | 'recipe';
 export type CyclePhase = 'menstrual' | 'follicular' | 'ovulation' | 'luteal' | 'none';
@@ -23,6 +25,10 @@ export interface Mission {
   completed: boolean;
   accentColor: string;
   icon: string;
+  label?: string;
+  href?: string;
+  courseId?: string;
+  lessonId?: string;
 }
 
 export interface UserProfile {
@@ -30,6 +36,8 @@ export interface UserProfile {
   goal: string;
   fitnessLevel: string;
   environment: string;
+  dailyTime: string;
+  foodPreference: string;
   planName: string;
   journeyDay: number;
   streak: number;
@@ -74,17 +82,19 @@ const DEFAULT_MISSIONS: Mission[] = [
 ];
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: 'Maya',
-  goal: 'Build confidence',
-  fitnessLevel: 'Beginner',
-  environment: 'Home',
-  planName: 'Confidence Builder Plan',
-  journeyDay: 12,
-  streak: 7,
-  level: 2,
-  points: 1450,
-  cyclePhase: 'follicular',
-  cycleDay: 8,
+  name: '',
+  goal: '',
+  fitnessLevel: '',
+  environment: '',
+  dailyTime: '',
+  foodPreference: '',
+  planName: '',
+  journeyDay: 1,
+  streak: 0,
+  level: 1,
+  points: 0,
+  cyclePhase: 'none',
+  cycleDay: 0,
   isPregnant: false,
   pregnancyWeek: 0,
 };
@@ -109,8 +119,9 @@ interface AppContextType {
   lastViewedLessonId: string | null;
   syncReady: boolean;
   updateProfile: (updates: Partial<UserProfile>) => void;
-  completeMission: (id: string) => void;
+  completeMission: (idOrKey: string) => boolean;
   resetMissions: () => void;
+  syncMissions: (catalog?: CatalogBundle) => void;
   completeOnboarding: (profile: Partial<UserProfile>) => void;
   setLessonComplete: (lessonId: string, completed: boolean) => void;
   setLessonWatchProgress: (lessonId: string, percent: number) => void;
@@ -167,6 +178,32 @@ function levelFromPoints(points: number): Level {
   return 1;
 }
 
+function missionKeyAliases(key: string): string[] {
+  const raw = key.trim();
+  const lower = raw.toLowerCase();
+  const aliases = new Set([raw, lower]);
+  if (lower === 'self-defence' || lower === 'self-defense') aliases.add('safety');
+  if (lower === 'safety') {
+    aliases.add('self-defence');
+    aliases.add('self-defense');
+  }
+  if (lower === 'diet-nutrition' || lower === 'nutrition') aliases.add('nutrition');
+  return [...aliases];
+}
+
+function findMissionIndex(missions: Mission[], idOrKey: string): number {
+  const keys = missionKeyAliases(idOrKey);
+  const exact = missions.findIndex(
+    (item) => !item.completed && (keys.includes(item.id) || (item.lessonId && keys.includes(item.lessonId)))
+  );
+  if (exact >= 0) return exact;
+  const byCourse = missions.findIndex(
+    (item) => !item.completed && item.courseId && keys.includes(item.courseId)
+  );
+  if (byCourse >= 0) return byCourse;
+  return missions.findIndex((item) => !item.completed && keys.includes(item.category));
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
@@ -203,14 +240,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     snapshotRef.current = snapshot;
     if (cloudTimerRef.current) clearTimeout(cloudTimerRef.current);
     const run = () => {
-      saveMemberProgress(snapshot).catch(() => undefined);
+      saveMemberProgress(snapshot, user?.email).catch(() => undefined);
     };
     if (immediate) {
       run();
       return;
     }
     cloudTimerRef.current = setTimeout(run, 800);
-  }, []);
+  }, [user?.email]);
 
   const persistAll = useCallback(
     async (snapshot: MemberProgressSnapshot, options?: { immediateCloud?: boolean }) => {
@@ -247,12 +284,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const remote = await fetchMemberProgress();
+        const remote = await fetchMemberProgress(user.email);
         if (!mounted) return;
         const merged = mergeProgressSnapshots(snapshotRef.current, remote);
         applySnapshot(merged);
         await writeLocalSnapshot(merged);
-        await saveMemberProgress(merged);
+        await saveMemberProgress(merged, user.email);
       } catch (error) {
         console.warn('Cloud progress sync failed', error);
       }
@@ -277,10 +314,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void persistAll(next);
   };
 
-  const completeMission = (id: string) => {
-    const updatedMissions = snapshotRef.current.missions.map((m) =>
-      m.id === id ? { ...m, completed: true } : m
+  const completeMission = useCallback((idOrKey: string) => {
+    const index = findMissionIndex(snapshotRef.current.missions, idOrKey);
+    if (index < 0) return false;
+
+    const updatedMissions = snapshotRef.current.missions.map((item, i) =>
+      i === index ? { ...item, completed: true } : item
     );
+    const allDone = updatedMissions.length > 0 && updatedMissions.every((item) => item.completed);
     const newPoints = snapshotRef.current.profile.points + 50;
     const next: MemberProgressSnapshot = {
       ...snapshotRef.current,
@@ -289,20 +330,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...snapshotRef.current.profile,
         points: newPoints,
         level: levelFromPoints(newPoints),
+        streak: allDone ? snapshotRef.current.profile.streak + 1 : snapshotRef.current.profile.streak,
       },
     };
-    void persistAll(next);
-  };
+    void persistAll(next, { immediateCloud: true });
+    return true;
+  }, [persistAll]);
 
   const resetMissions = () => {
-    const next = { ...snapshotRef.current, missions: DEFAULT_MISSIONS };
-    void persistAll(next);
+    const generated = buildDailyMissions(snapshotRef.current.profile);
+    void persistAll({ ...snapshotRef.current, missions: generated });
   };
 
+  const syncMissions = useCallback((catalog?: CatalogBundle) => {
+    const profile = snapshotRef.current.profile;
+    const generated = buildDailyMissions(profile, catalog, snapshotRef.current.completedLessonIds);
+    const nextPlan = profile.goal ? planNameForGoal(profile.goal) : profile.planName;
+    const missionsChanged = missionsNeedRefresh(snapshotRef.current.missions, generated);
+    const planChanged = Boolean(nextPlan && nextPlan !== profile.planName);
+    if (!missionsChanged && !planChanged) return;
+    void persistAll({
+      ...snapshotRef.current,
+      missions: missionsChanged ? mergeMissionCompletion(snapshotRef.current.missions, generated) : snapshotRef.current.missions,
+      profile: planChanged ? { ...profile, planName: nextPlan } : profile,
+    });
+  }, [persistAll]);
+
   const completeOnboarding = (profileUpdates: Partial<UserProfile>) => {
+    const name =
+      profileUpdates.name ||
+      snapshotRef.current.profile.name ||
+      (user ? `${user.firstName} ${user.lastName}`.trim() : '');
+    const profile = {
+      ...snapshotRef.current.profile,
+      ...profileUpdates,
+      name,
+      planName: profileUpdates.planName || planNameForGoal(snapshotRef.current.profile.goal || profileUpdates.goal || ''),
+    };
     const next: MemberProgressSnapshot = {
       ...snapshotRef.current,
-      profile: { ...DEFAULT_PROFILE, ...profileUpdates },
+      profile,
+      missions: buildDailyMissions(profile),
       onboardingCompleted: true,
     };
     void persistAll(next, { immediateCloud: true });
@@ -376,6 +444,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         completeMission,
         resetMissions,
+        syncMissions,
         completeOnboarding,
         setLessonComplete,
         setLessonWatchProgress,

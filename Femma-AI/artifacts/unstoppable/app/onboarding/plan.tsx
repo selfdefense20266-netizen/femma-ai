@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, FadeIn } from 'react-native-reanimated';
@@ -17,7 +17,7 @@ const STEPS = [
 export default function PlanLoadingScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = insets.top + 8;
 
   const [currentStep, setCurrentStep] = React.useState(0);
   const pulseAnim = useSharedValue(1);

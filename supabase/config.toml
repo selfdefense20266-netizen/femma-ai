@@ -2,3 +2,9 @@ project_id = "toxynqgahykpzsbsmpqz"
 
 [functions.app-signup]
 verify_jwt = false
+
+[functions.openai-meal-plan]
+verify_jwt = false
+
+[functions.openai-meal-scan]
+verify_jwt = false

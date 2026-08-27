@@ -13,7 +13,7 @@ import { useCatalog } from '@/hooks/useCatalog';
 import { getCourseLessons, getVideoCategory, getVideoCourse } from '@/lib/catalog';
 
 const BADGES: BadgeData[] = [
-  { id: 'b1', title: '7 Day Streak', description: '7 days in a row', icon: 'flame', color: '#FFD88A', earned: true, earnedDate: 'Aug 1' },
+  { id: 'b1', title: '7 Day Streak', description: '7 days in a row', icon: 'zap', color: '#FFD88A', earned: true, earnedDate: 'Aug 1' },
   { id: 'b2', title: 'First Workout', description: 'First session done', icon: 'zap', color: '#F26BB5', earned: true, earnedDate: 'Jul 26' },
   { id: 'b3', title: 'Yoga Flow', description: '5 yoga sessions', icon: 'wind', color: '#B9A7F2', earned: true, earnedDate: 'Jul 30' },
   { id: 'b4', title: 'Safety Shield', description: 'Completed safety level 1', icon: 'shield', color: '#77CDED', earned: false },
@@ -31,8 +31,8 @@ export default function ProgressScreen() {
   const { profile, completedLessonIds } = useApp();
   const { data: catalog, isLoading } = useCatalog();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
-  const botPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = insets.top + 8;
+  const botPad = Math.max(insets.bottom, 12);
 
   const levelName = LEVEL_NAMES[profile.level];
   const levelColor = LEVEL_COLORS[profile.level];
@@ -67,7 +67,7 @@ export default function ProgressScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 100 }}>
-        <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+        <View style={[styles.header, { paddingTop: topPad }]}>
           <Text style={[styles.title, { color: colors.foreground }]}>Progress</Text>
         </View>
 
