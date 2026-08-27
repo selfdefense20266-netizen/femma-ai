@@ -6,9 +6,10 @@ import {
   fetchMemberProgress,
   mergeProgressSnapshots,
   saveMemberProgress,
+  type CoachChatHistoryMessage,
   type MemberProgressSnapshot,
 } from '@/lib/memberProgress';
-import { buildDailyMissions, mergeMissionCompletion, missionsNeedRefresh, planNameForGoal } from '@/lib/dailyMissions';
+import { buildDailyMissions, mergeMissionCompletion, missionsNeedRefresh, planNameForGoal, buildPersonalizedPlan, type PersonalizedPlan } from '@/lib/dailyMissions';
 import type { CatalogBundle } from '@/lib/catalog';
 
 export type MissionCategory = 'fitness' | 'yoga' | 'safety' | 'nutrition' | 'recipe';
@@ -58,11 +59,20 @@ export const LEVEL_NAMES: Record<Level, string> = {
 };
 
 export const LEVEL_COLORS: Record<Level, string> = {
-  1: colors.light.mint,
+  1: '#2FA88F',
   2: colors.light.skyBlue,
   3: colors.light.lavender,
   4: colors.light.pink,
   5: colors.light.warmYellow,
+};
+
+/** Card gradients — saturated enough for white text on Progress level hero. */
+export const LEVEL_GRADIENTS: Record<Level, readonly [string, string]> = {
+  1: ['#7EE8CC', '#239B7A'],
+  2: ['#9AE2F7', '#3D9FD4'],
+  3: ['#D4C8FF', '#8B73E8'],
+  4: ['#FF8FD0', '#D94A9A'],
+  5: ['#FFE5A8', '#E5A020'],
 };
 
 export const CYCLE_PHASE_INFO: Record<CyclePhase, { name: string; color: string; insight: string }> = {
@@ -107,6 +117,7 @@ const STORAGE_KEYS = {
   courses: 'saved_video_courses',
   lastLesson: 'last_viewed_video_lesson',
   watch: 'lesson_watch_progress',
+  coach: 'coach_chat_history',
 } as const;
 
 interface AppContextType {
@@ -117,7 +128,10 @@ interface AppContextType {
   lessonWatchProgress: Record<string, number>;
   savedCourseIds: string[];
   lastViewedLessonId: string | null;
+  coachChatHistory: CoachChatHistoryMessage[];
   syncReady: boolean;
+  stagedPlan: PersonalizedPlan | null;
+  buildOnboardingPlan: () => Promise<PersonalizedPlan>;
   updateProfile: (updates: Partial<UserProfile>) => void;
   completeMission: (idOrKey: string) => boolean;
   resetMissions: () => void;
@@ -127,6 +141,7 @@ interface AppContextType {
   setLessonWatchProgress: (lessonId: string, percent: number) => void;
   toggleSavedCourse: (courseId: string) => void;
   setLastViewedLesson: (lessonId: string) => void;
+  saveCoachChatHistory: (history: CoachChatHistoryMessage[]) => void;
   missionsCompleted: number;
   totalMissions: number;
 }
@@ -144,11 +159,12 @@ async function writeLocalSnapshot(snapshot: MemberProgressSnapshot) {
     snapshot.lastViewedLessonId
       ? AsyncStorage.setItem(STORAGE_KEYS.lastLesson, snapshot.lastViewedLessonId)
       : AsyncStorage.removeItem(STORAGE_KEYS.lastLesson),
+    AsyncStorage.setItem(STORAGE_KEYS.coach, JSON.stringify(snapshot.coachChatHistory)),
   ]);
 }
 
 async function readLocalSnapshot(): Promise<MemberProgressSnapshot> {
-  const [savedProfile, savedMissions, completed, savedLessons, savedCourses, lastLesson, watchProgress] =
+  const [savedProfile, savedMissions, completed, savedLessons, savedCourses, lastLesson, watchProgress, coachHistory] =
     await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.profile),
       AsyncStorage.getItem(STORAGE_KEYS.missions),
@@ -157,6 +173,7 @@ async function readLocalSnapshot(): Promise<MemberProgressSnapshot> {
       AsyncStorage.getItem(STORAGE_KEYS.courses),
       AsyncStorage.getItem(STORAGE_KEYS.lastLesson),
       AsyncStorage.getItem(STORAGE_KEYS.watch),
+      AsyncStorage.getItem(STORAGE_KEYS.coach),
     ]);
 
   return {
@@ -167,6 +184,7 @@ async function readLocalSnapshot(): Promise<MemberProgressSnapshot> {
     savedCourseIds: savedCourses ? JSON.parse(savedCourses) : [],
     lastViewedLessonId: lastLesson || null,
     lessonWatchProgress: watchProgress ? JSON.parse(watchProgress) : {},
+    coachChatHistory: coachHistory ? JSON.parse(coachHistory) : [],
   };
 }
 
@@ -213,7 +231,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lessonWatchProgress, setLessonWatchProgressState] = useState<Record<string, number>>({});
   const [savedCourseIds, setSavedCourseIds] = useState<string[]>([]);
   const [lastViewedLessonId, setLastViewedLessonIdState] = useState<string | null>(null);
+  const [coachChatHistory, setCoachChatHistory] = useState<CoachChatHistoryMessage[]>([]);
   const [syncReady, setSyncReady] = useState(false);
+  const [stagedPlan, setStagedPlan] = useState<PersonalizedPlan | null>(null);
   const cloudTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const snapshotRef = useRef<MemberProgressSnapshot>({
     profile: DEFAULT_PROFILE,
@@ -223,6 +243,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     lessonWatchProgress: {},
     savedCourseIds: [],
     lastViewedLessonId: null,
+    coachChatHistory: [],
   });
 
   const applySnapshot = useCallback((snapshot: MemberProgressSnapshot) => {
@@ -234,6 +255,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLessonWatchProgressState(snapshot.lessonWatchProgress);
     setSavedCourseIds(snapshot.savedCourseIds);
     setLastViewedLessonIdState(snapshot.lastViewedLessonId);
+    setCoachChatHistory(snapshot.coachChatHistory);
   }, []);
 
   const queueCloudSave = useCallback((snapshot: MemberProgressSnapshot, immediate = false) => {
@@ -356,6 +378,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, [persistAll]);
 
+  const buildOnboardingPlan = useCallback(async () => {
+    const { fetchCatalog } = await import('@/lib/catalog');
+    const catalog = await fetchCatalog();
+    const plan = buildPersonalizedPlan(snapshotRef.current.profile, catalog);
+    setStagedPlan(plan);
+    return plan;
+  }, []);
+
   const completeOnboarding = (profileUpdates: Partial<UserProfile>) => {
     const name =
       profileUpdates.name ||
@@ -365,14 +395,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ...snapshotRef.current.profile,
       ...profileUpdates,
       name,
-      planName: profileUpdates.planName || planNameForGoal(snapshotRef.current.profile.goal || profileUpdates.goal || ''),
+      planName: stagedPlan?.planName || profileUpdates.planName || planNameForGoal(snapshotRef.current.profile.goal || profileUpdates.goal || ''),
     };
     const next: MemberProgressSnapshot = {
       ...snapshotRef.current,
       profile,
-      missions: buildDailyMissions(profile),
+      missions: stagedPlan?.missions ?? buildDailyMissions(profile),
       onboardingCompleted: true,
     };
+    setStagedPlan(null);
     void persistAll(next, { immediateCloud: true });
   };
 
@@ -427,6 +458,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void persistAll({ ...snapshotRef.current, lastViewedLessonId: lessonId });
   };
 
+  const saveCoachChatHistory = useCallback(
+    (history: CoachChatHistoryMessage[]) => {
+      const capped = history.slice(-100);
+      void persistAll({ ...snapshotRef.current, coachChatHistory: capped }, { immediateCloud: true });
+    },
+    [persistAll]
+  );
+
   const missionsCompleted = missions.filter((m) => m.completed).length;
   const totalMissions = missions.length;
 
@@ -440,7 +479,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         lessonWatchProgress,
         savedCourseIds,
         lastViewedLessonId,
+        coachChatHistory,
         syncReady,
+        stagedPlan,
+        buildOnboardingPlan,
         updateProfile,
         completeMission,
         resetMissions,
@@ -450,6 +492,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setLessonWatchProgress,
         toggleSavedCourse,
         setLastViewedLesson,
+        saveCoachChatHistory,
         missionsCompleted,
         totalMissions,
       }}

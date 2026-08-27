@@ -1,41 +1,68 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
+import { useApp } from '@/context/AppContext';
 
 const STEPS = [
-  'Analyzing your goals',
-  'Building your workout schedule',
-  'Calibrating nutrition targets',
-  'Personalizing your cycle plan',
-  'Generating your AI coach',
+  'Loading your course library',
+  'Matching courses to your goal',
+  'Selecting lessons for week 1',
+  'Building today\'s missions',
+  'Finalizing your plan',
 ];
+
+const MIN_STEP_MS = 650;
 
 export default function PlanLoadingScreen() {
   const colors = useColors();
+  const { buildOnboardingPlan } = useApp();
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
 
-  const [currentStep, setCurrentStep] = React.useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState('');
   const pulseAnim = useSharedValue(1);
 
   useEffect(() => {
     pulseAnim.value = withRepeat(withSequence(withTiming(1.08, { duration: 800 }), withTiming(1, { duration: 800 })), -1);
 
-    const intervals: ReturnType<typeof setTimeout>[] = [];
-    STEPS.forEach((_, i) => {
-      intervals.push(setTimeout(() => setCurrentStep(i), i * 900));
-    });
-    const nav = setTimeout(() => router.replace('/onboarding/reveal'), STEPS.length * 900 + 400);
+    let cancelled = false;
+    const startedAt = Date.now();
+
+    const advanceTo = async (step: number) => {
+      const elapsed = Date.now() - startedAt;
+      const minForStep = (step + 1) * MIN_STEP_MS;
+      if (elapsed < minForStep) {
+        await new Promise((resolve) => setTimeout(resolve, minForStep - elapsed));
+      }
+      if (!cancelled) setCurrentStep(step);
+    };
+
+    (async () => {
+      try {
+        await advanceTo(0);
+        await advanceTo(1);
+        await advanceTo(2);
+        const planPromise = buildOnboardingPlan();
+        await advanceTo(3);
+        await planPromise;
+        await advanceTo(4);
+        if (!cancelled) router.replace('/onboarding/reveal');
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Could not build your plan');
+        }
+      }
+    })();
 
     return () => {
-      intervals.forEach(clearTimeout);
-      clearTimeout(nav);
+      cancelled = true;
     };
-  }, []);
+  }, [buildOnboardingPlan, pulseAnim]);
 
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulseAnim.value }] }));
 
@@ -56,16 +83,16 @@ export default function PlanLoadingScreen() {
       <View style={styles.textSection}>
         <Text style={[styles.headline, { color: colors.foreground }]}>Building your plan</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>
-          Your personalized transformation journey is almost ready.
+          {error || 'Pulling live courses and lessons from your Fema AI catalog.'}
         </Text>
       </View>
 
       <View style={styles.stepsList}>
         {STEPS.map((step, i) => (
-          <Animated.View key={step} entering={FadeIn.delay(i * 900).duration(400)} style={[styles.stepRow, { opacity: i <= currentStep ? 1 : 0.35 }]}>
+          <Animated.View key={step} entering={FadeIn.delay(i * 120).duration(400)} style={[styles.stepRow, { opacity: i <= currentStep ? 1 : 0.35 }]}>
             <View style={[styles.stepDot, { backgroundColor: i < currentStep ? colors.primary : i === currentStep ? colors.primary : colors.border }]}>
               {i < currentStep && <Text style={styles.checkMark}>✓</Text>}
-              {i === currentStep && <View style={[styles.activeDot, { backgroundColor: '#FFFFFF' }]} />}
+              {i === currentStep && !error && <View style={[styles.activeDot, { backgroundColor: '#FFFFFF' }]} />}
             </View>
             <Text style={[styles.stepText, { color: i <= currentStep ? colors.foreground : colors.mutedForeground }]}>{step}</Text>
           </Animated.View>
@@ -90,5 +117,5 @@ const styles = StyleSheet.create({
   stepDot: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   activeDot: { width: 10, height: 10, borderRadius: 5 },
   checkMark: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
-  stepText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
+  stepText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold', flex: 1 },
 });

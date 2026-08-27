@@ -1,6 +1,13 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Mission, UserProfile } from '@/context/AppContext';
 
+export type CoachChatHistoryMessage = {
+  id: string;
+  role: 'user' | 'coach';
+  text: string;
+  createdAt?: string;
+};
+
 export type MemberProgressSnapshot = {
   profile: UserProfile;
   onboardingCompleted: boolean;
@@ -9,6 +16,7 @@ export type MemberProgressSnapshot = {
   savedCourseIds: string[];
   lastViewedLessonId: string | null;
   missions: Mission[];
+  coachChatHistory: CoachChatHistoryMessage[];
 };
 
 type MemberProgressRow = {
@@ -20,6 +28,7 @@ type MemberProgressRow = {
   saved_course_ids: string[] | null;
   last_viewed_lesson_id: string | null;
   daily_missions: Mission[] | null;
+  coach_chat_history: CoachChatHistoryMessage[] | null;
   updated_at?: string;
 };
 
@@ -36,6 +45,49 @@ function asWatchMap(value: unknown): Record<string, number> {
     if (Number.isFinite(n) && n > 0) out[key] = Math.max(0, Math.min(100, Math.round(n)));
   }
   return out;
+}
+
+function asCoachHistory(value: unknown): CoachChatHistoryMessage[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      const id = String(row.id || '').trim();
+      const text = String(row.text || '').trim();
+      const role = row.role === 'user' ? 'user' : row.role === 'coach' ? 'coach' : null;
+      if (!id || !text || !role) return null;
+      return {
+        id,
+        role,
+        text,
+        createdAt: typeof row.createdAt === 'string' ? row.createdAt : undefined,
+      } satisfies CoachChatHistoryMessage;
+    })
+    .filter((item): item is CoachChatHistoryMessage => Boolean(item))
+    .slice(-100);
+}
+
+function mergeCoachHistory(
+  local: CoachChatHistoryMessage[],
+  remote: CoachChatHistoryMessage[]
+): CoachChatHistoryMessage[] {
+  if (!remote.length) return local.slice(-100);
+  if (!local.length) return remote.slice(-100);
+
+  const byId = new Map<string, CoachChatHistoryMessage>();
+  for (const message of [...remote, ...local]) {
+    byId.set(message.id, message);
+  }
+
+  return Array.from(byId.values())
+    .sort((a, b) => {
+      const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
+      const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
+      if (aTime !== bTime) return aTime - bTime;
+      return a.id.localeCompare(b.id);
+    })
+    .slice(-100);
 }
 
 export async function resolveMemberId(emailHint?: string): Promise<string | null> {
@@ -81,6 +133,7 @@ export async function fetchMemberProgress(emailHint?: string): Promise<MemberPro
     savedCourseIds: asStringArray(row.saved_course_ids),
     lastViewedLessonId: row.last_viewed_lesson_id || null,
     missions: Array.isArray(row.daily_missions) ? (row.daily_missions as Mission[]) : [],
+    coachChatHistory: asCoachHistory(row.coach_chat_history),
   };
 }
 
@@ -181,6 +234,7 @@ export function mergeProgressSnapshots(
     savedCourseIds: mergeStringIds(local.savedCourseIds, remote.savedCourseIds),
     lastViewedLessonId: remote.lastViewedLessonId || local.lastViewedLessonId,
     missions: mergeMissions(local.missions, remote.missions),
+    coachChatHistory: mergeCoachHistory(local.coachChatHistory, remote.coachChatHistory),
   };
 }
 
@@ -246,6 +300,7 @@ export async function saveMemberProgress(
     saved_course_ids: snapshot.savedCourseIds,
     last_viewed_lesson_id: snapshot.lastViewedLessonId,
     daily_missions: snapshot.missions,
+    coach_chat_history: snapshot.coachChatHistory,
     updated_at: new Date().toISOString(),
   };
 

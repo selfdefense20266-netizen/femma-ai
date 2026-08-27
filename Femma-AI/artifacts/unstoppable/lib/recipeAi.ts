@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/
 import type { UserProfile } from '@/context/AppContext';
 import { detectFocus } from '@/lib/dailyMissions';
 import { addGeneratedRecipes, hydrateGeneratedRecipes, type Recipe } from '@/data/recipes';
+import { attachRecipeImages } from '@/lib/recipeImages';
 
 const GRADIENTS: [string, string][] = [
   ['#F26BB5', '#B9A7F2'],
@@ -98,8 +99,6 @@ export async function generateAiRecipes(profile: UserProfile): Promise<Recipe[]>
 
   await hydrateGeneratedRecipes();
   const focus = detectFocus(profile.goal, profile.isPregnant ? 'pregnancy' : '');
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token || supabaseAnonKey;
   const goalLabel = profile.isPregnant
     ? `pregnancy week ${profile.pregnancyWeek || ''} ${profile.goal || focus}`.trim()
     : profile.goal || focus;
@@ -117,40 +116,55 @@ export async function generateAiRecipes(profile: UserProfile): Promise<Recipe[]>
     days: 1,
   };
 
-  const post = async (auth: string) =>
-    fetch(`${supabaseUrl}/functions/v1/openai-meal-plan`, {
+  const post = async (token: string) => {
+    const response = await fetch(`${supabaseUrl}/functions/v1/openai-meal-plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth}`,
+        Authorization: `Bearer ${token}`,
         apikey: supabaseAnonKey,
       },
       body: JSON.stringify(payload),
     });
 
-  let response = await post(token);
-  if (response.status === 401 && token !== supabaseAnonKey) {
-    response = await post(supabaseAnonKey);
+    const text = await response.text();
+    let json: {
+      error?: string;
+      recipes?: AiRecipe[];
+      plan?: { recipes?: AiRecipe[]; days?: Array<{ meals?: Array<AiRecipe & { name?: string }> }> };
+    } = {};
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      json = { error: text || 'Recipe generate failed' };
+    }
+    return { response, json };
+  };
+
+  let token = supabaseAnonKey;
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData.session?.access_token) {
+    token = sessionData.session.access_token;
   }
 
-  const text = await response.text();
-  let json: {
-    error?: string;
-    recipes?: AiRecipe[];
-    plan?: { recipes?: AiRecipe[]; days?: Array<{ meals?: Array<AiRecipe & { name?: string }> }> };
-  } = {};
-  try {
-    json = text ? JSON.parse(text) : {};
-  } catch {
-    throw new Error('AI recipe response was invalid.');
+  let result = await post(token);
+  if (result.response.status === 401 && token !== supabaseAnonKey) {
+    result = await post(supabaseAnonKey);
   }
+
+  const { response, json } = result;
   if (!response.ok || json.error) {
-    throw new Error(json.error || `Recipe generate failed (${response.status})`);
+    const message =
+      response.status === 401
+        ? 'Recipe AI is not authorized. Reload the app and try again.'
+        : json.error || `Recipe generate failed (${response.status})`;
+    throw new Error(message);
   }
 
   const rawList = json.recipes || json.plan?.recipes || recipesFromPlan(json.plan);
-  const recipes = rawList.map(mapAiRecipe).filter((item): item is Recipe => Boolean(item));
+  let recipes = rawList.map(mapAiRecipe).filter((item): item is Recipe => Boolean(item));
   if (!recipes.length) throw new Error('AI did not return usable recipes.');
+  recipes = await attachRecipeImages(recipes);
   if (profile.isPregnant || focus === 'pregnancy') {
     for (const recipe of recipes) {
       if (!recipe.tags.includes('Pregnancy')) recipe.tags.unshift('Pregnancy');

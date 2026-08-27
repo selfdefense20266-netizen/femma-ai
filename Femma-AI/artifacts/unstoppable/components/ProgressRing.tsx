@@ -10,11 +10,25 @@ interface Props {
   label?: string;
   sublabel?: string;
   color?: string;
+  trackColor?: string;
+  labelColor?: string;
+  sublabelColor?: string;
 }
 
-export default function ProgressRing({ progress, size = 120, strokeWidth = 10, label, sublabel, color }: Props) {
+export default function ProgressRing({
+  progress,
+  size = 120,
+  strokeWidth = 10,
+  label,
+  sublabel,
+  color,
+  trackColor,
+  labelColor,
+  sublabelColor,
+}: Props) {
   const colors = useColors();
   const ringColor = color ?? colors.primary;
+  const ringTrack = trackColor ?? colors.border;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - Math.min(1, Math.max(0, progress)));
@@ -22,16 +36,14 @@ export default function ProgressRing({ progress, size = 120, strokeWidth = 10, l
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size} style={styles.svg}>
-        {/* Track */}
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={colors.border}
+          stroke={ringTrack}
           strokeWidth={strokeWidth}
           fill="none"
         />
-        {/* Progress */}
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -47,8 +59,12 @@ export default function ProgressRing({ progress, size = 120, strokeWidth = 10, l
       </Svg>
       {(label || sublabel) && (
         <View style={styles.labelContainer}>
-          {label && <Text style={[styles.label, { color: colors.foreground }]}>{label}</Text>}
-          {sublabel && <Text style={[styles.sublabel, { color: colors.mutedForeground }]}>{sublabel}</Text>}
+          {label ? (
+            <Text style={[styles.label, { color: labelColor ?? colors.foreground }]}>{label}</Text>
+          ) : null}
+          {sublabel ? (
+            <Text style={[styles.sublabel, { color: sublabelColor ?? colors.mutedForeground }]}>{sublabel}</Text>
+          ) : null}
         </View>
       )}
     </View>

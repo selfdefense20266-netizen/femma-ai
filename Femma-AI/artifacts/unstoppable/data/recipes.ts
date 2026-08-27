@@ -16,6 +16,7 @@ export type Recipe = {
   rating: number;
   tags: string[];
   gradient: [string, string];
+  imageUrl?: string;
   ingredients: string[];
   steps: string[];
   source?: 'catalog' | 'ai';

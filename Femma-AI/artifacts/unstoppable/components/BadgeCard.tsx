@@ -25,12 +25,14 @@ export default function BadgeCard({ badge }: Props) {
       <View style={[styles.iconCircle, { backgroundColor: badge.earned ? badge.color + '20' : colors.muted }]}>
         <Feather name={badge.icon as any} size={22} color={badge.earned ? badge.color : colors.mutedForeground} />
       </View>
-      <Text style={[styles.title, { color: badge.earned ? colors.foreground : colors.mutedForeground }]} numberOfLines={1}>{badge.title}</Text>
-      {badge.earned && badge.earnedDate && (
-        <Text style={[styles.date, { color: colors.mutedForeground }]}>{badge.earnedDate}</Text>
-      )}
+      <Text style={[styles.title, { color: badge.earned ? colors.foreground : colors.mutedForeground }]} numberOfLines={2}>
+        {badge.title}
+      </Text>
+      <Text style={[styles.desc, { color: colors.mutedForeground }]} numberOfLines={2}>
+        {badge.description}
+      </Text>
       {!badge.earned && (
-        <Text style={[styles.date, { color: colors.mutedForeground }]}>Locked</Text>
+        <Text style={[styles.locked, { color: badge.color }]}>In progress</Text>
       )}
     </View>
   );
@@ -38,12 +40,13 @@ export default function BadgeCard({ badge }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 90,
+    width: 118,
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 18,
     borderWidth: 1,
     gap: 6,
+    minHeight: 148,
   },
   iconCircle: {
     width: 48,
@@ -53,14 +56,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 11,
-    fontWeight: '600',
-    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     textAlign: 'center',
+    lineHeight: 16,
   },
-  date: {
+  desc: {
     fontSize: 10,
     fontFamily: 'Manrope_400Regular',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  locked: {
+    fontSize: 10,
+    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     textAlign: 'center',
   },
 });

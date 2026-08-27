@@ -421,10 +421,14 @@ export function mergeMissionCompletion(current: Mission[], next: Mission[]): Mis
     const byLesson = missionItem.lessonId
       ? current.find((item) => item.lessonId === missionItem.lessonId)
       : undefined;
+    const byCategory = current.find(
+      (item) => item.category === missionItem.category && item.completed
+    );
     const byIndex = current[index];
     const completed = Boolean(
       byId?.completed ||
         byLesson?.completed ||
+        byCategory?.completed ||
         (byIndex && byIndex.category === missionItem.category && byIndex.completed && byIndex.id === missionItem.id)
     );
     return { ...missionItem, completed };
@@ -452,4 +456,83 @@ export function weekPreview(goal: string): { day: string; items: string[] }[] {
     { day: 'Sat', items: ['Mobility & breath', 'Progress review'] },
     { day: 'Sun', items: ['Rest day', 'Meal prep'] },
   ];
+}
+
+export type PersonalizedPlan = {
+  planName: string;
+  focusLabel: string;
+  missions: Mission[];
+  weekSchedule: { day: string; items: string[] }[];
+  stats: {
+    missionsPerDay: number;
+    weeks: number;
+    focusAreas: number;
+    dailyMinutes: number;
+  };
+  courseNames: string[];
+  hasCatalogLessons: boolean;
+};
+
+function shortenMissionTitle(title: string, max = 44) {
+  return title.length > max ? `${title.slice(0, max - 1)}…` : title;
+}
+
+/** Week 1 preview built from the same missions the user will see on Today. */
+export function weekPreviewFromMissions(missions: Mission[]): { day: string; items: string[] }[] {
+  const training = missions.filter((m) => m.category === 'fitness' || m.category === 'safety');
+  const yoga = missions.find((m) => m.category === 'yoga');
+  const nutrition = missions.find((m) => m.category === 'nutrition');
+  const recipe = missions.find((m) => m.category === 'recipe');
+  const t0 = training[0];
+  const t1 = training[1] || training[0];
+
+  const row = (items: (Mission | string | undefined)[]) =>
+    items
+      .filter(Boolean)
+      .map((item) => (typeof item === 'string' ? item : shortenMissionTitle(item.title)));
+
+  return [
+    { day: 'Mon', items: row([t0, nutrition]) },
+    { day: 'Tue', items: row([t1, yoga]) },
+    { day: 'Wed', items: row([t0, nutrition]) },
+    { day: 'Thu', items: row([yoga, t1]) },
+    { day: 'Fri', items: row([t0, nutrition]) },
+    { day: 'Sat', items: row([yoga, recipe]) },
+    { day: 'Sun', items: row(['Rest & recovery', recipe ? recipe.title : 'Light meal prep']) },
+  ];
+}
+
+/** Builds plan + missions from onboarding answers and the live Supabase catalog (no OpenAI). */
+export function buildPersonalizedPlan(profile: UserProfile, catalog?: CatalogBundle): PersonalizedPlan {
+  const missions = buildDailyMissions(profile, catalog);
+  const planName = planNameForGoal(profile.goal);
+  const focus = detectFocus(profile.goal, profile.isPregnant ? 'pregnancy' : '');
+  const meta = FOCUS_META[focus];
+
+  const courseNames = [
+    ...new Set(
+      missions
+        .map((m) => (m.courseId ? catalog?.courses.find((c) => c.id === m.courseId)?.title : undefined))
+        .filter(Boolean) as string[]
+    ),
+  ];
+
+  const hasCatalogLessons = missions.some((m) => Boolean(m.lessonId));
+  const categories = new Set(missions.map((m) => m.category));
+  const dailyMinutes = missions.reduce((sum, m) => sum + (m.duration || 0), 0);
+
+  return {
+    planName,
+    focusLabel: meta.label,
+    missions,
+    weekSchedule: weekPreviewFromMissions(missions),
+    stats: {
+      missionsPerDay: missions.length,
+      weeks: 8,
+      focusAreas: categories.size,
+      dailyMinutes,
+    },
+    courseNames,
+    hasCatalogLessons,
+  };
 }

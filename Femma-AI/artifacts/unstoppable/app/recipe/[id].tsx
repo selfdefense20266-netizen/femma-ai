@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
+import RecipeImage from '@/components/RecipeImage';
 import { getRecipe, hydrateGeneratedRecipes, type Recipe } from '@/data/recipes';
 
 export default function RecipeDetailScreen() {
@@ -124,7 +125,9 @@ export default function RecipeDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 100 }}>
-        <LinearGradient colors={recipe.gradient} style={[styles.hero, { paddingTop: topPad }]}>
+        <View style={[styles.hero, { paddingTop: topPad }]}>
+          <RecipeImage recipe={recipe} style={styles.heroImage} iconSize={40} />
+          <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.55)']} style={StyleSheet.absoluteFill} />
           <View style={styles.heroHeader}>
             <TouchableOpacity onPress={() => router.back()}>
               <Feather name="arrow-left" size={22} color="#FFFFFF" />
@@ -132,9 +135,6 @@ export default function RecipeDetailScreen() {
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
               <Feather name="bookmark" size={18} color="#FFFFFF" />
             </TouchableOpacity>
-          </View>
-          <View style={styles.heroIcon}>
-            <Feather name="book-open" size={40} color="rgba(255,255,255,0.5)" />
           </View>
           <Text style={styles.heroTitle}>{recipe.title}</Text>
           <View style={styles.heroMeta}>
@@ -149,7 +149,7 @@ export default function RecipeDetailScreen() {
               </View>
             ))}
           </View>
-        </LinearGradient>
+        </View>
 
         <View style={styles.body}>
           <View style={[styles.macroRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -225,12 +225,13 @@ const styles = StyleSheet.create({
   cookNavBtn: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
   cookNextBtn: { flex: 1, height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   cookNextText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  hero: { paddingHorizontal: 22, paddingBottom: 28 },
-  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  hero: { paddingHorizontal: 22, paddingBottom: 28, minHeight: 260, overflow: 'hidden', justifyContent: 'flex-end' },
+  heroImage: { ...StyleSheet.absoluteFillObject },
+  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, zIndex: 2 },
   saveBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   heroIcon: { justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  heroTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', marginBottom: 12 },
-  heroMeta: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
+  heroTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', marginBottom: 12, zIndex: 2 },
+  heroMeta: { flexDirection: 'row', gap: 16, flexWrap: 'wrap', zIndex: 2 },
   heroMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   heroMetaText: { color: 'rgba(255,255,255,0.9)', fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
   body: { padding: 22, gap: 16 },

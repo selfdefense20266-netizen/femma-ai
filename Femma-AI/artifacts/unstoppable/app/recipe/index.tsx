@@ -11,7 +11,6 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
@@ -24,6 +23,7 @@ import {
   recommendedRecipeFilter,
   recipesForProfile,
 } from '@/data/recipes';
+import RecipeImage from '@/components/RecipeImage';
 import { generateAiRecipes } from '@/lib/recipeAi';
 
 export default function RecipeBrowse() {
@@ -141,9 +141,7 @@ export default function RecipeBrowse() {
                   }}
                   activeOpacity={0.85}
                 >
-                  <LinearGradient colors={r.gradient} style={styles.recipeImg}>
-                    <Feather name="book-open" size={28} color="rgba(255,255,255,0.7)" />
-                  </LinearGradient>
+                  <RecipeImage recipe={r} style={styles.recipeImg} iconSize={28} />
                   <View style={styles.recipeInfo}>
                     <Text style={[styles.recipeTitle, { color: colors.foreground }]} numberOfLines={2}>
                       {r.title}

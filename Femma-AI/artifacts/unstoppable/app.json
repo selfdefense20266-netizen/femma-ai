@@ -18,7 +18,8 @@
       "bundleIdentifier": "com.femmaai.app"
     },
     "android": {
-      "package": "com.femmaai.app"
+      "package": "com.femmaai.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/images/icon.png"
