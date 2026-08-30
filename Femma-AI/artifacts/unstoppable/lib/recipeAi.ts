@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import type { UserProfile } from '@/context/AppContext';
 import { detectFocus } from '@/lib/dailyMissions';
+import { calorieTarget, goalLabels, ONBOARDING_GOALS, recipeCoachNotes, recipeFitsDiet } from '@/lib/nutritionPlan';
 import { addGeneratedRecipes, hydrateGeneratedRecipes, type Recipe } from '@/data/recipes';
 import { attachRecipeImages } from '@/lib/recipeImages';
 
@@ -92,27 +93,48 @@ function recipesFromPlan(plan: { days?: Array<{ meals?: Array<AiRecipe & { name?
   });
 }
 
-export async function generateAiRecipes(profile: UserProfile): Promise<Recipe[]> {
+export type AiRecipeRequest = {
+  goalId?: string;
+  foodPreference?: string;
+};
+
+export async function generateAiRecipes(profile: UserProfile, request?: AiRecipeRequest): Promise<Recipe[]> {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase is not configured.');
   }
 
   await hydrateGeneratedRecipes();
-  const focus = detectFocus(profile.goal, profile.isPregnant ? 'pregnancy' : '');
-  const goalLabel = profile.isPregnant
-    ? `pregnancy week ${profile.pregnancyWeek || ''} ${profile.goal || focus}`.trim()
-    : profile.goal || focus;
+  const goalId = request?.goalId || '';
+  const foodPreference = request?.foodPreference || profile.foodPreference;
+  const askedGoal = goalId
+    ? ONBOARDING_GOALS.find((item) => item.id === goalId)?.label || goalId
+    : '';
+  const focus = detectFocus(askedGoal || profile.goal, profile.isPregnant ? 'pregnancy' : '');
+  const goalLabel = askedGoal
+    || (profile.isPregnant
+      ? `pregnancy week ${profile.pregnancyWeek || ''} ${goalLabels(profile.goal).join(', ')}`.trim()
+      : goalLabels(profile.goal).join(', ') || focus);
+  const workingProfile = {
+    ...profile,
+    goal: goalId || profile.goal,
+    foodPreference,
+  };
   const payload = {
     mode: 'recipes',
     goal: goalLabel,
     cyclePhase: profile.cyclePhase || 'none',
     preferences: [
-      profile.foodPreference,
+      foodPreference,
+      `can eat: ${foodPreference || 'Eat everything'}`,
+      askedGoal ? `User picked this training: ${askedGoal}. Build recipes specifically for that.` : '',
+      ...recipeCoachNotes(workingProfile),
       profile.fitnessLevel,
-      profile.isPregnant ? 'pregnancy-safe' : '',
+      profile.isPregnant || goalId === 'pregnancy' ? 'pregnancy-safe food only' : '',
+      profile.planDurationWeeks ? `${profile.planDurationWeeks} week plan` : '',
+      'Return 4 complete recipes with ingredients and numbered steps.',
     ].filter(Boolean),
     exclusions: [],
-    calories: 1800,
+    calories: calorieTarget(workingProfile),
     days: 1,
   };
 
@@ -163,9 +185,11 @@ export async function generateAiRecipes(profile: UserProfile): Promise<Recipe[]>
 
   const rawList = json.recipes || json.plan?.recipes || recipesFromPlan(json.plan);
   let recipes = rawList.map(mapAiRecipe).filter((item): item is Recipe => Boolean(item));
+  const allowed = recipes.filter((recipe) => recipeFitsDiet(recipe, foodPreference));
+  if (allowed.length) recipes = allowed;
   if (!recipes.length) throw new Error('AI did not return usable recipes.');
   recipes = await attachRecipeImages(recipes);
-  if (profile.isPregnant || focus === 'pregnancy') {
+  if (profile.isPregnant || focus === 'pregnancy' || goalId === 'pregnancy') {
     for (const recipe of recipes) {
       if (!recipe.tags.includes('Pregnancy')) recipe.tags.unshift('Pregnancy');
     }

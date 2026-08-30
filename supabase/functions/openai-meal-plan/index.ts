@@ -63,17 +63,18 @@ Deno.serve(async (req) => {
   const prompt = recipeMode
     ? `You are Fema AI recipe coach for women.
 Create 4 complete recipes matched to this person.
-Goal / focus: ${goal}
+Training categories: ${goal}
 Cycle phase: ${cyclePhase}
-Preferences: ${preferences.join(", ") || "none"}
+What she can eat (STRICT): ${preferences.join(", ") || "none"}
 Exclusions: ${exclusions.join(", ") || "none"}
 Daily calories context: ~${calories}
 
 Rules:
 - Recipes must be practical home cooking.
+- Only use foods she can eat. If vegan: no meat, fish, eggs, or dairy. If vegetarian: no meat or fish. If gluten-free / dairy-free / low carb / high protein: follow that exactly.
+- Match the training goal (weight loss, boxing, muscle, pregnancy, etc.).
 - If the goal is pregnancy or prenatal, make food pregnancy-safe (no raw fish, alcohol, or unpasteurized cheese) and iron/folate friendly.
-- If vegan or vegetarian is in preferences, follow that strictly.
-- Each recipe needs real ingredients and numbered cooking steps.
+- Each recipe needs real ingredients, calories, and numbered cooking steps.
 
 Return ONLY valid JSON:
 {

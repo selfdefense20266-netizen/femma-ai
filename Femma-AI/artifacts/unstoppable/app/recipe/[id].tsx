@@ -179,7 +179,7 @@ export default function RecipeDetailScreen() {
             ))}
           </View>
 
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Instructions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>How it's made</Text>
           {steps.map((step, i) => (
             <View key={i} style={[styles.stepRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={[styles.stepCircle, { backgroundColor: colors.warmYellow + '20', borderColor: colors.warmYellow + '40' }]}>
@@ -210,7 +210,7 @@ export default function RecipeDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, width: '100%', overflow: 'hidden' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   missing: { fontSize: 15, fontFamily: 'Manrope_400Regular', textAlign: 'center', lineHeight: 22 },
   cookContainer: { flex: 1 },

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -8,10 +8,9 @@ import { useEventListener } from 'expo';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/context/AppContext';
-import { getCourseLessons, courseProgressPercent, libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
+import { libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
 import { useCatalogLesson } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
-import ProgressBar from '@/components/ProgressBar';
 
 type Props = { categoryId: LibraryCategoryId; lessonId: string };
 
@@ -98,8 +97,6 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
     setLessonComplete,
     setLessonWatchProgress,
     setLastViewedLesson,
-    savedCourseIds,
-    toggleSavedCourse,
     completeMission,
   } = useApp();
   const resolvedCategoryId = resolveCategoryId(categoryId);
@@ -167,16 +164,8 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
     );
   }
 
-  const { category, course, module, lesson, previousLesson, nextLesson, lessonNumber, lessonCount } = context;
+  const { course, lesson, nextLesson } = context;
   const isComplete = completedLessonIds.includes(lesson.id);
-  const isSaved = savedCourseIds.includes(course.id);
-  const courseLessons = getCourseLessons(course);
-  const courseCompleted = courseLessons.filter((item) => completedLessonIds.includes(item.id)).length;
-  const liveWatch = {
-    ...lessonWatchProgress,
-    [lesson.id]: Math.max(lessonWatchProgress[lesson.id] ?? 0, watchPercent),
-  };
-  const progress = courseProgressPercent(courseLessons, completedLessonIds, liveWatch);
   const hasVideo = Boolean(lesson.videoUrl);
 
   const openLesson = (nextId: string) => {
@@ -194,24 +183,27 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
     }
   };
 
+  const goHome = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)' as never);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 102 }}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: botPad + 28, flexGrow: 1 }}
+      >
         <View style={[styles.darkHeader, { paddingTop: topPad }]}>
           <View style={styles.navRow}>
-            <TouchableOpacity accessibilityLabel="Go back" onPress={() => router.back()} style={styles.darkButton}>
+            <TouchableOpacity accessibilityLabel="Go back" onPress={goHome} style={styles.darkButton}>
               <Feather name="arrow-left" size={21} color="#FFFFFF" />
             </TouchableOpacity>
             <Text numberOfLines={1} style={styles.navTitle}>
-              {course.shortTitle}
+              {lesson.title}
             </Text>
-            <TouchableOpacity
-              accessibilityLabel={isSaved ? 'Remove saved course' : 'Save course'}
-              onPress={() => toggleSavedCourse(course.id)}
-              style={[styles.darkButton, isSaved && { backgroundColor: `${course.color}45` }]}
-            >
-              <Feather name="bookmark" size={19} color={isSaved ? course.color : '#FFFFFF'} />
-            </TouchableOpacity>
+            <View style={styles.darkButton} />
           </View>
 
           <View style={styles.videoFrame}>
@@ -226,137 +218,68 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
                 <View style={[styles.placeholderIcon, { backgroundColor: `${course.color}25`, borderColor: `${course.color}55` }]}>
                   <Feather name="upload-cloud" size={32} color={course.color} />
                 </View>
-                <Text style={styles.placeholderTitle}>Video slot ready</Text>
-                <Text style={styles.placeholderText}>Your final lesson video will play here after its URL is added.</Text>
-                <View style={styles.placeholderBadge}>
-                  <View style={[styles.statusDot, { backgroundColor: course.color }]} />
-                  <Text style={styles.placeholderBadgeText}>AWAITING UPLOAD</Text>
-                </View>
+                <Text style={styles.placeholderTitle}>Video not uploaded yet</Text>
+                <Text style={styles.placeholderText}>This lesson will play here once the video is added.</Text>
               </LinearGradient>
             )}
           </View>
 
-          {hasVideo && (
-            <View style={styles.watchProgressBlock}>
-              <View style={styles.watchProgressTop}>
-                <Text style={styles.watchProgressLabel}>Watch progress</Text>
-                <Text style={[styles.watchProgressValue, { color: course.color }]}>{watchPercent}%</Text>
-              </View>
-              <ProgressBar progress={watchPercent} color={course.color} trackColor="rgba(255,255,255,0.12)" height={4} />
-            </View>
-          )}
-
           <View style={styles.videoControlsHint}>
             <Text style={styles.videoCount}>
-              Lesson {lessonNumber} of {lessonCount}
+              {lesson.durationMinutes} min
             </Text>
-            <Text style={styles.videoDuration}>{lesson.durationMinutes} min</Text>
+            {hasVideo ? (
+              <Text style={[styles.watchProgressValue, { color: course.color }]}>{watchPercent}% watched</Text>
+            ) : null}
           </View>
         </View>
 
         <View style={styles.body}>
-          <View style={[styles.courseTag, { backgroundColor: `${course.color}14` }]}>
-            <Feather name={course.icon} size={13} color={course.color} />
-            <Text style={[styles.courseTagText, { color: course.color }]}>{module.title}</Text>
-          </View>
           <Text style={[styles.lessonTitle, { color: colors.foreground }]}>{lesson.title}</Text>
-          <Text style={[styles.lessonDescription, { color: colors.mutedForeground }]}>{lesson.description}</Text>
+          {lesson.description ? (
+            <Text style={[styles.lessonDescription, { color: colors.mutedForeground }]}>{lesson.description}</Text>
+          ) : null}
 
-          <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.progressTop}>
-              <Text style={[styles.progressTitle, { color: colors.foreground }]}>{course.title} progress</Text>
-              <Text style={[styles.progressPercent, { color: course.color }]}>{progress}%</Text>
-            </View>
-            <ProgressBar progress={progress} color={course.color} trackColor={colors.muted} height={6} style={styles.progressTrack} />
-            <Text style={[styles.progressMeta, { color: colors.mutedForeground }]}>
-              {courseCompleted} of {courseLessons.length} lessons complete
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.82}
-            onPress={toggleComplete}
-            style={[
-              styles.completeCard,
-              {
-                backgroundColor: isComplete ? `${course.color}13` : colors.card,
-                borderColor: isComplete ? `${course.color}55` : colors.border,
-              },
-            ]}
-          >
-            <View style={[styles.completeIcon, { backgroundColor: isComplete ? course.color : colors.muted }]}>
-              <Feather name={isComplete ? 'check' : 'check-circle'} size={20} color={isComplete ? '#FFFFFF' : colors.mutedForeground} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.completeTitle, { color: colors.foreground }]}>
-                {isComplete ? 'Lesson completed' : hasVideo ? 'Keep watching to complete' : 'Mark this lesson complete'}
-              </Text>
-              <Text style={[styles.completeText, { color: colors.mutedForeground }]}>
-                {isComplete
-                  ? 'Auto-saved from your watch progress. Tap to undo.'
-                  : hasVideo
-                    ? `Completes automatically at ${AUTO_COMPLETE_AT}% watched — or tap to mark now.`
-                    : 'No video yet — tap to mark complete manually.'}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.lessonNav}>
-            <TouchableOpacity
-              disabled={!previousLesson}
-              onPress={() => previousLesson && openLesson(previousLesson.id)}
-              style={[styles.lessonNavButton, { backgroundColor: colors.card, borderColor: colors.border, opacity: previousLesson ? 1 : 0.45 }]}
-            >
-              <Feather name="chevron-left" size={18} color={colors.mutedForeground} />
-              <View style={styles.lessonNavText}>
-                <Text style={[styles.lessonNavLabel, { color: colors.mutedForeground }]}>PREVIOUS</Text>
-                <Text numberOfLines={1} style={[styles.lessonNavTitle, { color: colors.foreground }]}>
-                  {previousLesson?.title ?? 'First lesson'}
-                </Text>
+          {isComplete ? (
+            <View style={[styles.doneBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.doneDot, { backgroundColor: course.color }]}>
+                <Feather name="check" size={14} color="#FFFFFF" />
               </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              disabled={!nextLesson}
-              onPress={() => nextLesson && openLesson(nextLesson.id)}
-              style={[styles.lessonNavButton, { backgroundColor: colors.card, borderColor: colors.border, opacity: nextLesson ? 1 : 0.45 }]}
-            >
-              <View style={[styles.lessonNavText, { alignItems: 'flex-end' }]}>
-                <Text style={[styles.lessonNavLabel, { color: colors.mutedForeground }]}>NEXT</Text>
-                <Text numberOfLines={1} style={[styles.lessonNavTitle, { color: colors.foreground, textAlign: 'right' }]}>
-                  {nextLesson?.title ?? 'Course complete'}
-                </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.completeTitle, { color: colors.foreground }]}>Completed</Text>
+                <Text style={[styles.completeText, { color: colors.mutedForeground }]}>Saved to your progress</Text>
               </View>
-              <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
-
-          {course.disclaimer ? (
-            <View style={[styles.disclaimer, { backgroundColor: `${category.color}10`, borderColor: `${category.color}28` }]}>
-              <Feather name="alert-triangle" size={16} color={category.color} />
-              <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>{course.disclaimer}</Text>
             </View>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={toggleComplete}
+              style={[styles.markDoneBtn, { backgroundColor: course.color }]}
+            >
+              <Feather name="check" size={16} color="#FFFFFF" />
+              <Text style={styles.actionText}>Mark as done</Text>
+            </TouchableOpacity>
+          )}
+
+          {nextLesson ? (
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => openLesson(nextLesson.id)}
+              style={[styles.nextButton, { backgroundColor: course.color }]}
+            >
+              <Text style={styles.actionText}>Next video</Text>
+              <Feather name="arrow-right" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
           ) : null}
         </View>
       </ScrollView>
-
-      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: botPad + 15 }]}>
-        <TouchableOpacity
-          activeOpacity={0.86}
-          onPress={() =>
-            nextLesson ? openLesson(nextLesson.id) : router.replace(libraryPath(resolvedCategoryId, course.id) as never)
-          }
-          style={[styles.actionButton, { backgroundColor: course.color }]}
-        >
-          <Text style={styles.actionText}>{nextLesson ? 'Next lesson' : 'Back to course'}</Text>
-          <Feather name={nextLesson ? 'arrow-right' : 'check'} size={18} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scroll: { flex: 1 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
   missingTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
   missingButton: { borderRadius: 22, paddingHorizontal: 22, paddingVertical: 12 },
@@ -385,28 +308,13 @@ const styles = StyleSheet.create({
   placeholderTitle: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_800ExtraBold', marginTop: 12 },
   placeholderText: {
     color: 'rgba(255,255,255,0.52)',
-    fontSize: 10.5,
-    lineHeight: 15,
+    fontSize: 12,
+    lineHeight: 18,
     textAlign: 'center',
     fontFamily: 'Manrope_500Medium',
-    maxWidth: 240,
-    marginTop: 3,
+    maxWidth: 260,
+    marginTop: 6,
   },
-  placeholderBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 100,
-    marginTop: 10,
-  },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  placeholderBadgeText: { color: 'rgba(255,255,255,0.58)', fontSize: 8.5, letterSpacing: 0.8, fontFamily: 'Manrope_800ExtraBold' },
-  watchProgressBlock: { marginTop: 12, gap: 6 },
-  watchProgressTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  watchProgressLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 10.5, fontFamily: 'Manrope_600SemiBold' },
   watchProgressValue: { fontSize: 12, fontFamily: 'Manrope_800ExtraBold' },
   videoControlsHint: {
     flexDirection: 'row',
@@ -415,49 +323,30 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 2,
   },
-  videoCount: { color: 'rgba(255,255,255,0.58)', fontSize: 10.5, fontFamily: 'Manrope_600SemiBold' },
-  videoDuration: { color: 'rgba(255,255,255,0.58)', fontSize: 10.5, fontFamily: 'Manrope_600SemiBold' },
+  videoCount: { color: 'rgba(255,255,255,0.58)', fontSize: 12, fontFamily: 'Manrope_600SemiBold' },
   body: { padding: 20, gap: 13 },
-  courseTag: {
-    alignSelf: 'flex-start',
+  lessonTitle: { fontSize: 22, lineHeight: 29, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.35 },
+  lessonDescription: { fontSize: 14, lineHeight: 21, fontFamily: 'Manrope_500Medium' },
+  markDoneBtn: {
+    height: 52,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderRadius: 100,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    justifyContent: 'center',
+    gap: 8,
   },
-  courseTagText: { fontSize: 9.5, fontFamily: 'Manrope_800ExtraBold', letterSpacing: 0.3 },
-  lessonTitle: { fontSize: 22, lineHeight: 29, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.35 },
-  lessonDescription: { fontSize: 12.5, lineHeight: 20, fontFamily: 'Manrope_500Medium' },
-  progressCard: { borderRadius: 17, borderWidth: 1, padding: 14, marginTop: 3 },
-  progressTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  progressTitle: { fontSize: 12.5, fontFamily: 'Manrope_700Bold' },
-  progressPercent: { fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
-  progressTrack: { marginTop: 9 },
-  progressMeta: { fontSize: 9.8, fontFamily: 'Manrope_500Medium', marginTop: 6 },
-  completeCard: { minHeight: 72, borderRadius: 17, borderWidth: 1, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 11 },
-  completeIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  completeTitle: { fontSize: 12.5, fontFamily: 'Manrope_700Bold' },
-  completeText: { fontSize: 9.8, fontFamily: 'Manrope_500Medium', marginTop: 2 },
-  lessonNav: { flexDirection: 'row', gap: 9 },
-  lessonNavButton: {
-    flex: 1,
-    minWidth: 0,
-    height: 62,
+  doneBanner: {
+    minHeight: 56,
     borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 9,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 12,
   },
-  lessonNavText: { flex: 1, minWidth: 0 },
-  lessonNavLabel: { fontSize: 7.8, letterSpacing: 0.7, fontFamily: 'Manrope_800ExtraBold' },
-  lessonNavTitle: { fontSize: 9.3, fontFamily: 'Manrope_600SemiBold', marginTop: 2 },
-  disclaimer: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, borderRadius: 15, borderWidth: 1, padding: 12 },
-  disclaimerText: { flex: 1, fontSize: 9.8, lineHeight: 15, fontFamily: 'Manrope_500Medium' },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: 1, paddingHorizontal: 20, paddingTop: 11 },
-  actionButton: { height: 52, borderRadius: 26, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  actionText: { color: '#FFFFFF', fontSize: 14.5, fontFamily: 'Manrope_700Bold' },
+  doneDot: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  completeTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
+  completeText: { fontSize: 12, fontFamily: 'Manrope_500Medium', marginTop: 2 },
+  nextButton: { height: 52, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
+  actionText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Manrope_700Bold' },
 });

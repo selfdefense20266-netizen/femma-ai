@@ -41,11 +41,15 @@ export default function YogaHub() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient colors={[colors.softLavender + 'AA', colors.background]} style={styles.headerGrad}>
         <View style={[styles.header, { paddingTop: topPad }]}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
             <Feather name="arrow-left" size={22} color={colors.foreground} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.foreground }]}>Yoga & Recovery</Text>
-          <Feather name="search" size={22} color={colors.foreground} />
+          <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={1}>
+            Yoga & Recovery
+          </Text>
+          <View style={styles.headerBtn}>
+            <Feather name="search" size={22} color={colors.foreground} />
+          </View>
         </View>
       </LinearGradient>
 
@@ -55,12 +59,7 @@ export default function YogaHub() {
         contentContainerStyle={{ paddingBottom: botPad + 32 }}
         nestedScrollEnabled
       >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersRow}
-          nestedScrollEnabled
-        >
+        <View style={styles.filtersWrap}>
           {YOGA_FILTERS.map((f) => (
             <FilterChip
               key={f}
@@ -74,7 +73,7 @@ export default function YogaHub() {
               color={colors.lavender}
             />
           ))}
-        </ScrollView>
+        </View>
 
         <View style={styles.body}>
           <SectionHeader
@@ -135,17 +134,18 @@ export default function YogaHub() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, width: '100%', overflow: 'hidden' },
   headerGrad: { paddingBottom: 8 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 12 },
-  title: { fontSize: 20, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
+  headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  title: { flex: 1, minWidth: 0, fontSize: 20, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', textAlign: 'center' },
   scroll: { flex: 1 },
-  filtersRow: { paddingHorizontal: 22, paddingVertical: 12, gap: 8 },
-  body: { paddingHorizontal: 22, gap: 10 },
+  filtersWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
+  body: { paddingHorizontal: 16, gap: 10, width: '100%' },
   empty: { fontSize: 14, fontFamily: 'Manrope_400Regular', lineHeight: 20, paddingVertical: 12 },
-  sessionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, overflow: 'hidden', gap: 14 },
-  sessionLeft: { width: 80, height: 80, justifyContent: 'center', alignItems: 'center' },
-  sessionInfo: { flex: 1, paddingVertical: 12, gap: 3 },
+  sessionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, overflow: 'hidden', gap: 12, width: '100%' },
+  sessionLeft: { width: 72, height: 72, justifyContent: 'center', alignItems: 'center' },
+  sessionInfo: { flex: 1, minWidth: 0, paddingVertical: 12, paddingRight: 8, gap: 3 },
   sessionTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, borderWidth: 1, marginBottom: 2 },
   sessionTagText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   sessionTitle: { fontSize: 15, fontWeight: '700', fontFamily: 'Manrope_700Bold' },

@@ -1,4 +1,5 @@
 import type { UserProfile } from '@/context/AppContext';
+import { goalLabels } from '@/lib/nutritionPlan';
 
 /** Motivational quote on the Today tab — avoids "yesterday" copy on day 1 / zero streak. */
 export function getTodayMotivational(
@@ -15,7 +16,7 @@ export function getTodayMotivational(
       return 'Great start — you finished day one. That is how unstoppable habits begin.';
     }
     if (profile.goal) {
-      return `Day 1 of your ${profile.goal.toLowerCase()} journey. One mission at a time.`;
+      return `Day 1 of your ${goalLabels(profile.goal).join(' + ').toLowerCase() || profile.goal.toLowerCase()} journey. One mission at a time.`;
     }
     if (profile.planName) {
       return `Welcome to ${profile.planName}. Your first missions are ready.`;
@@ -56,9 +57,8 @@ export function formatStreakValue(streak: number): string {
 }
 
 export function formatStreakLabel(streak: number): string {
-  if (streak <= 0) return 'Start your streak';
-  if (streak === 1) return 'day streak';
-  return 'day streak';
+  if (streak <= 0) return 'Streak';
+  return streak === 1 ? 'Day streak' : 'Day streak';
 }
 
 /** Week dots for Progress tab — derived from streak, not hardcoded. */

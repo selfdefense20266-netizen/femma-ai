@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -7,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-import { useApp, CYCLE_PHASE_INFO } from '@/context/AppContext';
+import { useApp, CYCLE_PHASE_INFO, phaseFromCycleDay, type CyclePhase } from '@/context/AppContext';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const PHASES = [
@@ -15,40 +16,191 @@ const PHASES = [
   { id: 'follicular', label: 'Follicular', days: '6-13', color: '#A9E4D2' },
   { id: 'ovulation', label: 'Ovulation', days: '14', color: '#F26BB5' },
   { id: 'luteal', label: 'Luteal', days: '15-28', color: '#B9A7F2' },
-];
+] as const;
 
-const RECS = [
-  { category: 'Fitness', icon: 'zap', color: '#F26BB5', rec: 'Moderate cardio and strength work — energy is building.', gradient: ['#F26BB5', '#D94A9A'] as [string, string] },
-  { category: 'Yoga', icon: 'wind', color: '#B9A7F2', rec: 'Energizing yoga flows and flexibility work.', gradient: ['#B9A7F2', '#77CDED'] as [string, string] },
-  { category: 'Nutrition', icon: 'coffee', color: '#A9E4D2', rec: 'Focus on iron-rich foods and leafy greens.', gradient: ['#A9E4D2', '#C9F2F6'] as [string, string] },
-];
+const MOODS = ['Great', 'Good', 'Low', 'Irritable'];
+const ENERGY = ['High', 'Steady', 'Low'];
+const CYCLE_LOGS_KEY = 'cycle_daily_logs';
+
+type DayLog = { mood?: string; energy?: string };
+
+const RECS: Record<CyclePhase, { category: string; icon: string; color: string; rec: string }[]> = {
+  menstrual: [
+    { category: 'Fitness', icon: 'zap', color: '#FF928F', rec: 'Keep it gentle — walking, mobility, or a light stretch.' },
+    { category: 'Yoga', icon: 'wind', color: '#B9A7F2', rec: 'Restorative yoga and slow breathing help cramps and energy.' },
+    { category: 'Nutrition', icon: 'coffee', color: '#A9E4D2', rec: 'Iron-rich foods, warm meals, and extra water.' },
+  ],
+  follicular: [
+    { category: 'Fitness', icon: 'zap', color: '#F26BB5', rec: 'Energy is building — moderate cardio and strength work well.' },
+    { category: 'Yoga', icon: 'wind', color: '#B9A7F2', rec: 'Energizing flows and flexibility work.' },
+    { category: 'Nutrition', icon: 'coffee', color: '#A9E4D2', rec: 'Protein and colorful plants to match rising energy.' },
+  ],
+  ovulation: [
+    { category: 'Fitness', icon: 'zap', color: '#F26BB5', rec: 'Peak energy — a harder session is okay if you feel good.' },
+    { category: 'Yoga', icon: 'wind', color: '#B9A7F2', rec: 'Power yoga or a longer flow if your body wants it.' },
+    { category: 'Nutrition', icon: 'coffee', color: '#A9E4D2', rec: 'Stay hydrated and keep meals balanced around training.' },
+  ],
+  luteal: [
+    { category: 'Fitness', icon: 'zap', color: '#B9A7F2', rec: 'Wind down intensity. Strength still helps — skip the extra grind.' },
+    { category: 'Yoga', icon: 'wind', color: '#B9A7F2', rec: 'Gentle yoga, hips, and breathing for PMS tension.' },
+    { category: 'Nutrition', icon: 'coffee', color: '#A9E4D2', rec: 'Magnesium-rich foods, steady snacks, and less caffeine if you crash.' },
+  ],
+  none: [
+    { category: 'Fitness', icon: 'zap', color: '#F26BB5', rec: 'Follow your training plan and rest when you need it.' },
+    { category: 'Yoga', icon: 'wind', color: '#B9A7F2', rec: 'A short stretch after workouts keeps you consistent.' },
+    { category: 'Nutrition', icon: 'coffee', color: '#A9E4D2', rec: 'Scan meals to stay aligned with your food preference.' },
+  ],
+};
+
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function startOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function daysBetween(from: Date, to: Date) {
+  return Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / 86400000);
+}
+
+function cycleDayForOffset(cycleDay: number, offset: number) {
+  const base = Math.max(1, cycleDay || 1);
+  return ((base - 1 + offset) % 28 + 28) % 28 + 1;
+}
 
 export default function CycleScreen() {
   const colors = useColors();
-  const { profile } = useApp();
+  const { profile, updateProfile } = useApp();
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
+  const tracking = profile.cyclePhase !== 'none';
 
-  const phaseInfo = CYCLE_PHASE_INFO[profile.cyclePhase];
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [logs, setLogs] = useState<Record<string, DayLog>>({});
 
-  // Build a simple 28-day calendar (just current week for display)
-  const today = new Date();
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - today.getDay() + i);
-    return { date: d.getDate(), dayLabel: DAYS[i], isToday: d.getDate() === today.getDate() };
-  });
+  useEffect(() => {
+    AsyncStorage.getItem(CYCLE_LOGS_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as Record<string, DayLog>;
+        if (parsed && typeof parsed === 'object') setLogs(parsed);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const weekDays = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() - today.getDay() + i);
+        return {
+          key: dateKey(date),
+          date,
+          dateNum: date.getDate(),
+          dayLabel: DAYS[i],
+          isToday: dateKey(date) === dateKey(today),
+        };
+      }),
+    [today]
+  );
+
+  const offset = daysBetween(today, selectedDate);
+  const previewDay = tracking ? cycleDayForOffset(profile.cycleDay, offset) : 0;
+  const previewPhase: CyclePhase = tracking ? phaseFromCycleDay(previewDay) : 'none';
+  const phaseInfo = CYCLE_PHASE_INFO[previewPhase] || CYCLE_PHASE_INFO.none;
+  const selectedLog = logs[dateKey(selectedDate)] || {};
+  const recs = RECS[previewPhase] || RECS.none;
+  const isTodaySelected = dateKey(selectedDate) === dateKey(today);
+
+  const persistLogs = (next: Record<string, DayLog>) => {
+    setLogs(next);
+    void AsyncStorage.setItem(CYCLE_LOGS_KEY, JSON.stringify(next)).catch(() => undefined);
+  };
+
+  const patchSelectedLog = (patch: DayLog) => {
+    const key = dateKey(selectedDate);
+    persistLogs({ ...logs, [key]: { ...logs[key], ...patch } });
+  };
+
+  const startTracking = () => {
+    updateProfile({ cyclePhase: 'follicular', cycleDay: 1, isPregnant: false });
+    setSelectedDate(today);
+  };
+
+  const stopTracking = () => {
+    updateProfile({ cyclePhase: 'none', cycleDay: 0 });
+  };
+
+  const logPeriod = () => {
+    Alert.alert('Log period start?', 'This sets the selected day as Day 1 of your cycle.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log',
+        onPress: () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          const shift = daysBetween(selectedDate, today);
+          const nextDay = cycleDayForOffset(1, shift);
+          updateProfile({
+            cyclePhase: phaseFromCycleDay(nextDay),
+            cycleDay: nextDay,
+            isPregnant: false,
+          });
+        },
+      },
+    ]);
+  };
+
+  const pickValue = (title: string, options: string[], onPick: (value: string) => void) => {
+    Alert.alert(title, undefined, [
+      ...options.map((value) => ({
+        text: value,
+        onPress: () => {
+          Haptics.selectionAsync();
+          onPick(value);
+        },
+      })),
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
+  };
+
+  const openSettings = () => {
+    Alert.alert(
+      'Cycle settings',
+      tracking
+        ? 'Workouts and nutrition tips follow your cycle. You can turn this off anytime.'
+        : 'Turn tracking on to personalize workouts around your cycle.',
+      tracking
+        ? [
+            { text: 'Stop tracking', style: 'destructive', onPress: stopTracking },
+            { text: 'Close', style: 'cancel' },
+          ]
+        : [
+            { text: 'Start tracking', onPress: startTracking },
+            { text: 'Close', style: 'cancel' },
+          ]
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient colors={[colors.coral + '30', colors.background]} style={styles.headerGrad}>
         <View style={[styles.header, { paddingTop: topPad }]}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Feather name="arrow-left" size={22} color={colors.foreground} />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.foreground }]}>Cycle Tracking</Text>
-          <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.settingsBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={openSettings}
+          >
             <Feather name="settings" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
         </View>
@@ -56,94 +208,125 @@ export default function CycleScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 32 }}>
         <View style={styles.body}>
-          {/* Current phase card */}
           <Animated.View entering={FadeInDown.delay(100).duration(500)}>
             <LinearGradient colors={[phaseInfo.color + 'EE', phaseInfo.color + '88']} style={styles.phaseCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
               <View style={styles.phaseTop}>
                 <View>
-                  <Text style={styles.phaseCardLabel}>Current Phase</Text>
+                  <Text style={styles.phaseCardLabel}>{isTodaySelected ? 'Current phase' : 'Predicted phase'}</Text>
                   <Text style={styles.phaseCardName}>{phaseInfo.name}</Text>
-                  <Text style={styles.phaseCardDay}>Day {profile.cycleDay} of your cycle</Text>
+                  <Text style={styles.phaseCardDay}>
+                    {tracking ? `Day ${previewDay} of your cycle` : 'Tracking is off'}
+                  </Text>
                 </View>
                 <View style={[styles.phaseRing, { borderColor: 'rgba(255,255,255,0.5)' }]}>
-                  <Text style={styles.phaseRingNum}>{profile.cycleDay}</Text>
+                  <Text style={styles.phaseRingNum}>{tracking ? previewDay : '—'}</Text>
                 </View>
               </View>
               <View style={[styles.phaseInsight, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                <Text style={styles.phaseInsightText}>{phaseInfo.insight}</Text>
+                <Text style={styles.phaseInsightText}>
+                  {phaseInfo.insight || 'Turn tracking on to get phase-based workout and nutrition tips.'}
+                </Text>
               </View>
             </LinearGradient>
           </Animated.View>
 
-          {/* Week Calendar */}
           <Animated.View entering={FadeInDown.delay(150).duration(500)}>
             <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>This Week</Text>
               <View style={styles.weekRow}>
-                {weekDays.map(day => (
-                  <TouchableOpacity
-                    key={day.date}
-                    style={[styles.dayCell, day.isToday && { backgroundColor: colors.primary }]}
-                    onPress={() => Haptics.selectionAsync()}
-                  >
-                    <Text style={[styles.dayLabel, { color: day.isToday ? '#FFFFFF' : colors.mutedForeground }]}>{day.dayLabel}</Text>
-                    <Text style={[styles.dayNum, { color: day.isToday ? '#FFFFFF' : colors.foreground }]}>{day.date}</Text>
-                  </TouchableOpacity>
-                ))}
+                {weekDays.map((day) => {
+                  const selected = day.key === dateKey(selectedDate);
+                  return (
+                    <TouchableOpacity
+                      key={day.key}
+                      style={[styles.dayCell, selected && { backgroundColor: colors.primary }]}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setSelectedDate(day.date);
+                      }}
+                    >
+                      <Text style={[styles.dayLabel, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>{day.dayLabel}</Text>
+                      <Text style={[styles.dayNum, { color: selected ? '#FFFFFF' : colors.foreground }]}>{day.dateNum}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
+              {(selectedLog.mood || selectedLog.energy) ? (
+                <Text style={[styles.logSummary, { color: colors.mutedForeground }]}>
+                  {selectedLog.mood ? `Mood: ${selectedLog.mood}` : ''}
+                  {selectedLog.mood && selectedLog.energy ? ' · ' : ''}
+                  {selectedLog.energy ? `Energy: ${selectedLog.energy}` : ''}
+                </Text>
+              ) : null}
             </View>
           </Animated.View>
 
-          {/* Log */}
           <Animated.View entering={FadeInDown.delay(200).duration(500)}>
             <View style={styles.logRow}>
-              {[{ icon: 'droplet', label: 'Log Period', color: colors.coral }, { icon: 'smile', label: 'Log Mood', color: colors.lavender }, { icon: 'zap', label: 'Log Energy', color: colors.warmYellow }].map(l => (
+              {[
+                { icon: 'droplet', label: 'Log Period', color: colors.coral, action: logPeriod },
+                {
+                  icon: 'smile',
+                  label: selectedLog.mood ? selectedLog.mood : 'Log Mood',
+                  color: colors.lavender,
+                  action: () => pickValue('How is your mood?', MOODS, (value) => patchSelectedLog({ mood: value })),
+                },
+                {
+                  icon: 'zap',
+                  label: selectedLog.energy ? selectedLog.energy : 'Log Energy',
+                  color: colors.warmYellow,
+                  action: () => pickValue('How is your energy?', ENERGY, (value) => patchSelectedLog({ energy: value })),
+                },
+              ].map((item) => (
                 <TouchableOpacity
-                  key={l.label}
-                  style={[styles.logBtn, { backgroundColor: l.color + '18', borderColor: l.color + '40' }]}
-                  onPress={() => Haptics.selectionAsync()}
+                  key={item.icon}
+                  style={[styles.logBtn, { backgroundColor: item.color + '18', borderColor: item.color + '40' }]}
+                  onPress={item.action}
                   activeOpacity={0.8}
                 >
-                  <Feather name={l.icon as any} size={20} color={l.color} />
-                  <Text style={[styles.logBtnText, { color: colors.foreground }]}>{l.label}</Text>
+                  <Feather name={item.icon as never} size={20} color={item.color} />
+                  <Text style={[styles.logBtnText, { color: colors.foreground }]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </Animated.View>
 
-          {/* Phase Cycle */}
           <Animated.View entering={FadeInDown.delay(250).duration(500)}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Cycle Phases</Text>
-            {PHASES.map(p => (
-              <View key={p.id} style={[styles.phaseRow, { backgroundColor: colors.card, borderColor: p.id === profile.cyclePhase ? p.color + '50' : colors.border }]}>
-                <View style={[styles.phaseDot, { backgroundColor: p.color }]} />
+            {PHASES.map((phase) => (
+              <View
+                key={phase.id}
+                style={[
+                  styles.phaseRow,
+                  { backgroundColor: colors.card, borderColor: phase.id === previewPhase ? phase.color + '50' : colors.border },
+                ]}
+              >
+                <View style={[styles.phaseDot, { backgroundColor: phase.color }]} />
                 <View style={styles.phaseInfo}>
-                  <Text style={[styles.phaseLabel, { color: colors.foreground }]}>{p.label}</Text>
-                  <Text style={[styles.phaseDays, { color: colors.mutedForeground }]}>Days {p.days}</Text>
+                  <Text style={[styles.phaseLabel, { color: colors.foreground }]}>{phase.label}</Text>
+                  <Text style={[styles.phaseDays, { color: colors.mutedForeground }]}>Days {phase.days}</Text>
                 </View>
-                {p.id === profile.cyclePhase && (
-                  <View style={[styles.currentBadge, { backgroundColor: p.color + '20', borderColor: p.color + '50' }]}>
-                    <Text style={[styles.currentText, { color: p.color }]}>Now</Text>
+                {phase.id === previewPhase ? (
+                  <View style={[styles.currentBadge, { backgroundColor: phase.color + '20', borderColor: phase.color + '50' }]}>
+                    <Text style={[styles.currentText, { color: phase.color }]}>{isTodaySelected ? 'Now' : 'This day'}</Text>
                   </View>
-                )}
+                ) : null}
               </View>
             ))}
           </Animated.View>
 
-          {/* Phase Recommendations */}
           <Animated.View entering={FadeInDown.delay(300).duration(500)}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Phase Recommendations</Text>
-            {RECS.map(r => (
-              <TouchableOpacity key={r.category} style={[styles.recCard, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.8}>
-                <View style={[styles.recIcon, { backgroundColor: r.color + '20' }]}>
-                  <Feather name={r.icon as any} size={18} color={r.color} />
+            {recs.map((rec) => (
+              <View key={rec.category} style={[styles.recCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.recIcon, { backgroundColor: rec.color + '20' }]}>
+                  <Feather name={rec.icon as never} size={18} color={rec.color} />
                 </View>
                 <View style={styles.recInfo}>
-                  <Text style={[styles.recCategory, { color: r.color }]}>{r.category}</Text>
-                  <Text style={[styles.recText, { color: colors.foreground }]}>{r.rec}</Text>
+                  <Text style={[styles.recCategory, { color: rec.color }]}>{rec.category}</Text>
+                  <Text style={[styles.recText, { color: colors.foreground }]}>{rec.rec}</Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-              </TouchableOpacity>
+              </View>
             ))}
 
             <View style={[styles.disclaimer, { backgroundColor: colors.muted }]}>
@@ -181,6 +364,7 @@ const styles = StyleSheet.create({
   dayCell: { alignItems: 'center', padding: 8, borderRadius: 12, gap: 4, minWidth: 38 },
   dayLabel: { fontSize: 10, fontFamily: 'Manrope_600SemiBold' },
   dayNum: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
+  logSummary: { fontSize: 12, fontFamily: 'Manrope_500Medium' },
   logRow: { flexDirection: 'row', gap: 10 },
   logBtn: { flex: 1, alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, gap: 6 },
   logBtnText: { fontSize: 12, fontWeight: '600', fontFamily: 'Manrope_600SemiBold', textAlign: 'center' },

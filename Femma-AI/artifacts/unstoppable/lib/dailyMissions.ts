@@ -177,7 +177,7 @@ const FOCUS_META: Record<
   postpartum: {
     label: 'Recovery',
     planName: 'Postpartum Recovery Plan',
-    icon: 'sunrise',
+    icon: 'sun',
     category: 'fitness',
     href: '/library/cycle-pregnancy-health/cph-postpartum',
     courseId: 'cph-postpartum',
@@ -431,7 +431,8 @@ export function mergeMissionCompletion(current: Mission[], next: Mission[]): Mis
         byCategory?.completed ||
         (byIndex && byIndex.category === missionItem.category && byIndex.completed && byIndex.id === missionItem.id)
     );
-    return { ...missionItem, completed };
+    const skipped = Boolean(byId?.skipped || byLesson?.skipped || byIndex?.skipped);
+    return { ...missionItem, completed, skipped: skipped && !completed };
   });
 }
 
@@ -458,6 +459,26 @@ export function weekPreview(goal: string): { day: string; items: string[] }[] {
   ];
 }
 
+export function courseIdsForProfile(profile: UserProfile): string[] {
+  const chunks = `${profile.goal || ''} ${profile.isPregnant ? 'pregnancy' : ''}`
+    .split(/[,/&+]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const ids = new Set<string>();
+  const parts = chunks.length ? chunks : ['general'];
+  for (const part of parts) {
+    const focus = detectFocus(part, profile.isPregnant ? 'pregnancy' : '');
+    for (const id of COURSE_PREFS[focus]) ids.add(id);
+  }
+  const food = (profile.foodPreference || '').toLowerCase();
+  if (food && !/no preference|eat everything|everything/.test(food)) {
+    ids.add('dn-nutrition-by-goal');
+  } else {
+    ids.add('dn-nutrition-basics');
+  }
+  return [...ids];
+}
+
 export type PersonalizedPlan = {
   planName: string;
   focusLabel: string;
@@ -469,8 +490,10 @@ export type PersonalizedPlan = {
     focusAreas: number;
     dailyMinutes: number;
   };
+  courseIds: string[];
   courseNames: string[];
   hasCatalogLessons: boolean;
+  trainingPlan?: import('@/lib/trainingPlan').TrainingPlan;
 };
 
 function shortenMissionTitle(title: string, max = 44) {
@@ -508,14 +531,14 @@ export function buildPersonalizedPlan(profile: UserProfile, catalog?: CatalogBun
   const planName = planNameForGoal(profile.goal);
   const focus = detectFocus(profile.goal, profile.isPregnant ? 'pregnancy' : '');
   const meta = FOCUS_META[focus];
-
-  const courseNames = [
-    ...new Set(
-      missions
-        .map((m) => (m.courseId ? catalog?.courses.find((c) => c.id === m.courseId)?.title : undefined))
-        .filter(Boolean) as string[]
-    ),
-  ];
+  const preferredIds = courseIdsForProfile(profile);
+  const courseIds = (
+    catalog ? preferredIds.filter((id) => catalog.courses.some((course) => course.id === id)) : preferredIds
+  );
+  const matchedIds = courseIds.length ? courseIds : preferredIds;
+  const courseNames = matchedIds
+    .map((id) => catalog?.courses.find((course) => course.id === id)?.title)
+    .filter(Boolean) as string[];
 
   const hasCatalogLessons = missions.some((m) => Boolean(m.lessonId));
   const categories = new Set(missions.map((m) => m.category));
@@ -528,10 +551,11 @@ export function buildPersonalizedPlan(profile: UserProfile, catalog?: CatalogBun
     weekSchedule: weekPreviewFromMissions(missions),
     stats: {
       missionsPerDay: missions.length,
-      weeks: 8,
+      weeks: profile.planDurationWeeks || 8,
       focusAreas: categories.size,
       dailyMinutes,
     },
+    courseIds: matchedIds,
     courseNames,
     hasCatalogLessons,
   };

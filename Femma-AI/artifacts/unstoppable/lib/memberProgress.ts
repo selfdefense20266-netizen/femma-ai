@@ -1,5 +1,11 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Mission, UserProfile } from '@/context/AppContext';
+import {
+  asActivityLog,
+  earlierIso,
+  mergeActivityLogs,
+  type ActivityEvent,
+} from '@/lib/activityLog';
 
 export type CoachChatHistoryMessage = {
   id: string;
@@ -17,6 +23,7 @@ export type MemberProgressSnapshot = {
   lastViewedLessonId: string | null;
   missions: Mission[];
   coachChatHistory: CoachChatHistoryMessage[];
+  activityLog: ActivityEvent[];
 };
 
 type MemberProgressRow = {
@@ -45,6 +52,33 @@ function asWatchMap(value: unknown): Record<string, number> {
     if (Number.isFinite(n) && n > 0) out[key] = Math.max(0, Math.min(100, Math.round(n)));
   }
   return out;
+}
+
+export function unpackProfileBlob(raw: unknown): { profile: Partial<UserProfile>; activityLog: ActivityEvent[] } {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { profile: {}, activityLog: [] };
+  }
+  const blob = raw as Record<string, unknown>;
+  const activityLog = asActivityLog(blob.activityLog);
+  const { activityLog: _ignored, ...profile } = blob;
+  return { profile: profile as Partial<UserProfile>, activityLog };
+}
+
+function packProfileBlob(profile: UserProfile, activityLog: ActivityEvent[]) {
+  const plan = profile.trainingPlan;
+  const compactPlan = plan
+    ? {
+        ...plan,
+        days:
+          plan.generatedBy === 'ai'
+            ? []
+            : (plan.days || []).map((day) => ({
+                ...day,
+                items: (day.items || []).map(({ steps: _steps, ...item }) => item),
+              })),
+      }
+    : null;
+  return { ...profile, trainingPlan: compactPlan, activityLog };
 }
 
 function asCoachHistory(value: unknown): CoachChatHistoryMessage[] {
@@ -92,6 +126,8 @@ function mergeCoachHistory(
 
 export async function resolveMemberId(emailHint?: string): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return null;
   const { data } = await supabase.auth.getUser();
   const email = (data.user?.email || emailHint || '').toLowerCase();
 
@@ -125,8 +161,9 @@ export async function fetchMemberProgress(emailHint?: string): Promise<MemberPro
   if (!data) return null;
 
   const row = data as MemberProgressRow;
+  const unpacked = unpackProfileBlob(row.profile);
   return {
-    profile: (row.profile || {}) as UserProfile,
+    profile: unpacked.profile as UserProfile,
     onboardingCompleted: Boolean(row.onboarding_completed),
     completedLessonIds: asStringArray(row.completed_lesson_ids),
     lessonWatchProgress: asWatchMap(row.lesson_watch_progress),
@@ -134,6 +171,7 @@ export async function fetchMemberProgress(emailHint?: string): Promise<MemberPro
     lastViewedLessonId: row.last_viewed_lesson_id || null,
     missions: Array.isArray(row.daily_missions) ? (row.daily_missions as Mission[]) : [],
     coachChatHistory: asCoachHistory(row.coach_chat_history),
+    activityLog: unpacked.activityLog,
   };
 }
 
@@ -181,6 +219,25 @@ function mergeProfile(local: UserProfile, remote: Partial<UserProfile> | null | 
     cycleDay: remote.cycleDay ?? local.cycleDay,
     isPregnant: remote.isPregnant ?? local.isPregnant,
     pregnancyWeek: remote.pregnancyWeek ?? local.pregnancyWeek,
+    planStartedAt: earlierIso(local.planStartedAt, remote.planStartedAt),
+    planDurationWeeks: Number(remote.planDurationWeeks || local.planDurationWeeks || 8),
+    trainingPlan: (() => {
+      const score = (plan: UserProfile['trainingPlan']) => {
+        if (!plan) return 0;
+        const first = plan.days?.[0] as { items?: unknown; tasks?: unknown } | undefined;
+        if (plan.generatedBy === 'ai' || (first && !first.items && first.tasks)) return 1;
+        if (plan.generatedBy === 'roadmap' && plan.days?.length) return 3;
+        return plan.days?.length ? 2 : 1;
+      };
+      const localPlan = local.trainingPlan;
+      const remotePlan = remote.trainingPlan;
+      return score(localPlan) >= score(remotePlan) ? localPlan || remotePlan || null : remotePlan || localPlan || null;
+    })(),
+    planHistory: Array.from(
+      new Map(
+        [...(local.planHistory || []), ...(remote.planHistory || [])].map((plan) => [plan.id, plan])
+      ).values()
+    ).slice(-12),
   };
 }
 
@@ -235,65 +292,61 @@ export function mergeProgressSnapshots(
     lastViewedLessonId: remote.lastViewedLessonId || local.lastViewedLessonId,
     missions: mergeMissions(local.missions, remote.missions),
     coachChatHistory: mergeCoachHistory(local.coachChatHistory, remote.coachChatHistory),
+    activityLog: mergeActivityLogs(local.activityLog, remote.activityLog),
   };
+}
+
+async function updateMemberRow(memberId: string, payload: Record<string, unknown>) {
+  const body: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (value !== undefined && value !== '') body[key] = value;
+  }
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const { error } = await supabase.from('members').update(body).eq('id', memberId);
+    if (!error) return null;
+    const missing =
+      error.message.match(/'([^']+)' column/i)?.[1] ||
+      error.message.match(/column "([^"]+)"/i)?.[1];
+    if (!missing || !(missing in body)) return error;
+    delete body[missing];
+  }
+  return { message: 'Could not update member' };
 }
 
 export async function saveMemberProgress(
   snapshot: MemberProgressSnapshot,
   emailHint?: string
 ): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return false;
   const memberId = await resolveMemberId(emailHint);
   if (!memberId) return false;
 
-  const { data: authData } = await supabase.auth.getUser();
-  const email = (authData.user?.email || emailHint || '').toLowerCase();
-  if (email) {
-    const existing = await supabase.from('members').select('id').eq('id', memberId).maybeSingle();
-    if (!existing.data) {
-      const name =
-        snapshot.profile.name ||
-        `${authData.user?.user_metadata?.first_name || ''} ${authData.user?.user_metadata?.last_name || ''}`.trim() ||
-        email.split('@')[0];
-      await supabase.from('members').upsert(
-        {
-          id: memberId,
-          email,
-          name,
-          status: 'active',
-        },
-        { onConflict: 'email' }
-      );
-    }
-  }
-
-  const completedCount = snapshot.completedLessonIds.length;
-  const { error: memberError } = await supabase
-    .from('members')
-    .update({
-      name: snapshot.profile.name || undefined,
-      points: snapshot.profile.points,
-      streak: snapshot.profile.streak,
-      level: snapshot.profile.level,
-      journey_day: snapshot.profile.journeyDay,
-      goal: snapshot.profile.goal,
-      fitness_level: snapshot.profile.fitnessLevel,
-      environment: snapshot.profile.environment,
-      cycle_phase: snapshot.profile.cyclePhase,
-      cycle_day: snapshot.profile.cycleDay,
-      is_pregnant: snapshot.profile.isPregnant,
-      pregnancy_week: snapshot.profile.pregnancyWeek,
-      completed_lessons: completedCount,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', memberId);
-
+  const memberError = await updateMemberRow(memberId, {
+    name: snapshot.profile.name || undefined,
+    points: snapshot.profile.points,
+    streak: snapshot.profile.streak,
+    level: snapshot.profile.level,
+    journey_day: snapshot.profile.journeyDay,
+    goal: snapshot.profile.goal,
+    fitness_level: snapshot.profile.fitnessLevel,
+    environment: snapshot.profile.environment,
+    cycle_phase: snapshot.profile.cyclePhase,
+    cycle_day: snapshot.profile.cycleDay,
+    is_pregnant: snapshot.profile.isPregnant,
+    pregnancy_week: snapshot.profile.pregnancyWeek,
+    completed_lessons: snapshot.completedLessonIds.length,
+    food_preference: snapshot.profile.foodPreference || undefined,
+    updated_at: new Date().toISOString(),
+  });
   if (memberError) {
     console.warn('Failed to save member onboarding', memberError.message);
   }
 
   const row = {
     member_id: memberId,
-    profile: snapshot.profile,
+    profile: packProfileBlob(snapshot.profile, snapshot.activityLog),
     onboarding_completed: snapshot.onboardingCompleted,
     completed_lesson_ids: snapshot.completedLessonIds,
     lesson_watch_progress: snapshot.lessonWatchProgress,
@@ -306,7 +359,11 @@ export async function saveMemberProgress(
 
   const { error } = await supabase.from('member_progress').upsert(row, { onConflict: 'member_id' });
   if (error) {
-    console.warn('Failed to save member progress', error.message);
+    if (/401|JWT|not authorized|row-level/i.test(error.message)) {
+      console.warn('Cloud progress save skipped (not signed in to Supabase)');
+    } else {
+      console.warn('Failed to save member progress', error.message);
+    }
     return !memberError;
   }
 

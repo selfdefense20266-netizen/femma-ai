@@ -12,7 +12,7 @@ const CYCLE_OPTIONS = [
   { id: 'track', label: 'Track my cycle', desc: 'Get personalized workout & nutrition recs', icon: 'calendar', color: '#F26BB5' },
   { id: 'pregnant', label: 'Currently pregnant', desc: 'Safe pregnancy-focused programs', icon: 'heart', color: '#FF928F' },
   { id: 'postpartum', label: 'Postpartum recovery', desc: 'Gentle recovery programs', icon: 'sunrise', color: '#A9E4D2' },
-  { id: 'skip', label: 'Skip for now', desc: "I'll set this up later", icon: 'skip-forward', color: '#B9A7F2' },
+  { id: 'none', label: 'Not tracking', desc: 'Don’t personalize around my cycle', icon: 'minus-circle', color: '#B9A7F2' },
 ];
 
 export default function CycleStep() {
@@ -30,11 +30,11 @@ export default function CycleStep() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4].map(i => (
-            <View key={i} style={[styles.progressDot, { backgroundColor: colors.primary }]} />
+          {[1, 2, 3, 4, 5].map(i => (
+            <View key={i} style={[styles.progressDot, { backgroundColor: i <= 4 ? colors.primary : colors.border }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 4 of 4</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 4 of 5</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>Cycle & reproductive health</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>Your data stays private and is only used to personalize your plan.</Text>
       </View>
@@ -78,11 +78,11 @@ export default function CycleStep() {
             } else {
               updateProfile({ cyclePhase: 'none', isPregnant: false, pregnancyWeek: 0, cycleDay: 0 });
             }
-            router.push('/onboarding/plan');
+            router.push('/onboarding/duration');
           }}
           activeOpacity={0.85}
         >
-          <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Build My Plan</Text>
+          <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
           <Feather name="arrow-right" size={18} color={selected ? '#FFFFFF' : colors.mutedForeground} />
         </TouchableOpacity>
       </View>

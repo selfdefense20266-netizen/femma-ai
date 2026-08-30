@@ -5,7 +5,7 @@ export default function LibraryCategoryLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
-      <Stack.Screen name="player" options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="player" />
     </Stack>
   );
 }

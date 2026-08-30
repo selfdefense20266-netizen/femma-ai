@@ -13,7 +13,7 @@ const ENVIRONMENTS = [
   { id: 'both', label: 'Both', icon: 'repeat', desc: 'Mix of home & gym' },
 ];
 
-const FOOD_STYLES = ['No preference', 'Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
+const FOOD_STYLES = ['Eat everything', 'Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
 
 export default function LifestyleStep() {
   const colors = useColors();
@@ -41,11 +41,11 @@ export default function LifestyleStep() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4, 5].map(i => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i <= 3 ? colors.primary : colors.border }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 3 of 4</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 3 of 5</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>Your lifestyle</Text>
       </View>
 
@@ -94,21 +94,21 @@ export default function LifestyleStep() {
 
       <View style={[styles.footer, { paddingBottom: botPad + 16, backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.nextBtn, { backgroundColor: env ? colors.primary : colors.muted }]}
-          disabled={!env}
+          style={[styles.nextBtn, { backgroundColor: env && food ? colors.primary : colors.muted }]}
+          disabled={!env || !food}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             const selectedEnv = ENVIRONMENTS.find((item) => item.id === env);
             updateProfile({
               environment: selectedEnv?.label || env || '',
-              foodPreference: food || 'No preference',
+              foodPreference: food || 'Eat everything',
             });
             router.push('/onboarding/cycle');
           }}
           activeOpacity={0.85}
         >
-          <Text style={[styles.nextBtnText, { color: env ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
-          <Feather name="arrow-right" size={18} color={env ? '#FFFFFF' : colors.mutedForeground} />
+          <Text style={[styles.nextBtnText, { color: env && food ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
+          <Feather name="arrow-right" size={18} color={env && food ? '#FFFFFF' : colors.mutedForeground} />
         </TouchableOpacity>
       </View>
     </View>

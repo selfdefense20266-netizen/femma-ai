@@ -6,6 +6,28 @@ type MealDbResponse = {
   meals?: Array<{ strMealThumb?: string | null }> | null;
 };
 
+const KEYWORD_PHOTOS: Array<[RegExp, string]> = [
+  [/chicken|turkey/, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80'],
+  [/salmon|tuna|fish/, 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80'],
+  [/tofu|stir.?fry/, 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80'],
+  [/soup|lentil/, 'https://images.unsplash.com/photo-1547592166-23acba3e6ef8?auto=format&fit=crop&w=800&q=80'],
+  [/smoothie|shake|cocoa/, 'https://images.unsplash.com/photo-1623065422902-30dd32d19fc8?auto=format&fit=crop&w=800&q=80'],
+  [/oat|overnight/, 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=800&q=80'],
+  [/egg/, 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80'],
+  [/chickpea|salad/, 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80'],
+  [/curry/, 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=800&q=80'],
+  [/yogurt|yoghurt|berry/, 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80'],
+  [/quinoa|bean|bowl/, 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80'],
+  [/sweet potato|hash/, 'https://images.unsplash.com/photo-1588166524941-3bf61a2c0d3e?auto=format&fit=crop&w=800&q=80'],
+  [/rice/, 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=800&q=80'],
+];
+
+function photoForTitle(title: string): string | null {
+  const hay = title.toLowerCase();
+  const match = KEYWORD_PHOTOS.find(([pattern]) => pattern.test(hay));
+  return match?.[1] || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+}
+
 async function searchMealDb(query: string): Promise<string | null> {
   const q = query.trim();
   if (!q) return null;
@@ -46,8 +68,9 @@ export async function lookupRecipeImageUrl(title: string): Promise<string | null
     }
   }
 
-  memoryCache.set(cacheKey, null);
-  return null;
+  const fallback = photoForTitle(title);
+  memoryCache.set(cacheKey, fallback);
+  return fallback;
 }
 
 export async function attachRecipeImages<T extends { title: string; imageUrl?: string }>(

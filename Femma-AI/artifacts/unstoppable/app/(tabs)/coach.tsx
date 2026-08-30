@@ -53,7 +53,7 @@ export default function CoachScreen() {
   const { profile, coachChatHistory, saveCoachChatHistory } = useApp();
   const suggestions = useMemo(() => buildCoachSuggestions(profile), [profile]);
   const topPad = insets.top + 8;
-  const tabBarPad = Platform.OS === 'web' ? 84 : insets.bottom + 56;
+  const tabBarPad = Platform.OS === 'web' ? 88 : insets.bottom + 72;
 
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -258,7 +258,7 @@ export default function CoachScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, width: '100%', overflow: 'hidden' },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',

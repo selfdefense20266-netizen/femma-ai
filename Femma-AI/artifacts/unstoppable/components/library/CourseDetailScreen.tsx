@@ -63,8 +63,12 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 104 }}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: botPad + 28, flexGrow: 1 }}
+      >
         <LinearGradient colors={[course.gradient[0], course.gradient[1]]} style={[styles.hero, { paddingTop: topPad }]}> 
           <View style={styles.navRow}>
             <TouchableOpacity accessibilityLabel="Go back" onPress={() => router.back()} style={styles.glassButton}>
@@ -96,6 +100,17 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
         </LinearGradient>
 
         <View style={styles.body}>
+          {firstIncomplete ? (
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => openLesson(firstIncomplete.id)}
+              style={[styles.primaryButton, { backgroundColor: course.color }]}
+            >
+              <Feather name={completedCount ? 'play' : 'play-circle'} size={18} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>{completedCount ? 'Continue video' : 'Watch video'}</Text>
+            </TouchableOpacity>
+          ) : null}
+
           <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
             <View style={styles.progressTop}>
               <View>
@@ -184,24 +199,13 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
           )}
         </View>
       </ScrollView>
-
-      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: botPad + 16 }]}> 
-        <TouchableOpacity
-          disabled={!firstIncomplete}
-          activeOpacity={0.86}
-          onPress={() => firstIncomplete && openLesson(firstIncomplete.id)}
-          style={[styles.primaryButton, { backgroundColor: course.color }]}
-        >
-          <Feather name={completedCount ? 'play' : 'book-open'} size={18} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>{completedCount ? 'Continue course' : 'Start course'}</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scroll: { flex: 1 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
   missingTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
   missingButton: { borderRadius: 20, paddingHorizontal: 22, paddingVertical: 12 },
@@ -250,8 +254,7 @@ const styles = StyleSheet.create({
   lessonMetaDot: { width: 3, height: 3, borderRadius: 2 },
   disclaimer: { flexDirection: 'row', gap: 9, borderRadius: 16, borderWidth: 1, padding: 13, alignItems: 'flex-start' },
   disclaimerText: { flex: 1, fontSize: 10.3, lineHeight: 16, fontFamily: 'Manrope_500Medium' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, paddingHorizontal: 20, paddingTop: 12 },
-  primaryButton: { height: 52, borderRadius: 26, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  primaryButton: { height: 52, borderRadius: 26, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 14.5, fontFamily: 'Manrope_700Bold' },
 });
 

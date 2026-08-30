@@ -249,8 +249,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [completeAccount]);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      if (isSupabaseConfigured) {
+        await Promise.race([
+          supabase.auth.signOut(),
+          new Promise<void>((resolve) => setTimeout(resolve, 4000)),
+        ]);
+      }
+    } catch {
+      // Local session still clears below.
+    }
     await AsyncStorage.removeItem(LOCAL_USER_KEY);
+    await AsyncStorage.removeItem('fema-ai-app-auth');
     setUser(null);
   }, []);
 

@@ -1,16 +1,23 @@
 import type { BadgeData } from '@/components/BadgeCard';
-import type { Level, Mission, UserProfile } from '@/context/AppContext';
+import type { Mission, UserProfile } from '@/context/AppContext';
 import { LEVEL_NAMES } from '@/context/AppContext';
 import type { CatalogBundle } from '@/lib/catalog';
 import { getCourseLessons, getVideoCategory } from '@/lib/catalog';
+import { planNameForGoal } from '@/lib/dailyMissions';
+import { LEVEL_THRESHOLDS, type Level } from '@/lib/levels';
+import { startOfWeek, type ActivityEvent } from '@/lib/activityLog';
+import { isSameDay, type SavedMealScan } from '@/lib/mealScanHistory';
+import {
+  countCompletedPlanDays,
+  countPlanItems,
+  isNutritionItem,
+  isPlanItemDone,
+  isWorkoutItem,
+  planTotalDays,
+  type TrainingPlan,
+} from '@/lib/trainingPlan';
 
-export const LEVEL_THRESHOLDS: Record<Level, number> = {
-  1: 0,
-  2: 1000,
-  3: 3000,
-  4: 6000,
-  5: 10000,
-};
+export { LEVEL_THRESHOLDS };
 
 export type CategoryProgress = {
   id: string;
@@ -53,24 +60,40 @@ function countInProgress(lessonIds: string[], completed: Set<string>, watch: Rec
 export function buildCategoryProgress(
   catalog: CatalogBundle,
   completedLessonIds: string[],
-  lessonWatchProgress: Record<string, number>
+  lessonWatchProgress: Record<string, number>,
+  trainingPlan?: TrainingPlan | null
 ): CategoryProgress[] {
   const completed = new Set(completedLessonIds);
+  const planItems = (trainingPlan?.days || []).flatMap((day) => day.items);
   const defs = [
-    { id: 'fitness', label: 'Fitness', icon: 'zap', color: '#F26BB5' },
-    { id: 'self-defence', label: 'Self Defence', icon: 'shield', color: '#77CDED' },
-    { id: 'cycle-pregnancy-health', label: 'Cycle & Health', icon: 'heart', color: '#FF928F' },
-    { id: 'diet-nutrition', label: 'Nutrition', icon: 'coffee', color: '#A9E4D2' },
+    { id: 'fitness', label: 'Fitness', icon: 'zap', color: '#F26BB5', catalogId: 'fitness', plan: ['fitness'] as Mission['category'][] },
+    { id: 'yoga', label: 'Yoga', icon: 'wind', color: '#B9A7F2', catalogId: '', plan: ['yoga'] as Mission['category'][] },
+    { id: 'self-defence', label: 'Self Defence', icon: 'shield', color: '#77CDED', catalogId: 'self-defence', plan: ['safety'] as Mission['category'][] },
+    { id: 'cycle-pregnancy-health', label: 'Cycle & Health', icon: 'heart', color: '#FF928F', catalogId: 'cycle-pregnancy-health', plan: [] as Mission['category'][] },
+    { id: 'diet-nutrition', label: 'Nutrition', icon: 'coffee', color: '#A9E4D2', catalogId: 'diet-nutrition', plan: ['nutrition', 'recipe'] as Mission['category'][] },
   ];
 
   return defs
     .map((def) => {
-      const ids = lessonIdsForCategory(catalog, def.id);
-      const done = ids.filter((id) => completed.has(id)).length;
-      const inProgress = countInProgress(ids, completed, lessonWatchProgress);
-      const total = ids.length;
+      const ids = def.catalogId ? lessonIdsForCategory(catalog, def.catalogId) : [];
+      const catalogDone = ids.filter((id) => completed.has(id)).length;
+      const matched = planItems.filter((item) => def.plan.includes(item.category));
+      const planDone = matched.filter((item) => item.completed).length;
+      const usePlan = matched.length > 0;
+      const done = usePlan ? planDone : catalogDone;
+      const total = usePlan ? matched.length : ids.length;
+      const inProgress = usePlan ? 0 : countInProgress(ids, completed, lessonWatchProgress);
       const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-      return { ...def, completed: done, inProgress, total, percent };
+      return {
+        id: def.id,
+        label: def.label,
+        icon: def.icon,
+        color: def.color,
+        completed: done,
+        inProgress,
+        total,
+        percent,
+      };
     })
     .filter((item) => item.total > 0);
 }
@@ -91,20 +114,27 @@ export function buildProgressBadges(input: {
   const yogaCourse = catalog.courses.find((c) => c.id === 'fit-yoga');
   const yogaIds = yogaCourse ? getCourseLessons(yogaCourse).map((l) => l.id) : [];
 
-  const fitnessDone = fitnessIds.filter((id) => completed.has(id)).length;
-  const safetyDone = safetyIds.filter((id) => completed.has(id)).length;
-  const yogaDone = yogaIds.filter((id) => completed.has(id)).length;
+  const fitnessDone =
+    fitnessIds.filter((id) => completed.has(id)).length +
+    countPlanItems(profile.trainingPlan, (item) => item.category === 'fitness', true);
+  const safetyDone =
+    safetyIds.filter((id) => completed.has(id)).length +
+    countPlanItems(profile.trainingPlan, (item) => item.category === 'safety', true);
+  const yogaDone =
+    yogaIds.filter((id) => completed.has(id)).length +
+    countPlanItems(profile.trainingPlan, (item) => item.category === 'yoga', true);
+  const workoutMissions = missions.filter((item) => item.completed && isWorkoutItem(item)).length;
   const missionsDoneToday = missions.filter((m) => m.completed).length;
-  const allMissionsDone = missions.length > 0 && missionsDoneToday === missions.length;
+  const allMissionsDone = missions.length > 0 && missions.every((item) => item.completed || item.skipped) && missionsDoneToday > 0;
 
   const badges: BadgeData[] = [
     {
       id: 'first-workout',
       title: 'First Workout',
-      description: fitnessDone >= 1 ? 'First fitness lesson done' : 'Complete 1 fitness lesson',
+      description: fitnessDone >= 1 || workoutMissions >= 1 ? 'First workout done' : 'Complete 1 workout',
       icon: 'zap',
       color: '#F26BB5',
-      earned: fitnessDone >= 1,
+      earned: fitnessDone >= 1 || workoutMissions >= 1,
     },
     {
       id: 'safety-shield',
@@ -198,7 +228,8 @@ export function buildProgressSummary(input: {
   const categories = buildCategoryProgress(
     input.catalog,
     input.completedLessonIds,
-    input.lessonWatchProgress
+    input.lessonWatchProgress,
+    input.profile.trainingPlan
   );
 
   const completed = new Set(input.completedLessonIds);
@@ -241,44 +272,31 @@ export type ProgressStatCards = {
   nutrition: { value: string; sub: string; trend: string; trendUp: boolean };
 };
 
-/** Cumulative strength score per plan week from real lesson, mission, and library data. */
+/** Workouts completed in each plan week. */
 export function buildStrengthTrend(input: {
+  activityLog: ActivityEvent[];
   journeyDay: number;
-  fitnessCompleted: number;
-  libraryPercent: number;
-  lessonsCompleted: number;
-  missionsDone: number;
-  points: number;
+  trainingPlan?: TrainingPlan | null;
+  durationWeeks?: number;
 }): WeeklyTrend {
-  const currentWeek = planWeekNumber(input.journeyDay);
-  const currentScore = Math.max(
-    0,
-    Math.round(
-      input.fitnessCompleted * 10 +
-        input.lessonsCompleted * 4 +
-        input.libraryPercent * 0.75 +
-        input.missionsDone * 6 +
-        Math.min(input.points / 80, 25)
-    )
-  );
-
-  const values = Array.from({ length: 8 }, (_, index) => {
-    const week = index + 1;
-    if (currentScore <= 0) return 0;
-    if (week > currentWeek) return currentScore;
-    const progress = week / currentWeek;
-    return Math.round(currentScore * (0.18 + 0.82 * Math.pow(progress, 1.08)));
-  });
-
-  for (let i = 1; i < values.length; i += 1) {
-    values[i] = Math.max(values[i], values[i - 1]);
-  }
-  if (currentWeek > 0) {
-    values[currentWeek - 1] = Math.max(values[currentWeek - 1], currentScore);
+  const weeks = Math.max(4, input.durationWeeks || input.trainingPlan?.durationWeeks || 8);
+  const currentWeek = planWeekNumber(input.journeyDay, weeks);
+  if (input.trainingPlan?.days?.length) {
+    const values = Array.from({ length: weeks }, (_, index) => {
+      const week = index + 1;
+      return input.trainingPlan!.days
+        .filter((day) => day.week === week)
+        .reduce((sum, day) => sum + day.items.filter((item) => isWorkoutItem(item) && item.completed).length, 0);
+    });
+    return {
+      values,
+      currentWeek,
+      highlightIndex: Math.max(0, currentWeek - 1),
+    };
   }
 
   return {
-    values,
+    values: Array.from({ length: weeks }, () => 0),
     currentWeek,
     highlightIndex: Math.max(0, currentWeek - 1),
   };
@@ -286,37 +304,51 @@ export function buildStrengthTrend(input: {
 
 export function buildProgressStatCards(input: {
   journeyDay: number;
-  fitnessCompleted: number;
-  libraryPercent: number;
-  levelPercent: number;
-  mealScanCount: number;
+  activityLog: ActivityEvent[];
+  mealScans: SavedMealScan[];
   streak: number;
-  missionsDone: number;
+  trainingPlan?: TrainingPlan | null;
+  durationWeeks?: number;
+  missions?: Mission[];
 }): ProgressStatCards {
-  const planWeek = planWeekNumber(input.journeyDay);
-  const workoutRate = planWeek > 0 ? Math.round((input.fitnessCompleted / planWeek) * 100) : 0;
-  const expectedLibrary = Math.round((planWeek / 8) * 100);
-  const libraryDelta = input.libraryPercent - Math.round(expectedLibrary * 0.45);
-  const levelPct = Math.round(input.levelPercent * 100);
+  const planWeek = planWeekNumber(input.journeyDay, input.durationWeeks);
+  const planWorkouts = countPlanItems(input.trainingPlan, isWorkoutItem, true);
+  const todayWorkouts = (input.missions || []).filter((item) => item.completed && isWorkoutItem(item)).length;
+  const workouts = Math.max(planWorkouts, input.activityLog.filter((event) => event.kind === 'workout').length);
+  const thisWeekDays = (input.trainingPlan?.days || []).filter((day) => day.week === planWeek);
+  const expectedThisWeek = thisWeekDays.flatMap((day) => day.items).filter(isWorkoutItem).length;
+  const workoutsThisWeek =
+    thisWeekDays.flatMap((day) => day.items).filter((item) => isWorkoutItem(item) && item.completed).length || todayWorkouts;
+  const pacePercent = expectedThisWeek > 0 ? Math.round((workoutsThisWeek / expectedThisWeek) * 100) : workoutsThisWeek > 0 ? 100 : 0;
+  const planScans = countPlanItems(input.trainingPlan, isNutritionItem, true);
+  const scans = Math.max(input.mealScans.length, planScans);
+  const weekStart = startOfWeek(new Date());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+  const scansToday = input.mealScans.filter((scan) => isSameDay(scan.scannedAt)).length;
+  const scansThisWeek = input.mealScans.filter((scan) => {
+    const time = Date.parse(scan.scannedAt);
+    return Number.isFinite(time) && time >= weekStart.getTime() && time < weekEnd.getTime();
+  }).length;
 
   return {
     workouts: {
-      value: String(input.fitnessCompleted),
-      sub: 'Completed',
-      trend: input.streak > 0 ? `↑ ${input.streak}d streak` : workoutRate > 0 ? `↑ ${Math.min(workoutRate, 99)}%` : 'Start today',
-      trendUp: input.fitnessCompleted > 0 || input.streak > 0,
+      value: String(workouts),
+      sub: workouts === 1 ? 'Completed' : 'Completed',
+      trend: input.streak > 0 ? `${input.streak}d streak` : workoutsThisWeek > 0 ? `${workoutsThisWeek} this week` : 'Start today',
+      trendUp: workouts > 0 || input.streak > 0,
     },
     strength: {
-      value: libraryDelta >= 0 ? `+${libraryDelta}%` : `${libraryDelta}%`,
-      sub: 'vs plan pace',
-      trend: `↑ ${levelPct}% level`,
-      trendUp: libraryDelta >= 0 || levelPct > 0,
+      value: `${Math.min(999, pacePercent)}%`,
+      sub: 'of plan pace',
+      trend: expectedThisWeek > 0 ? `${workoutsThisWeek}/${expectedThisWeek} this week` : `${workoutsThisWeek} this week`,
+      trendUp: expectedThisWeek > 0 ? workoutsThisWeek >= expectedThisWeek : workoutsThisWeek > 0,
     },
     nutrition: {
-      value: String(input.mealScanCount),
-      sub: input.mealScanCount === 1 ? 'Scan logged' : 'Scans logged',
-      trend: input.missionsDone > 0 ? `↑ ${input.missionsDone} missions` : input.mealScanCount > 0 ? `↑ ${input.mealScanCount}` : 'Scan food',
-      trendUp: input.mealScanCount > 0 || input.missionsDone > 0,
+      value: String(scans),
+      sub: scans === 1 ? 'Scan logged' : 'Scans logged',
+      trend: scansToday > 0 ? `${scansToday} today` : scansThisWeek > 0 ? `${scansThisWeek} this week` : planScans > 0 ? `${planScans} logged` : 'Scan food',
+      trendUp: scans > 0,
     },
   };
 }
@@ -334,24 +366,37 @@ export function buildActivityTrend(input: {
   lessonsCompleted: number;
   missionsDone: number;
   streak: number;
+  activityLog?: ActivityEvent[];
 }): number[] {
   return buildStrengthTrend({
+    activityLog: input.activityLog || [],
     journeyDay: input.journeyDay,
-    fitnessCompleted: 0,
-    libraryPercent: 0,
-    lessonsCompleted: input.lessonsCompleted,
-    missionsDone: input.missionsDone,
-    points: input.streak * 20,
   }).values;
 }
 
-export function planProgressPercent(summary: Pick<ProgressSummary, 'libraryPercent' | 'missionPercent'>, journeyDay: number) {
-  const journeyPct = Math.min(100, Math.round((journeyDay / 56) * 100));
-  return Math.round((summary.libraryPercent + summary.missionPercent + journeyPct) / 3);
+export function planWeekNumber(journeyDay: number, durationWeeks = 8) {
+  const max = Math.max(1, durationWeeks || 8);
+  return Math.min(max, Math.max(1, Math.ceil((journeyDay || 1) / 7)));
 }
 
-export function planWeekNumber(journeyDay: number) {
-  return Math.min(8, Math.max(1, Math.ceil(journeyDay / 7)));
+export function planProgressPercent(input: {
+  journeyDay: number;
+  missions: Mission[];
+  trainingPlan?: TrainingPlan | null;
+  durationWeeks?: number;
+}) {
+  const totalDays = planTotalDays(input.durationWeeks || input.trainingPlan?.durationWeeks);
+  const todayDone = input.missions.length > 0 && input.missions.every(isPlanItemDone);
+  const completedDays = countCompletedPlanDays(input.trainingPlan, input.journeyDay, todayDone);
+  const todayFraction =
+    todayDone || !input.missions.length
+      ? 0
+      : input.missions.filter(isPlanItemDone).length / input.missions.length;
+  return Math.min(100, Math.round(((completedDays + todayFraction) / totalDays) * 100));
+}
+
+export function displayPlanName(profile: UserProfile) {
+  return profile.planName || planNameForGoal(profile.goal) || 'Your Plan';
 }
 
 export function levelProgress(profile: UserProfile) {

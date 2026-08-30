@@ -25,6 +25,7 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
+      "./plugins/withShortNativePaths.js",
       [
         "expo-router",
         {
@@ -33,11 +34,22 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#F26BB5",
+          "defaultChannel": "daily-tasks"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "revenueCatApiKey": "test_bPYgMvVaIOBKbTiiXmfzxcrTeyv"
     }
   }
 }

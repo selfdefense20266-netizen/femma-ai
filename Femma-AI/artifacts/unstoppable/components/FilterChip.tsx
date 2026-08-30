@@ -34,10 +34,11 @@ export default function FilterChip({ label, selected = false, onPress, color }: 
 
 const styles = StyleSheet.create({
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 100,
     borderWidth: 1,
+    flexShrink: 0,
   },
   label: {
     fontSize: 13,

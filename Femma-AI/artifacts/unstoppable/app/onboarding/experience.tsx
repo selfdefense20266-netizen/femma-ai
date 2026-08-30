@@ -42,11 +42,11 @@ export default function ExperienceStep() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4, 5].map(i => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i <= 2 ? colors.primary : colors.border }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 2 of 4</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 2 of 5</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>Your fitness experience</Text>
       </View>
 

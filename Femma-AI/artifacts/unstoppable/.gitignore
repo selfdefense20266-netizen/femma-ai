@@ -38,4 +38,6 @@ yarn-error.*
 *.tsbuildinfo
 .vercel
 
+scripts/.roadmap-out/
+
 .env

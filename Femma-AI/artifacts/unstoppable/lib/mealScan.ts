@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import { Platform } from 'react-native';
+import { applyScanVerdict } from '@/lib/nutritionPlan';
 
 export type MealScanResult = {
   name: string;
@@ -15,6 +16,10 @@ export type MealScanResult = {
   tags?: string[];
   ingredients?: Array<{ name: string; concern?: boolean; detail?: string }>;
   alternatives?: Array<{ name: string; score: number; why: string }>;
+  verdict?: 'good' | 'okay' | 'avoid';
+  verdict_label?: string;
+  calories_note?: string;
+  fit_reason?: string;
 };
 
 type MealScanResponse = {
@@ -73,6 +78,9 @@ export async function scanMealFromBase64(input: {
   imageBase64: string;
   mimeType?: string;
   goal?: string;
+  foodPreference?: string;
+  durationWeeks?: number;
+  dailyTime?: string;
 }) {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
@@ -83,6 +91,9 @@ export async function scanMealFromBase64(input: {
     imageBase64: shrunk.base64,
     mimeType: shrunk.mimeType,
     goal: input.goal || 'balanced nutrition for women',
+    foodPreference: input.foodPreference || '',
+    durationWeeks: input.durationWeeks || 8,
+    dailyTime: input.dailyTime || '',
   };
 
   const post = async (token: string) => {
@@ -107,26 +118,32 @@ export async function scanMealFromBase64(input: {
   };
 
   let token = await authToken();
-  let result: { response: Response; data: MealScanResponse };
+  let posted: { response: Response; data: MealScanResponse };
   try {
-    result = await post(token);
+    posted = await post(token);
   } catch {
     throw new Error('Could not reach the meal scanner. Check your connection and try a smaller photo.');
   }
-  if (result.response.status === 401 && token !== supabaseAnonKey) {
+  if (posted.response.status === 401 && token !== supabaseAnonKey) {
     try {
-      result = await post(supabaseAnonKey);
+      posted = await post(supabaseAnonKey);
     } catch {
       throw new Error('Could not reach the meal scanner. Check your connection and try a smaller photo.');
     }
   }
-  const { response, data } = result;
+  const { response, data } = posted;
 
   if (!response.ok || data?.error) {
     throw new Error(data?.error || `Meal scan failed (${response.status})`);
   }
   if (!data?.result) throw new Error('No scan result returned');
 
-  setLastMealScan(data.result);
-  return data.result;
+  const scanned = applyScanVerdict(data.result, {
+    goal: input.goal,
+    foodPreference: input.foodPreference,
+    planDurationWeeks: input.durationWeeks,
+    dailyTime: input.dailyTime,
+  });
+  setLastMealScan(scanned);
+  return scanned;
 }

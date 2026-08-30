@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.openai-meal-scan]
 verify_jwt = false
+
+[functions.openai-course-plan]
+verify_jwt = false

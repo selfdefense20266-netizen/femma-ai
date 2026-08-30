@@ -150,12 +150,14 @@ export default function ScanScreen() {
   );
 
   const goalHint = useMemo(() => {
-    const goal = profile?.goal || '';
-    if (/loss|lean|cut/i.test(goal)) return 'weight-loss friendly nutrition';
-    if (/muscle|strength|gain/i.test(goal)) return 'muscle recovery and protein';
-    if (/pregnant|prenatal/i.test(goal)) return 'pregnancy-safe nutrition';
-    return 'balanced nutrition for women';
-  }, [profile?.goal]);
+    const labels = (profile?.goal || '')
+      .split(/[,/&+]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(' + ') || 'your plan';
+    const food = profile?.foodPreference && profile.foodPreference !== 'Eat everything' ? profile.foodPreference : '';
+    return food ? `${labels} · ${food}` : labels;
+  }, [profile?.goal, profile?.foodPreference]);
 
   const stopScanAnim = () => {
     cancelAnimation(scanLineAnim);
@@ -179,7 +181,10 @@ export default function ScanScreen() {
       const result = await scanMealFromBase64({
         imageBase64: asset.base64,
         mimeType: asset.mimeType || guessMime(asset.uri),
-        goal: goalHint,
+        goal: profile?.goal || goalHint,
+        foodPreference: profile?.foodPreference,
+        durationWeeks: profile?.planDurationWeeks,
+        dailyTime: profile?.dailyTime,
       });
 
       const rows = await saveMealScan(result, user?.email);

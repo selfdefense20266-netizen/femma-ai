@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { Recipe } from '@/data/recipes';
+import { localRecipeImage, type Recipe } from '@/data/recipes';
 import { lookupRecipeImageUrl } from '@/lib/recipeImages';
 
 type Props = {
@@ -13,9 +13,11 @@ type Props = {
 };
 
 export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0 }: Props) {
-  const [uri, setUri] = useState<string | undefined>(recipe.imageUrl);
+  const local = localRecipeImage(recipe.image);
+  const [uri, setUri] = useState<string | undefined>(local ? undefined : recipe.imageUrl);
 
   useEffect(() => {
+    if (local) return;
     if (recipe.imageUrl) {
       setUri(recipe.imageUrl);
       return;
@@ -27,31 +29,29 @@ export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0 
     return () => {
       cancelled = true;
     };
-  }, [recipe.title, recipe.imageUrl]);
+  }, [local, recipe.title, recipe.imageUrl]);
 
   const flatStyle = StyleSheet.flatten(style) || {};
   const radius = rounded || (typeof flatStyle.borderRadius === 'number' ? flatStyle.borderRadius : 0);
-
-  if (uri) {
-    return (
-      <Image
-        source={{ uri }}
-        style={[style, styles.image, radius ? { borderRadius: radius } : null]}
-        resizeMode="cover"
-      />
-    );
-  }
+  const source = local || (uri ? { uri } : undefined);
 
   return (
-    <LinearGradient colors={recipe.gradient} style={style}>
-      <View style={styles.fallback}>
-        <Feather name="book-open" size={iconSize} color="rgba(255,255,255,0.72)" />
-      </View>
-    </LinearGradient>
+    <View style={[style, styles.wrap, radius ? { borderRadius: radius } : null]}>
+      {source ? (
+        <Image source={source} style={styles.fill} resizeMode="cover" />
+      ) : (
+        <LinearGradient colors={recipe.gradient} style={styles.fill}>
+          <View style={styles.fallback}>
+            <Feather name="book-open" size={iconSize} color="rgba(255,255,255,0.72)" />
+          </View>
+        </LinearGradient>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  image: { width: '100%', height: '100%' },
+  wrap: { overflow: 'hidden' },
+  fill: { width: '100%', height: '100%' },
   fallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

@@ -9,6 +9,7 @@ interface Props {
   mission: Mission;
   onPress?: () => void;
   onComplete?: () => void;
+  onSkip?: () => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -19,13 +20,20 @@ const CATEGORY_LABELS: Record<string, string> = {
   recipe: 'Recipe',
 };
 
-export default function MissionCard({ mission, onPress, onComplete }: Props) {
+export default function MissionCard({ mission, onPress, onComplete, onSkip }: Props) {
   const colors = useColors();
+  const resolved = mission.completed || mission.skipped;
 
   const handleComplete = () => {
-    if (mission.completed) return;
+    if (resolved) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onComplete?.();
+  };
+
+  const handleSkip = () => {
+    if (resolved) return;
+    Haptics.selectionAsync();
+    onSkip?.();
   };
 
   return (
@@ -35,21 +43,25 @@ export default function MissionCard({ mission, onPress, onComplete }: Props) {
         {
           backgroundColor: colors.card,
           borderColor: mission.completed ? mission.accentColor + '40' : colors.border,
-          opacity: mission.completed ? 0.78 : 1,
+          opacity: resolved ? 0.78 : 1,
         },
       ]}
     >
       <View style={[styles.stripe, { backgroundColor: mission.accentColor }]} />
 
-      <TouchableOpacity style={styles.main} onPress={onPress} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.main} onPress={onPress} activeOpacity={0.8} disabled={mission.skipped}>
         <View style={[styles.iconWrap, { backgroundColor: mission.accentColor + '18' }]}>
-          <Feather name={mission.icon as any} size={20} color={mission.accentColor} />
+          <Feather
+            name={((Feather.glyphMap as Record<string, number>)[mission.icon] ? mission.icon : 'circle') as never}
+            size={20}
+            color={mission.accentColor}
+          />
         </View>
 
         <View style={styles.content}>
           <View style={styles.topRow}>
             <Text style={[styles.category, { color: mission.accentColor }]}>
-              {mission.label || CATEGORY_LABELS[mission.category] || 'Mission'}
+              {mission.skipped ? 'Skipped' : mission.label || CATEGORY_LABELS[mission.category] || 'Mission'}
             </Text>
             {mission.duration > 0 && (
               <View style={[styles.durationBadge, { backgroundColor: colors.muted }]}>
@@ -58,9 +70,15 @@ export default function MissionCard({ mission, onPress, onComplete }: Props) {
               </View>
             )}
           </View>
-          <Text style={[styles.title, { color: mission.completed ? colors.mutedForeground : colors.foreground }]} numberOfLines={2}>
+          <Text style={[styles.title, { color: resolved ? colors.mutedForeground : colors.foreground }]} numberOfLines={2}>
             {mission.title}
           </Text>
+          {mission.cue ? (
+            <Text style={[styles.cue, { color: colors.mutedForeground }]} numberOfLines={1}>
+              {mission.animation ? 'How to · ' : ''}
+              {mission.cue}
+            </Text>
+          ) : null}
           {mission.calories > 0 || mission.difficulty ? (
             <View style={styles.metaRow}>
               {mission.difficulty ? (
@@ -74,24 +92,33 @@ export default function MissionCard({ mission, onPress, onComplete }: Props) {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[
-          styles.checkBtn,
-          {
-            backgroundColor: mission.completed ? mission.accentColor : colors.card,
-            borderColor: mission.completed ? mission.accentColor : colors.border,
-          },
-        ]}
-        onPress={handleComplete}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityLabel={mission.completed ? 'Mission completed' : 'Mark mission done'}
-      >
-        {mission.completed ? (
-          <Feather name="check" size={16} color="#FFFFFF" />
-        ) : (
-          <View style={[styles.emptyCheck, { borderColor: colors.mutedForeground }]} />
-        )}
-      </TouchableOpacity>
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={[
+            styles.checkBtn,
+            {
+              backgroundColor: mission.completed ? mission.accentColor : colors.card,
+              borderColor: mission.completed ? mission.accentColor : colors.border,
+            },
+          ]}
+          onPress={handleComplete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel={mission.completed ? 'Mission completed' : 'Mark mission done'}
+        >
+          {mission.completed ? (
+            <Feather name="check" size={16} color="#FFFFFF" />
+          ) : mission.skipped ? (
+            <Feather name="minus" size={14} color={colors.mutedForeground} />
+          ) : (
+            <View style={[styles.emptyCheck, { borderColor: colors.mutedForeground }]} />
+          )}
+        </TouchableOpacity>
+        {!resolved && onSkip ? (
+          <TouchableOpacity onPress={handleSkip} hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}>
+            <Text style={[styles.skipText, { color: colors.mutedForeground }]}>Skip</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -120,6 +147,7 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -135,6 +163,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minWidth: 0,
     gap: 3,
   },
   topRow: {
@@ -167,6 +196,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     lineHeight: 21,
   },
+  cue: {
+    fontSize: 12,
+    fontFamily: 'Manrope_400Regular',
+    lineHeight: 16,
+  },
   metaRow: {
     flexDirection: 'row',
     gap: 10,
@@ -182,6 +216,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  actions: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  skipText: {
+    fontSize: 11,
+    fontFamily: 'Manrope_600SemiBold',
   },
   emptyCheck: {
     width: 12,

@@ -8,16 +8,17 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
 import { getLastMealScan } from '@/lib/mealScan';
+import { applyScanVerdict } from '@/lib/nutritionPlan';
 
 export default function NutritionResultScreen() {
   const colors = useColors();
-  const { completeMission } = useApp();
+  const { completeMission, profile } = useApp();
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
   const [serving, setServing] = useState(1);
 
-  const scan = getLastMealScan();
+  const scan = getLastMealScan() ? applyScanVerdict(getLastMealScan()!, profile) : null;
 
   const macros = useMemo(() => {
     const calories = Number(scan?.calories) || 0;
@@ -42,7 +43,11 @@ export default function NutritionResultScreen() {
 
   const alternatives = scan?.alternatives || [];
   const score = Number(scan?.score) || 0;
-  const scoreColor = score >= 80 ? colors.mint : score >= 60 ? colors.warmYellow : colors.coral;
+  const verdict = scan?.verdict || (score >= 78 ? 'good' : score >= 58 ? 'okay' : 'avoid');
+  const scoreColor = verdict === 'good' ? colors.mint : verdict === 'okay' ? colors.warmYellow : colors.coral;
+  const verdictTitle =
+    scan?.verdict_label ||
+    (verdict === 'good' ? 'This is good for your plan' : verdict === 'okay' ? 'Okay for your plan' : 'Not a fit for your plan');
 
   if (!scan) {
     return (
@@ -97,6 +102,19 @@ export default function NutritionResultScreen() {
                   <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
                   <Text style={[styles.scoreLabel, { color: colors.mutedForeground }]}>score</Text>
                 </View>
+              </View>
+
+              <View style={[styles.verdictCard, { backgroundColor: scoreColor + '18', borderColor: scoreColor + '50' }]}>
+                <Text style={[styles.verdictTitle, { color: scoreColor === colors.coral ? colors.coral : colors.foreground }]}>
+                  {verdict === 'good' ? 'This is good for you' : verdict === 'okay' ? 'This is okay' : 'Skip this one'}
+                </Text>
+                <Text style={[styles.verdictLabel, { color: colors.foreground }]}>{verdictTitle}</Text>
+                <Text style={[styles.verdictCals, { color: colors.mutedForeground }]}>
+                  {scan.calories_note || `${Math.round(Number(scan.calories) || 0)} kcal · ${Math.round(Number(scan.protein_g) || 0)}g protein`}
+                </Text>
+                {scan.fit_reason ? (
+                  <Text style={[styles.verdictReason, { color: colors.mutedForeground }]}>{scan.fit_reason}</Text>
+                ) : null}
               </View>
 
               <View style={[styles.servingRow, { backgroundColor: colors.muted, borderRadius: 12 }]}>
@@ -237,6 +255,11 @@ const styles = StyleSheet.create({
   scoreCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
   scoreNum: { fontSize: 22, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
   scoreLabel: { fontSize: 10, fontFamily: 'Manrope_400Regular' },
+  verdictCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 4 },
+  verdictTitle: { fontSize: 13, fontFamily: 'Manrope_700Bold', letterSpacing: 0.2 },
+  verdictLabel: { fontSize: 15, fontFamily: 'Manrope_600SemiBold', lineHeight: 21 },
+  verdictCals: { fontSize: 13, fontFamily: 'Manrope_600SemiBold', marginTop: 2 },
+  verdictReason: { fontSize: 12, fontFamily: 'Manrope_400Regular', lineHeight: 17, marginTop: 2 },
   servingRow: { flexDirection: 'row', alignItems: 'center', padding: 12, justifyContent: 'space-between' },
   servingLabel: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
   servingControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },

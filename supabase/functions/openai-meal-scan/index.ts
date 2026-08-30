@@ -37,7 +37,14 @@ Deno.serve(async (req) => {
   const openAiKey = await resolveOpenAiKey(adminClient);
   if (!openAiKey) return json({ error: "OpenAI API key is not configured on the server" }, 500);
 
-  let body: { imageBase64?: string; mimeType?: string; goal?: string };
+  let body: {
+    imageBase64?: string;
+    mimeType?: string;
+    goal?: string;
+    foodPreference?: string;
+    durationWeeks?: number;
+    dailyTime?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -48,8 +55,19 @@ Deno.serve(async (req) => {
   if (!imageBase64) return json({ error: "imageBase64 is required" }, 400);
   const mimeType = String(body.mimeType || "image/jpeg");
   const goal = String(body.goal || "balanced nutrition for women");
+  const foodPreference = String(body.foodPreference || "Eat everything");
+  const durationWeeks = Number(body.durationWeeks) || 8;
+  const dailyTime = String(body.dailyTime || "20–30 min");
 
-  const prompt = `You are Fema AI nutrition coach. Analyze this food photo for a woman focusing on ${goal}.
+  const prompt = `You are Fema AI nutrition coach. Analyze this food photo for a woman.
+Her training selection: ${goal}
+Plan length: ${durationWeeks} weeks
+Daily training time: ${dailyTime}
+What she can eat: ${foodPreference}
+
+Judge the meal AGAINST that selection. If it breaks her food rule (vegan, vegetarian, gluten-free, dairy-free, high protein, low carb), verdict must be "avoid".
+Say clearly whether this food is good for her plan, and give calories.
+
 Return ONLY valid JSON with this shape:
 {
   "name": "food name",
@@ -61,6 +79,10 @@ Return ONLY valid JSON with this shape:
   "fiber_g": number,
   "sugar_g": number,
   "summary": "1-2 sentence insight",
+  "verdict": "good" | "okay" | "avoid",
+  "verdict_label": "Good for your Boxing · Vegan plan",
+  "calories_note": "420 kcal · 28g protein",
+  "fit_reason": "why this helps or hurts her selected plan",
   "tips": ["tip1", "tip2", "tip3"],
   "tags": ["tag1", "tag2"],
   "ingredients": [{"name": "item", "concern": false, "detail": ""}],
