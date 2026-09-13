@@ -171,7 +171,12 @@ export default function RecipeBrowse() {
                   }}
                   activeOpacity={0.85}
                 >
-                  <RecipeImage recipe={r} style={{ width: imageSize, height: imageSize }} iconSize={28} />
+                  <RecipeImage
+                    recipe={r}
+                    style={{ width: imageSize, height: imageSize }}
+                    iconSize={28}
+                    rounded={0}
+                  />
                   <View style={styles.recipeInfo}>
                     <Text style={[styles.recipeTitle, { color: colors.foreground }]} numberOfLines={2}>
                       {r.title}

@@ -13,6 +13,7 @@ type MemberRow = {
   first_name?: string | null;
   last_name?: string | null;
   password_hash?: string | null;
+  plan_id?: string | null;
 };
 
 function splitName(name?: string | null) {

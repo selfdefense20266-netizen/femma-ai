@@ -126,28 +126,32 @@ export default function RecipeDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 100 }}>
         <View style={[styles.hero, { paddingTop: topPad }]}>
-          <RecipeImage recipe={recipe} style={styles.heroImage} iconSize={40} />
-          <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.55)']} style={StyleSheet.absoluteFill} />
-          <View style={styles.heroHeader}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Feather name="arrow-left" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
-              <Feather name="bookmark" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.heroTitle}>{recipe.title}</Text>
-          <View style={styles.heroMeta}>
-            {[
-              { icon: 'clock', val: recipe.time },
-              { icon: 'users', val: `${recipe.servings} serving${recipe.servings === 1 ? '' : 's'}` },
-              { icon: 'zap', val: `${recipe.calories} kcal` },
-            ].map((m) => (
-              <View key={m.val} style={styles.heroMetaItem}>
-                <Feather name={m.icon as never} size={13} color="rgba(255,255,255,0.85)" />
-                <Text style={styles.heroMetaText}>{m.val}</Text>
+          <View style={styles.heroMedia}>
+            <RecipeImage recipe={recipe} style={styles.heroImage} iconSize={40} />
+            <LinearGradient colors={['rgba(0,0,0,0.12)', 'rgba(0,0,0,0.58)']} style={StyleSheet.absoluteFill} />
+            <View style={styles.heroHeader}>
+              <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+                <Feather name="arrow-left" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+                <Feather name="bookmark" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroTitle}>{recipe.title}</Text>
+              <View style={styles.heroMeta}>
+                {[
+                  { icon: 'clock', val: recipe.time },
+                  { icon: 'users', val: `${recipe.servings} serving${recipe.servings === 1 ? '' : 's'}` },
+                  { icon: 'zap', val: `${recipe.calories} kcal` },
+                ].map((m) => (
+                  <View key={m.val} style={styles.heroMetaItem}>
+                    <Feather name={m.icon as never} size={13} color="rgba(255,255,255,0.85)" />
+                    <Text style={styles.heroMetaText}>{m.val}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
+            </View>
           </View>
         </View>
 
@@ -225,13 +229,27 @@ const styles = StyleSheet.create({
   cookNavBtn: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
   cookNextBtn: { flex: 1, height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   cookNextText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  hero: { paddingHorizontal: 22, paddingBottom: 28, minHeight: 260, overflow: 'hidden', justifyContent: 'flex-end' },
+  hero: { paddingHorizontal: 16, paddingBottom: 8 },
+  heroMedia: {
+    height: 220,
+    borderRadius: 20,
+    overflow: 'hidden',
+    justifyContent: 'space-between',
+  },
   heroImage: { ...StyleSheet.absoluteFillObject },
-  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, zIndex: 2 },
+  heroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    zIndex: 2,
+  },
   saveBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  heroCopy: { paddingHorizontal: 16, paddingBottom: 16, zIndex: 2 },
   heroIcon: { justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  heroTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', marginBottom: 12, zIndex: 2 },
-  heroMeta: { flexDirection: 'row', gap: 16, flexWrap: 'wrap', zIndex: 2 },
+  heroTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', marginBottom: 10 },
+  heroMeta: { flexDirection: 'row', gap: 14, flexWrap: 'wrap' },
   heroMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   heroMetaText: { color: 'rgba(255,255,255,0.9)', fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
   body: { padding: 22, gap: 16 },

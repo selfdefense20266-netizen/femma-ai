@@ -31,12 +31,25 @@ import usePagination from 'hooks/usePagination';
 import EyeOutlined from '@ant-design/icons/EyeOutlined';
 
 export default function Users() {
-  const { users, plans, levelNames, setUserStatus, assignPlan, saveUser, membersLoading, membersError } = useAdminData();
+  const {
+    users,
+    plans,
+    levelNames,
+    setUserStatus,
+    assignPlan,
+    saveUser,
+    sendNewNotification,
+    membersLoading,
+    membersError
+  } = useAdminData();
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteBody, setNoteBody] = useState('');
+  const [noteMsg, setNoteMsg] = useState('');
 
   const rows = useMemo(() => {
     return users
@@ -167,11 +180,15 @@ export default function Users() {
       <Drawer
         anchor="right"
         open={Boolean(selected)}
-        onClose={() => setSelected(null)}
+        onClose={() => {
+          setSelected(null);
+          setNoteTitle('');
+          setNoteBody('');
+        }}
         PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}
       >
         {selected && (
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
             <Typography variant="h4">{selected.name}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {selected.email}
@@ -192,6 +209,59 @@ export default function Users() {
                 }
               />
               <Detail label="Joined" value={selected.joinedAt} />
+            </Stack>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Send notification
+            </Typography>
+            <Stack spacing={1.25} sx={{ mb: 2 }}>
+              <TextField
+                size="small"
+                label="Title"
+                fullWidth
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+              />
+              <TextField
+                size="small"
+                label="Message"
+                fullWidth
+                multiline
+                minRows={3}
+                value={noteBody}
+                onChange={(e) => setNoteBody(e.target.value)}
+              />
+              {noteMsg ? (
+                <Alert severity={noteMsg.startsWith('Sent') ? 'success' : 'error'} onClose={() => setNoteMsg('')}>
+                  {noteMsg}
+                </Alert>
+              ) : null}
+              <Button
+                variant="contained"
+                disabled={saving || !noteTitle.trim() || !noteBody.trim()}
+                onClick={async () => {
+                  setSaving(true);
+                  setNoteMsg('');
+                  try {
+                    await sendNewNotification({
+                      title: noteTitle.trim(),
+                      body: noteBody.trim(),
+                      audience: `email:${String(selected.email).trim().toLowerCase()}`
+                    });
+                    setNoteTitle('');
+                    setNoteBody('');
+                    setNoteMsg(`Sent to ${selected.email}`);
+                  } catch (err) {
+                    setNoteMsg(err?.message || 'Could not send notification');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                {saving ? 'Sending…' : 'Send to this user'}
+              </Button>
             </Stack>
 
             <Divider sx={{ my: 2 }} />

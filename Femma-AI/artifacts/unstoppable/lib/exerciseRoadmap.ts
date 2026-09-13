@@ -375,7 +375,8 @@ export function buildRoadmapWeekDays(input: {
 
   return WEEKDAYS.map((weekday, index) => {
     const exerciseCount = exerciseCountForDay(input.fitnessLevel || '', input.dailyTime);
-    const leftover = Math.max(exerciseCount, budget - RECIPE_MIN - SCAN_MIN);
+    const breathMins = input.category === 'yoga' ? 5 : 0;
+    const leftover = Math.max(exerciseCount, budget - RECIPE_MIN - SCAN_MIN - breathMins);
     const times = splitExerciseMinutes(leftover, exerciseCount);
     const moves = collectMoves(pack, environment, index, exerciseCount, input.fitnessLevel || '');
     const icons = [
@@ -403,6 +404,28 @@ export function buildRoadmapWeekDays(input: {
         steps: move.steps,
       })
     );
+
+    // Yoga plans always end training with an important deep-breath session.
+    if (breathMins > 0) {
+      exercises.push(
+        task({
+          slot: 'exercise',
+          title: `${breathMins} min Deep breath exercise ${where}`,
+          category: 'yoga',
+          label: 'Breath',
+          duration: breathMins,
+          calories: breathMins * 3,
+          difficulty,
+          accentColor: ACCENT.yoga,
+          icon: 'wind',
+          href: '/exercise-guide?animation=breath',
+          cue: 'Inhale slowly through the nose, exhale longer through the mouth.',
+          animation: 'breath',
+          steps: ANIMATION_STEPS.breath,
+        })
+      );
+    }
+
     const daily = [
       ...exercises,
       task({
@@ -613,12 +636,61 @@ export function generateRoadmapTrainingPlan(profile: Pick<
         lessons: [],
       },
     ],
-    days: expandRoadmapDays(weekDays, weeks, profile.foodPreference || 'Eat everything'),
+    days: ensureYogaDeepBreathDays(
+      expandRoadmapDays(weekDays, weeks, profile.foodPreference || 'Eat everything'),
+      category
+    ),
     startedAt,
     endsAt: addDays(startedAt, planTotalDays(weeks)),
     status: 'active',
     generatedBy: 'roadmap',
   };
+}
+
+/** Inject Deep breath as the last exercise before recipe/meal on yoga plans (including older saved plans). */
+export function ensureYogaDeepBreathDays(days: PlanDay[], category: RoadmapCategoryId): PlanDay[] {
+  if (category !== 'yoga' || !days?.length) return days;
+  let changed = false;
+  const next = days.map((day) => {
+    const hasBreath = day.items.some((item) => /deep breath/i.test(item.title || ''));
+    if (hasBreath) return day;
+    changed = true;
+    const difficulty = day.items.find((item) => item.slot === 'exercise')?.difficulty || 'Beginner';
+    const breath: Mission = {
+      id: `ex-breath-d${day.day}`,
+      title: '5 min Deep breath exercise at home',
+      category: 'yoga',
+      label: 'Breath',
+      duration: 5,
+      calories: 15,
+      difficulty,
+      completed: false,
+      accentColor: ACCENT.yoga,
+      icon: 'wind',
+      href: '/exercise-guide?animation=breath',
+      cue: 'Inhale slowly through the nose, exhale longer through the mouth.',
+      animation: 'breath',
+      steps: ANIMATION_STEPS.breath,
+      slot: 'exercise',
+    };
+    const recipeIdx = day.items.findIndex((item) => item.slot === 'recipe');
+    const items = [...day.items];
+    items.splice(recipeIdx >= 0 ? recipeIdx : items.length, 0, breath);
+    return { ...day, items };
+  });
+  return changed ? next : days;
+}
+
+export function ensureYogaDeepBreathPlan<T extends { days?: PlanDay[]; goal?: string }>(
+  plan: T | null | undefined,
+  goal?: string
+): T | null | undefined {
+  if (!plan?.days?.length) return plan;
+  const category = primaryRoadmapCategory(goal || plan.goal || '');
+  if (category !== 'yoga') return plan;
+  const days = ensureYogaDeepBreathDays(plan.days, category);
+  if (days === plan.days) return plan;
+  return { ...plan, days };
 }
 
 export type RoadmapTestFailure = { combo: string; message: string };
@@ -654,7 +726,8 @@ export function assertPlanForUser(
     const recipe = day.items.find((item) => item.slot === 'recipe');
     const exercises = day.items.filter((item) => item.slot === 'exercise');
     const courses = day.items.filter((item) => item.slot === 'course');
-    const expectedExercises = exerciseCountForDay(profile.fitnessLevel || 'beginner', profile.dailyTime);
+    const expectedExercises =
+      exerciseCountForDay(profile.fitnessLevel || 'beginner', profile.dailyTime) + (category === 'yoga' ? 1 : 0);
     const expectedSlots = [
       ...Array.from({ length: expectedExercises }, () => 'exercise'),
       'recipe',

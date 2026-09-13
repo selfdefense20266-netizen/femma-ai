@@ -1,6 +1,7 @@
 const PLAN_WEEKS = [4, 8, 12] as const;
 
 export const ONBOARDING_GOALS = [
+  { id: 'yoga', label: 'Yoga', icon: 'wind', desc: 'Strength, breath, and flow' },
   { id: 'weight_loss', label: 'Weight Loss', icon: 'trending-down', desc: 'Burn fat, feel lighter' },
   { id: 'tone', label: 'Tone & Sculpt', icon: 'activity', desc: 'Define and strengthen' },
   { id: 'muscle', label: 'Build Muscle', icon: 'zap', desc: 'Get stronger every week' },
@@ -9,7 +10,6 @@ export const ONBOARDING_GOALS = [
   { id: 'karate', label: 'Karate', icon: 'award', desc: 'Strikes, forms, discipline' },
   { id: 'selfdefense', label: 'Learn Self-Defense', icon: 'shield', desc: 'Feel safe anywhere' },
   { id: 'hiit', label: 'HIIT', icon: 'zap', desc: 'Short, high-energy intervals' },
-  { id: 'yoga', label: 'Yoga', icon: 'wind', desc: 'Strength, breath, and flow' },
   { id: 'confidence', label: 'Build Confidence', icon: 'star', desc: 'Inside and out' },
   { id: 'pregnancy', label: 'Pregnancy Wellness', icon: 'heart', desc: 'Safe & supported' },
   { id: 'postpartum', label: 'Postpartum Recovery', icon: 'sun', desc: 'Gentle return to strength' },

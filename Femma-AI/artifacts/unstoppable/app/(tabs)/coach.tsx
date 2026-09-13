@@ -8,7 +8,9 @@ import {
   TextInput,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Feather } from '@expo/vector-icons';
@@ -16,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
+import { usePurchases } from '@/context/PurchaseContext';
 import { sendCoachMessage, type CoachChatMessage } from '@/lib/coachAi';
 import { COACH_SCOPE_TOPICS } from '@/lib/coachScope';
 import { buildCoachSuggestions } from '@/lib/coachSuggestions';
@@ -51,6 +54,7 @@ export default function CoachScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { profile, coachChatHistory, saveCoachChatHistory } = useApp();
+  const { isPremium } = usePurchases();
   const suggestions = useMemo(() => buildCoachSuggestions(profile), [profile]);
   const topPad = insets.top + 8;
   const tabBarPad = Platform.OS === 'web' ? 88 : insets.bottom + 72;
@@ -92,10 +96,31 @@ export default function CoachScreen() {
 
   const inputBottomPad = keyboardOpen ? 8 : tabBarPad;
 
+  const userMessagesTodayCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return coachChatHistory.filter(
+      (m) => m.role === 'user' && (m.createdAt ? m.createdAt.slice(0, 10) === today : true)
+    ).length;
+  }, [coachChatHistory]);
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || typing) return;
+
+      if (!isPremium && userMessagesTodayCount >= 5) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          'Free Limit Reached 👑',
+          'Free Plan includes 5 AI coach messages per day. Upgrade to Premium for unlimited AI coaching anytime!',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'View Premium', onPress: () => router.push('/paywall') },
+          ]
+        );
+        return;
+      }
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const userMsg: Message = {
         id: `u${++idRef.current}`,
@@ -130,7 +155,7 @@ export default function CoachScreen() {
         setTyping(false);
       }
     },
-    [typing, profile, coachChatHistory, saveCoachChatHistory]
+    [typing, isPremium, userMessagesTodayCount, coachChatHistory, saveCoachChatHistory, profile]
   );
 
   const renderItem = useCallback(
@@ -236,10 +261,22 @@ export default function CoachScreen() {
         <LinearGradient colors={[colors.deepPink, colors.lavender]} style={styles.headerAvatar}>
           <Feather name="heart" size={18} color="#FFF" />
         </LinearGradient>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>AI Coach</Text>
-          <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>Wellness topics only</Text>
+          <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
+            {isPremium ? 'Unlimited Premium Coach' : `Free Plan · ${Math.max(0, 5 - userMessagesTodayCount)} msgs left today`}
+          </Text>
         </View>
+        {!isPremium && (
+          <TouchableOpacity
+            style={[styles.upgradeBadge, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/paywall')}
+            activeOpacity={0.8}
+          >
+            <Feather name="star" size={12} color="#FFF" />
+            <Text style={styles.upgradeBadgeText}>Upgrade</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={[styles.scopeBar, { backgroundColor: colors.softLavender, borderBottomColor: colors.border }]}>
@@ -329,4 +366,13 @@ const styles = StyleSheet.create({
     maxHeight: 110,
   },
   sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  upgradeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  upgradeBadgeText: { color: '#FFF', fontSize: 11, fontFamily: 'Manrope_700Bold' },
 });

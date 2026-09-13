@@ -9,6 +9,8 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  Modal,
+  useWindowDimensions,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +29,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
+import { usePurchases } from '@/context/PurchaseContext';
 import { getLastMealScan, scanMealFromBase64, setLastMealScan } from '@/lib/mealScan';
 import {
   formatScanTime,
@@ -101,9 +104,11 @@ export default function ScanScreen() {
   const colors = useColors();
   const { profile, completeMission } = useApp();
   const { user } = useAuth();
+  const { isPremium } = usePurchases();
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
+  const { height: windowHeight } = useWindowDimensions();
   const [scanning, setScanning] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedMealScan[]>([]);
@@ -172,10 +177,11 @@ export default function ScanScreen() {
 
     try {
       setError('');
-      setScanning(true);
       setPreviewUri(asset.uri);
+      setScanning(true);
+      const sweep = Math.max(220, windowHeight - 160);
       scanLineAnim.value = 0;
-      scanLineAnim.value = withRepeat(withTiming(220, { duration: 1500 }), -1, true);
+      scanLineAnim.value = withRepeat(withTiming(sweep, { duration: 1600 }), -1, true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       const result = await scanMealFromBase64({
@@ -206,7 +212,24 @@ export default function ScanScreen() {
     }
   };
 
+  const checkPremiumAccess = (): boolean => {
+    if (!isPremium) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert(
+        'Premium Feature 👑',
+        'AI Camera Meal Scanner is a Premium feature. Upgrade to Premium to instantly analyze calories, macros, and nutrition score!',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade to Premium', onPress: () => router.push('/paywall') },
+        ]
+      );
+      return false;
+    }
+    return true;
+  };
+
   const startCameraScan = async () => {
+    if (!checkPremiumAccess()) return;
     if (mode === 'barcode') {
       Alert.alert('Coming soon', 'Barcode scanning will be available in a future update.');
       return;
@@ -229,6 +252,7 @@ export default function ScanScreen() {
   };
 
   const pickImage = async () => {
+    if (!checkPremiumAccess()) return;
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('Photo permission', 'Allow photo library access to scan food.');
@@ -339,7 +363,7 @@ export default function ScanScreen() {
                   )}
 
                   <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.35)']}
+                    colors={previewUri ? ['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.28)'] : ['transparent', 'rgba(0,0,0,0.35)']}
                     style={styles.viewfinderShade}
                   />
 
@@ -378,10 +402,12 @@ export default function ScanScreen() {
 
                   <View style={styles.viewfinderCenter}>
                     {scanning ? (
-                      <View style={[styles.scanningBadge, { backgroundColor: 'rgba(255,255,255,0.92)' }]}>
+                      <View style={[styles.scanningBadge, { backgroundColor: 'rgba(255,255,255,0.88)' }]}>
                         <ActivityIndicator color={colors.primary} size="small" />
-                        <Text style={[styles.scanningText, { color: colors.foreground }]}>Analyzing meal…</Text>
+                        <Text style={[styles.scanningText, { color: colors.foreground }]}>Analyzing this meal…</Text>
                       </View>
+                    ) : previewUri ? (
+                      <Text style={styles.viewfinderHint}>Ready to scan this photo</Text>
                     ) : (
                       <>
                         <View style={[styles.viewfinderIcon, { backgroundColor: 'rgba(255,255,255,0.88)' }]}>
@@ -569,6 +595,18 @@ export default function ScanScreen() {
           </Animated.View>
         </View>
       </ScrollView>
+
+      <Modal visible={scanning && Boolean(previewUri)} animationType="fade" transparent statusBarTranslucent>
+        <View style={styles.scanOverlay}>
+          <Image source={{ uri: previewUri || '' }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+          <View style={styles.scanOverlayDim} />
+          <Animated.View style={[styles.scanOverlayLine, { backgroundColor: colors.primary }, scanLineStyle]} />
+          <View style={[styles.scanningBadge, styles.scanOverlayBadge, { backgroundColor: 'rgba(255,255,255,0.94)' }]}>
+            <ActivityIndicator color={colors.primary} size="small" />
+            <Text style={[styles.scanningText, { color: colors.foreground }]}>Analyzing this meal…</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -708,4 +746,8 @@ const styles = StyleSheet.create({
   scoreBadge: { minWidth: 36, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100, borderWidth: 1, alignItems: 'center' },
   scoreBadgeText: { fontSize: 13, fontFamily: 'Manrope_800ExtraBold' },
   historyTime: { fontSize: 10.5, fontFamily: 'Manrope_400Regular' },
+  scanOverlay: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
+  scanOverlayDim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
+  scanOverlayLine: { position: 'absolute', left: 28, right: 28, top: 80, height: 2, opacity: 0.9, zIndex: 2 },
+  scanOverlayBadge: { zIndex: 3 },
 });

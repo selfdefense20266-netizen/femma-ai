@@ -221,21 +221,18 @@ export default function NutritionResultScreen() {
             </Animated.View>
           )}
 
-          <View style={styles.mealButtons}>
-            {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((meal) => (
-              <TouchableOpacity
-                key={meal}
-                style={[styles.mealBtn, { backgroundColor: colors.primary, flex: 1 }]}
-                onPress={() => {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  completeMission('nutrition');
-                  router.replace('/(tabs)');
-                }}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.mealBtnText}>+ {meal}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.doneWrap}>
+            <TouchableOpacity
+              style={[styles.doneBtn, { backgroundColor: colors.primary }]}
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                completeMission('nutrition');
+                router.replace('/(tabs)');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.doneBtnText}>Save to log</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -283,7 +280,7 @@ const styles = StyleSheet.create({
   altInfo: { flex: 1 },
   altName: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   altWhy: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
-  mealButtons: { flexDirection: 'row', gap: 8 },
-  mealBtn: { height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  mealBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
+  doneWrap: { paddingTop: 8 },
+  doneBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
 });

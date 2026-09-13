@@ -29,7 +29,12 @@ import {
   snapshotPerformance,
   type TrainingPlan,
 } from '@/lib/trainingPlan';
-import { generateRoadmapTrainingPlan, exerciseCountForDay } from '@/lib/exerciseRoadmap';
+import {
+  generateRoadmapTrainingPlan,
+  exerciseCountForDay,
+  ensureYogaDeepBreathPlan,
+  primaryRoadmapCategory,
+} from '@/lib/exerciseRoadmap';
 
 export type MissionCategory = 'fitness' | 'yoga' | 'safety' | 'nutrition' | 'recipe';
 export type MissionSlot = 'course' | 'meal' | 'recipe' | 'exercise';
@@ -683,7 +688,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const syncMissions = useCallback((catalog?: CatalogBundle) => {
     const profile = snapshotRef.current.profile;
     let saved = profile.trainingPlan;
-    const expectedExercises = exerciseCountForDay(profile.fitnessLevel || 'beginner', profile.dailyTime, false);
+    const category = primaryRoadmapCategory(profile.goal || '');
+    const expectedExercises =
+      exerciseCountForDay(profile.fitnessLevel || 'beginner', profile.dailyTime, false) +
+      (category === 'yoga' ? 1 : 0);
     const sampleExercises = saved?.days?.[0]?.items.filter((item) => item.slot === 'exercise').length;
     const hasCourseOnToday = saved?.days?.some((day) => day.items.some((item) => item.slot === 'course'));
     const needsRoadmap =
@@ -701,6 +709,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.warn('Roadmap rebuild failed', error);
         return;
       }
+    } else if (saved?.days?.length) {
+      saved = ensureYogaDeepBreathPlan(saved, profile.goal) || saved;
     }
     if (saved?.days?.length && catalog && planNeedsCatalogLinks(saved)) {
       saved = linkPlanToCatalog(saved, catalog);
@@ -747,6 +757,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // Keep the on-device roadmap. Do not call ChatGPT for daily plans.
       }
+      trainingPlan =
+        ensureYogaDeepBreathPlan(trainingPlan, snapshotRef.current.profile.goal) || trainingPlan;
       await persistAll(
         {
           ...snapshotRef.current,

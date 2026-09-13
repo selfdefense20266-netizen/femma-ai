@@ -96,6 +96,7 @@ export default function ExerciseGuideScreen() {
     duration?: string | string[];
     steps?: string | string[];
     missionId?: string | string[];
+    category?: string | string[];
   }>();
   const title = first(params.title) || 'Exercise guide';
   const missionId = first(params.missionId);
@@ -112,6 +113,7 @@ function ExerciseGuideBody({
     duration?: string | string[];
     steps?: string | string[];
     missionId?: string | string[];
+    category?: string | string[];
   };
 }) {
   const colors = useColors();
@@ -134,6 +136,7 @@ function ExerciseGuideBody({
   const [gifName, setGifName] = useState('');
   const [gifReady, setGifReady] = useState(false);
   const [gifFailed, setGifFailed] = useState(false);
+  const [gifMissing, setGifMissing] = useState(false);
   const finishingRef = useRef(false);
 
   useEffect(() => {
@@ -144,21 +147,30 @@ function ExerciseGuideBody({
     setGifName('');
     setGifReady(false);
     setGifFailed(false);
+    setGifMissing(false);
     void lookupExerciseGif(title, animation).then((match) => {
       if (cancelled) return;
-      if (match?.local || match?.urls.length) {
-        setGifLocal(match.local);
+      if (match?.missing) {
+        setGifMissing(true);
+        setGifName(match.name || title);
+        return;
+      }
+      if (match?.urls.length || match?.local) {
         setGifUrls(match.urls);
+        setGifLocal(match.urls.length ? undefined : match.local);
         setGifName(match.name);
-      } else setGifFailed(true);
+      } else {
+        setGifMissing(true);
+        setGifFailed(true);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [title, animation]);
 
-  const gifUrl = !gifFailed ? gifUrls[gifIndex] : undefined;
-  const gifSource = gifUrl ? { uri: gifUrl } : gifLocal;
+  const gifUrl = !gifFailed && !gifMissing ? gifUrls[gifIndex] : undefined;
+  const gifSource = gifUrl ? { uri: gifUrl } : gifLocal != null ? gifLocal : undefined;
   const showGif = Boolean(gifSource);
 
   useEffect(() => {
@@ -218,10 +230,7 @@ function ExerciseGuideBody({
                     setGifIndex((value) => value + 1);
                     return;
                   }
-                  if (gifUrls.length) {
-                    setGifUrls([]);
-                    if (gifLocal) return;
-                  }
+                  setGifMissing(true);
                   setGifFailed(true);
                 }}
               />
@@ -235,7 +244,13 @@ function ExerciseGuideBody({
               </Text>
             </View>
           ) : (
-            <ExerciseMotion kind={animation} color={colors.primary} />
+            <View style={[styles.gifWrap, styles.missingWrap]}>
+              <Feather name="image" size={36} color={colors.mutedForeground} />
+              <Text style={[styles.missingTitle, { color: colors.foreground }]}>No GIF available</Text>
+              <Text style={[styles.missingHint, { color: colors.mutedForeground }]}>
+                No matching ExerciseDB demo for this move
+              </Text>
+            </View>
           )}
         </LinearGradient>
 
@@ -323,6 +338,9 @@ const styles = StyleSheet.create({
   gif: { width: '100%', height: 248 },
   gifLoading: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   gifCredit: { fontSize: 11, fontFamily: 'Manrope_600SemiBold', textTransform: 'capitalize', marginBottom: 8 },
+  missingWrap: { gap: 8, paddingHorizontal: 24 },
+  missingTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold', textAlign: 'center' },
+  missingHint: { fontSize: 13, fontFamily: 'Manrope_400Regular', textAlign: 'center', lineHeight: 18, marginBottom: 8 },
   stage: { height: 180, alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 },
   floor: { position: 'absolute', bottom: 18, width: 160, height: 18, borderRadius: 100 },
   figure: {

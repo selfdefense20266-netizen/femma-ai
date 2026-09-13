@@ -10,6 +10,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="duration" />
       <Stack.Screen name="plan" />
       <Stack.Screen name="reveal" />
+      <Stack.Screen name="subscription" />
     </Stack>
   );
 }

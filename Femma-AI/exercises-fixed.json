@@ -1,9 +1,7 @@
 {
-  "generatedAt": "2026-09-06T00:00:00.000Z",
-  "api": "https://oss.exercisedb.dev/api/v1 + curated web fallback for breathwork",
+  "generatedAt": "2026-09-03T09:09:05.392Z",
+  "api": "https://oss.exercisedb.dev/api/v1",
   "total": 290,
-  "found": 290,
-  "missing": 0,
   "exercises": [
     {
       "title": "3-minute round shadowboxing",
@@ -14,8 +12,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "40-on / 20-off squat pulses",
@@ -24,10 +22,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "bodyweight squatting row",
-      "gifUrl": "https://static.exercisedb.dev/media/3xK09Sk.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "squat jerk",
+      "gifUrl": "https://static.exercisedb.dev/media/IMRsOCn.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "90/90 hip switches",
@@ -36,10 +34,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "band seated hip internal rotation",
-      "gifUrl": "https://static.exercisedb.dev/media/9gbyYKk.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "barbell standing close grip military press",
+      "gifUrl": "https://static.exercisedb.dev/media/wdRZISl.gif",
+      "source": "api",
+      "score": 15
     },
     {
       "title": "Adductor or butterfly stretch",
@@ -48,10 +46,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "butterfly yoga pose",
-      "gifUrl": "https://static.exercisedb.dev/media/bWlZvXh.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "peroneals stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/XhfS1DZ.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Alternating reverse lunges",
@@ -60,10 +58,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "dumbbell rear lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/SSsBDwB.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "barbell squat jump step rear lunge",
+      "gifUrl": "https://static.exercisedb.dev/media/RYcV1kH.gif",
+      "source": "api",
+      "score": 65
     },
     {
       "title": "Assault-bike or fan-bike bursts",
@@ -72,10 +70,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "air bike",
-      "gifUrl": "https://static.exercisedb.dev/media/1ZFqTDN.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "stationary bike run v. 3",
+      "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Awareness turns in place",
@@ -84,10 +82,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "back and forth step",
-      "gifUrl": "https://static.exercisedb.dev/media/fNGumX0.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Back extension easy",
@@ -96,10 +94,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "back extension on exercise ball",
-      "gifUrl": "https://static.exercisedb.dev/media/qLpO4vV.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Backpack or book rows",
@@ -108,10 +106,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "bodyweight standing row (with towel)",
-      "gifUrl": "https://static.exercisedb.dev/media/uTv34oq.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bag front kicks",
@@ -120,10 +118,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "kick out sit",
-      "gifUrl": "https://static.exercisedb.dev/media/v7p5bYl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bag hooks and uppercuts",
@@ -134,8 +132,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bag mawashi geri",
@@ -144,10 +142,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "kick out sit",
-      "gifUrl": "https://static.exercisedb.dev/media/v7p5bYl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bag MMA combos",
@@ -158,8 +156,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Balance holds",
@@ -168,10 +166,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "balance board",
-      "gifUrl": "https://static.exercisedb.dev/media/xAySMB0.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Balance kicks held at chamber",
@@ -180,10 +178,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "high knee against wall",
-      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Band or towel rows",
@@ -192,10 +190,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "band one arm standing low row",
-      "gifUrl": "https://static.exercisedb.dev/media/km0sQC0.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Band rows",
@@ -204,10 +202,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "band standing rear delt row",
-      "gifUrl": "https://static.exercisedb.dev/media/tc5dYrf.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Barbell or goblet squat",
@@ -218,8 +216,8 @@
       "status": "found",
       "matchedName": "dumbbell goblet squat",
       "gifUrl": "https://static.exercisedb.dev/media/yn8yg1r.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Battle-rope or slam intervals",
@@ -228,10 +226,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "battling ropes",
-      "gifUrl": "https://static.exercisedb.dev/media/RJa4tCo.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "medicine ball overhead slam",
+      "gifUrl": "https://static.exercisedb.dev/media/oHg8eop.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bench or floor press",
@@ -242,8 +240,8 @@
       "status": "found",
       "matchedName": "barbell bench press",
       "gifUrl": "https://static.exercisedb.dev/media/EIeI8Vf.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bike easy spin",
@@ -252,10 +250,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "stationary bike walk",
-      "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "stationary bike run v. 3",
+      "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bike flush",
@@ -264,10 +262,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "hands bike",
-      "gifUrl": "https://static.exercisedb.dev/media/pAIWRGu.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "stationary bike run v. 3",
+      "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bike intervals",
@@ -278,8 +276,8 @@
       "status": "found",
       "matchedName": "stationary bike run v. 3",
       "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Bike or rower flush",
@@ -288,10 +286,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "stationary bike walk",
-      "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Bike or rower sprints",
@@ -300,10 +298,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "stationary bike run v. 3",
-      "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Block-and-counter drill",
@@ -314,8 +312,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Body-shot combos",
@@ -326,8 +324,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Bodyweight squat pulses",
@@ -336,10 +334,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "bodyweight squatting row",
-      "gifUrl": "https://static.exercisedb.dev/media/3xK09Sk.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "squat jerk",
+      "gifUrl": "https://static.exercisedb.dev/media/IMRsOCn.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Boundary stance and palm strike",
@@ -350,8 +348,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Box breathing standing",
@@ -360,10 +358,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Box step-overs",
@@ -372,10 +370,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "dumbbell step-up",
-      "gifUrl": "https://static.exercisedb.dev/media/aXtJhlg.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell step up single leg balance with bicep curl",
+      "gifUrl": "https://static.exercisedb.dev/media/76vfTdU.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Breath-down after intensity",
@@ -384,10 +382,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/3o7TKz2b0bDBIzJ9dS/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Breathing for calm",
@@ -396,10 +394,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Breathing reset",
@@ -408,10 +406,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Bridge or wheel prep",
@@ -420,10 +418,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "pelvic tilt into bridge",
-      "gifUrl": "https://static.exercisedb.dev/media/D9qe7CM.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "glute bridge march",
+      "gifUrl": "https://static.exercisedb.dev/media/GibBPPg.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Brisk march in place",
@@ -432,10 +430,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "high knee against wall",
-      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "walking high knees lunge",
+      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Bulgarian split squat",
@@ -444,10 +442,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "dumbbell step-up split squat",
-      "gifUrl": "https://static.exercisedb.dev/media/QjE2DcA.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "suspended split squat",
+      "gifUrl": "https://static.exercisedb.dev/media/QpXqiq8.gif",
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Burpee step-backs or full burpees",
@@ -458,8 +456,8 @@
       "status": "found",
       "matchedName": "burpee",
       "gifUrl": "https://static.exercisedb.dev/media/dK9394r.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Cable kickbacks",
@@ -470,8 +468,8 @@
       "status": "found",
       "matchedName": "cable kickback",
       "gifUrl": "https://static.exercisedb.dev/media/HEJ6DIX.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Cable or band punch-outs",
@@ -482,8 +480,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Cable or band rows",
@@ -494,8 +492,8 @@
       "status": "found",
       "matchedName": "cable seated row",
       "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
-      "source": "rule",
-      "score": 900
+      "source": "api",
+      "score": 100
     },
     {
       "title": "Cable woodchops",
@@ -504,10 +502,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "cable standing twist row (v-bar)",
-      "gifUrl": "https://static.exercisedb.dev/media/JOZhu2h.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "medicine ball overhead slam",
+      "gifUrl": "https://static.exercisedb.dev/media/oHg8eop.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Calf and ankle rocks",
@@ -516,10 +514,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "ankle circles",
-      "gifUrl": "https://static.exercisedb.dev/media/uL9CsKm.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "calf stretch with hands against wall",
+      "gifUrl": "https://static.exercisedb.dev/media/m0tCHqc.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Calf raises holding a chair",
@@ -528,10 +526,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "bodyweight standing calf raise",
-      "gifUrl": "https://static.exercisedb.dev/media/bJYHBIN.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "calf stretch with hands against wall",
+      "gifUrl": "https://static.exercisedb.dev/media/m0tCHqc.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Cardio burst: knees or marches",
@@ -540,10 +538,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "walking high knees lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "high knee against wall",
+      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Cat-cow",
@@ -552,10 +550,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "all fours squad stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/qBcKorM.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Cat-cow on all fours",
@@ -564,10 +562,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "all fours squad stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/qBcKorM.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Cat-cow to child’s pose",
@@ -576,10 +574,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "all fours squad stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/qBcKorM.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Chest opener on a wall",
@@ -588,10 +586,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "chest and front of shoulder stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/Uto7l43.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Chest-opening stretch",
@@ -600,10 +598,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "behind head chest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/QoHIhPl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Child’s pose holds",
@@ -612,10 +610,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "spine stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/JbC2iaV.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Clinch knees on bag",
@@ -624,10 +622,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "kick out sit",
-      "gifUrl": "https://static.exercisedb.dev/media/v7p5bYl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Clinch-control posture",
@@ -638,8 +636,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Close-stance squats",
@@ -648,10 +646,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell narrow stance squat",
-      "gifUrl": "https://static.exercisedb.dev/media/elhhVgj.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Combo: punch then kick",
@@ -660,10 +658,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "kick out sit",
-      "gifUrl": "https://static.exercisedb.dev/media/v7p5bYl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Combo: squat then strike",
@@ -672,10 +670,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "left hook. boxing",
-      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Confidence flow",
@@ -684,10 +682,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "spine twist",
-      "gifUrl": "https://static.exercisedb.dev/media/2jl9K55.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Cool-down shoulder circles",
@@ -696,10 +694,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "dumbbell lying external shoulder rotation",
-      "gifUrl": "https://static.exercisedb.dev/media/bmBf7LN.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Core anti-rotation holds",
@@ -710,8 +708,8 @@
       "status": "found",
       "matchedName": "band horizontal pallof press",
       "gifUrl": "https://static.exercisedb.dev/media/9pa4H5m.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Core boat or forearm flow",
@@ -720,10 +718,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "front plank with twist",
-      "gifUrl": "https://static.exercisedb.dev/media/CosupLu.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Core braces",
@@ -732,10 +730,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "dead bug",
-      "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Core braces between rounds",
@@ -744,10 +742,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "dead bug",
-      "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Core flutter or dead bug bursts",
@@ -756,10 +754,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "flutter kicks",
-      "gifUrl": "https://static.exercisedb.dev/media/UVo2Qs2.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dead bug",
+      "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Couch or quad stretch",
@@ -770,8 +768,8 @@
       "status": "found",
       "matchedName": "intermediate hip flexor and quad stretch",
       "gifUrl": "https://static.exercisedb.dev/media/tFGKm99.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Curtsy lunge sculpt",
@@ -782,8 +780,8 @@
       "status": "found",
       "matchedName": "curtsey squat",
       "gifUrl": "https://static.exercisedb.dev/media/gUjqdei.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Dead bug core",
@@ -794,8 +792,8 @@
       "status": "found",
       "matchedName": "dead bug",
       "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Dead bug with exhale",
@@ -806,8 +804,20 @@
       "status": "found",
       "matchedName": "dead bug",
       "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
+    },
+    {
+      "title": "Deep breath exercise",
+      "animation": "breath",
+      "categories": [
+        "yoga"
+      ],
+      "status": "found",
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Deep squat hold",
@@ -818,8 +828,8 @@
       "status": "found",
       "matchedName": "potty squat",
       "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Defensive parry drill",
@@ -830,8 +840,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Down-dog to plank flow",
@@ -840,10 +850,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "power point plank",
-      "gifUrl": "https://static.exercisedb.dev/media/hCjGsRQ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Down-regulate the nervous system",
@@ -852,10 +862,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/3o7TKz2b0bDBIzJ9dS/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Down-regulating breath",
@@ -864,10 +874,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/3o7TKz2b0bDBIzJ9dS/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Downshift breathing",
@@ -876,10 +886,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/3o7TKz2b0bDBIzJ9dS/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Dumbbell thrusters",
@@ -889,10 +899,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "barbell thruster",
-      "gifUrl": "https://static.exercisedb.dev/media/f7Y9eDZ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "kettlebell thruster",
+      "gifUrl": "https://static.exercisedb.dev/media/yWxMvB5.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy bike flush",
@@ -901,10 +911,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "stationary bike walk",
-      "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "stationary bike run v. 3",
+      "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy fat-burn walk",
@@ -913,10 +923,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "walking on incline treadmill",
-      "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy full-body mobility",
@@ -925,10 +935,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy interval walk",
@@ -937,10 +947,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "walking on stepmill",
-      "gifUrl": "https://static.exercisedb.dev/media/j9Q5crt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy machine circuit",
@@ -949,20 +959,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "walk elliptical cross trainer",
-      "gifUrl": "https://static.exercisedb.dev/media/rjtuP6X.gif",
-      "source": "rule",
-      "score": 900
-    },
-    {
-      "title": "Easy march with guard",
-      "animation": "walk",
-      "categories": [],
-      "status": "found",
-      "matchedName": "monster walk",
-      "gifUrl": "https://static.exercisedb.dev/media/O95afRA.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy prenatal mobility",
@@ -971,10 +971,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "all fours squad stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/qBcKorM.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy spin cool-down",
@@ -985,8 +985,8 @@
       "status": "found",
       "matchedName": "stationary bike run v. 3",
       "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Easy walk between sets",
@@ -995,10 +995,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "march sit (wall)",
-      "gifUrl": "https://static.exercisedb.dev/media/sVQCCeG.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Elbow strike on air",
@@ -1009,8 +1009,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Exit footwork after a strike",
@@ -1019,10 +1019,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "walking lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/IZVHb27.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Farmer carries",
@@ -1033,8 +1033,8 @@
       "status": "found",
       "matchedName": "farmers walk",
       "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Farmer-carry fight stance walk",
@@ -1045,8 +1045,8 @@
       "status": "found",
       "matchedName": "farmers walk",
       "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Farmer-carry stances",
@@ -1057,8 +1057,8 @@
       "status": "found",
       "matchedName": "farmers walk",
       "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Fast feet + squat combo",
@@ -1067,10 +1067,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "jump squat",
-      "gifUrl": "https://static.exercisedb.dev/media/LIlE5Tn.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Fast feet in-place ladder",
@@ -1079,10 +1079,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "walking high knees lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "high knee against wall",
+      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Fast mountain climbers",
@@ -1093,8 +1093,8 @@
       "status": "found",
       "matchedName": "mountain climber",
       "gifUrl": "https://static.exercisedb.dev/media/RJgzwny.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Fast punches between legs",
@@ -1105,8 +1105,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Fast sprawls",
@@ -1117,8 +1117,8 @@
       "status": "found",
       "matchedName": "burpee",
       "gifUrl": "https://static.exercisedb.dev/media/dK9394r.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Forearm plank holds",
@@ -1127,10 +1127,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "power point plank",
-      "gifUrl": "https://static.exercisedb.dev/media/hCjGsRQ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Forward fold hang",
@@ -1139,10 +1139,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "hamstring stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/99rWm7w.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Front kick chamber drill",
@@ -1151,10 +1151,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "kick out sit",
-      "gifUrl": "https://static.exercisedb.dev/media/v7p5bYl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Front-stance stepping",
@@ -1163,10 +1163,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "walking lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/IZVHb27.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Full stretch",
@@ -1175,10 +1175,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Full-body strength flow",
@@ -1187,10 +1187,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "squat to overhead reach with twist",
-      "gifUrl": "https://static.exercisedb.dev/media/5BZHW9s.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Full-body stretch",
@@ -1200,10 +1200,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Gentle neck rolls",
@@ -1212,10 +1212,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "neck side stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/x2chWLO.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Glute bridge marches",
@@ -1224,10 +1224,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "glute bridge march",
-      "gifUrl": "https://static.exercisedb.dev/media/GibBPPg.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Glute bridge strength",
@@ -1236,10 +1236,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell glute bridge",
-      "gifUrl": "https://static.exercisedb.dev/media/qKBpF7I.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Glute bridges",
@@ -1250,8 +1250,8 @@
       "status": "found",
       "matchedName": "low glute bridge on floor",
       "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Glute bridges tiny range",
@@ -1260,10 +1260,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "glute bridge two legs on bench (male)",
-      "gifUrl": "https://static.exercisedb.dev/media/aWedzZX.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Glute-finisher circuit",
@@ -1272,10 +1272,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "resistance band hip thrusts on knees (female)",
-      "gifUrl": "https://static.exercisedb.dev/media/Pjbc0Kt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Goblet squat sculpt",
@@ -1286,8 +1286,8 @@
       "status": "found",
       "matchedName": "dumbbell goblet squat",
       "gifUrl": "https://static.exercisedb.dev/media/yn8yg1r.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Goblet squats",
@@ -1296,10 +1296,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "kettlebell goblet squat",
-      "gifUrl": "https://static.exercisedb.dev/media/ZA8b5hc.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell goblet squat",
+      "gifUrl": "https://static.exercisedb.dev/media/yn8yg1r.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Grappling hip drills",
@@ -1308,10 +1308,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "resistance band seated hip abduction",
-      "gifUrl": "https://static.exercisedb.dev/media/0xDpB4L.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Gratitude breathing",
@@ -1320,10 +1320,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Ground bridge and recover",
@@ -1334,8 +1334,8 @@
       "status": "found",
       "matchedName": "low glute bridge on floor",
       "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Ground get-up to stance",
@@ -1344,10 +1344,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "kettlebell turkish get up (squat style)",
-      "gifUrl": "https://static.exercisedb.dev/media/Ha7SZ3y.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Grounding breath",
@@ -1356,10 +1356,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Grounding squat hold",
@@ -1368,10 +1368,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "potty squat with support",
-      "gifUrl": "https://static.exercisedb.dev/media/b63ZzGe.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Guard-up footwork",
@@ -1380,10 +1380,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "high knee against wall",
-      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hammer-fist combos",
@@ -1394,8 +1394,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hamstring fold with bent knees",
@@ -1406,8 +1406,8 @@
       "status": "found",
       "matchedName": "hamstring stretch",
       "gifUrl": "https://static.exercisedb.dev/media/99rWm7w.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hard bodyweight squats",
@@ -1416,10 +1416,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "sissy squat",
-      "gifUrl": "https://static.exercisedb.dev/media/xdYPUtE.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Heavy bag jab-cross",
@@ -1430,8 +1430,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Heavy bag level changes",
@@ -1440,10 +1440,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "barbell squat jump step rear lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/RYcV1kH.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Heel slides and core reconnection",
@@ -1452,10 +1452,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "dead bug",
-      "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "High-knee or fast march",
@@ -1464,10 +1464,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "walking high knees lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "high knee against wall",
+      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hikite pull-back punches",
@@ -1478,8 +1478,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip and chest stretch",
@@ -1488,10 +1488,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip and groin stretch",
@@ -1500,10 +1500,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "assisted side lying adductor stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/hC6oYY5.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip escape if taken down",
@@ -1512,10 +1512,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "glute bridge march",
-      "gifUrl": "https://static.exercisedb.dev/media/GibBPPg.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip escape on the floor",
@@ -1526,8 +1526,8 @@
       "status": "found",
       "matchedName": "low glute bridge on floor",
       "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip flexor stretch",
@@ -1538,8 +1538,8 @@
       "status": "found",
       "matchedName": "intermediate hip flexor and quad stretch",
       "gifUrl": "https://static.exercisedb.dev/media/tFGKm99.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip mobility flow",
@@ -1548,10 +1548,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "roller hip stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/oMypNrz.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip mobility for punch rotation",
@@ -1560,10 +1560,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "roller hip lat stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/0L2KwtI.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip openers after boxing",
@@ -1572,10 +1572,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "seated piriformis stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/QY39eBr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip rotation for kicks",
@@ -1584,10 +1584,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "circles knee stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/X7jbxra.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip thrust",
@@ -1596,10 +1596,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell glute bridge",
-      "gifUrl": "https://static.exercisedb.dev/media/qKBpF7I.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "resistance band hip thrusts on knees (female)",
+      "gifUrl": "https://static.exercisedb.dev/media/Pjbc0Kt.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip thrust or bridge with weight",
@@ -1608,10 +1608,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "barbell glute bridge two legs on bench (male)",
-      "gifUrl": "https://static.exercisedb.dev/media/qg2PGl6.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "resistance band hip thrusts on knees (female)",
+      "gifUrl": "https://static.exercisedb.dev/media/Pjbc0Kt.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip-flexor kneeling stretch",
@@ -1620,10 +1620,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "weighted stretch lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/13VW2VO.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "intermediate hip flexor and quad stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/tFGKm99.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip-flexor stretch supported",
@@ -1632,10 +1632,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "exercise ball hip flexor stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/2LQkNPW.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "intermediate hip flexor and quad stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/tFGKm99.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hip-opening lunges",
@@ -1644,10 +1644,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "barbell lateral lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/py1HSzx.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "forward lunge (male)",
+      "gifUrl": "https://static.exercisedb.dev/media/kMzUs9Y.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hollow holds or dead bugs",
@@ -1658,8 +1658,8 @@
       "status": "found",
       "matchedName": "dead bug",
       "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hollow-body holds",
@@ -1668,10 +1668,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "power point plank",
-      "gifUrl": "https://static.exercisedb.dev/media/hCjGsRQ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Hook and uppercut air combos",
@@ -1682,8 +1682,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Horse-stance holds",
@@ -1692,10 +1692,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "barbell wide squat",
-      "gifUrl": "https://static.exercisedb.dev/media/s7HX1BY.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat with support",
+      "gifUrl": "https://static.exercisedb.dev/media/b63ZzGe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Incline dumbbell press",
@@ -1704,10 +1704,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "dumbbell incline bench press",
-      "gifUrl": "https://static.exercisedb.dev/media/ns0SIbU.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "barbell bench press",
+      "gifUrl": "https://static.exercisedb.dev/media/EIeI8Vf.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Incline walk finisher",
@@ -1718,8 +1718,8 @@
       "status": "found",
       "matchedName": "walking on incline treadmill",
       "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Interval bag rounds",
@@ -1730,8 +1730,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Inversions or legs-up-wall",
@@ -1740,10 +1740,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "weighted russian twist (legs up)",
-      "gifUrl": "https://static.exercisedb.dev/media/WU9BLIs.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Jab-cross shadowboxing",
@@ -1754,8 +1754,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Jaw and shoulder release",
@@ -1764,10 +1764,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "neck side stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/x2chWLO.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Jump-rope rounds",
@@ -1777,10 +1777,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "jump rope",
-      "gifUrl": "https://static.exercisedb.dev/media/e1e76I2.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Karate stance and reverse punch",
@@ -1791,8 +1791,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Kata then bag",
@@ -1801,10 +1801,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "left hook. boxing",
-      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Kata-style combination",
@@ -1813,10 +1813,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "left hook. boxing",
-      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Kettlebell deadlifts",
@@ -1825,10 +1825,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "dumbbell single leg deadlift",
-      "gifUrl": "https://static.exercisedb.dev/media/gKozT8X.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell deadlift",
+      "gifUrl": "https://static.exercisedb.dev/media/nUwVh7b.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Kettlebell goblet squats",
@@ -1837,10 +1837,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "kettlebell goblet squat",
-      "gifUrl": "https://static.exercisedb.dev/media/ZA8b5hc.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell goblet squat",
+      "gifUrl": "https://static.exercisedb.dev/media/yn8yg1r.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Kettlebell swings",
@@ -1851,8 +1851,8 @@
       "status": "found",
       "matchedName": "kettlebell swing",
       "gifUrl": "https://static.exercisedb.dev/media/UHJlbu3.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Kick chamber practice",
@@ -1861,10 +1861,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "kick out sit",
-      "gifUrl": "https://static.exercisedb.dev/media/v7p5bYl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Knee strike from clinch posture",
@@ -1873,10 +1873,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "knee touch crunch",
-      "gifUrl": "https://static.exercisedb.dev/media/dTg95eZ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Knife-hand block practice",
@@ -1887,8 +1887,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Lat pulldown or pull-up hold",
@@ -1899,8 +1899,8 @@
       "status": "found",
       "matchedName": "cable lat pulldown full range of motion",
       "gifUrl": "https://static.exercisedb.dev/media/LEprlgG.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Lateral raises light",
@@ -1909,10 +1909,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "dumbbell lateral raise",
-      "gifUrl": "https://static.exercisedb.dev/media/DsgkuIt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell full can lateral raise",
+      "gifUrl": "https://static.exercisedb.dev/media/AQ0mC4Y.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Leg press or hack squat",
@@ -1921,10 +1921,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell hack squat",
-      "gifUrl": "https://static.exercisedb.dev/media/5VCj6iH.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Leg-press or squat machine",
@@ -1933,10 +1933,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "smith leg press",
-      "gifUrl": "https://static.exercisedb.dev/media/7zdxRTl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Legs-up or reclined bound-angle",
@@ -1945,10 +1945,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "weighted russian twist (legs up)",
-      "gifUrl": "https://static.exercisedb.dev/media/WU9BLIs.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Legs-up recovery",
@@ -1957,10 +1957,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "weighted russian twist (legs up)",
-      "gifUrl": "https://static.exercisedb.dev/media/WU9BLIs.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Level-change shots in place",
@@ -1969,10 +1969,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "barbell single leg split squat",
-      "gifUrl": "https://static.exercisedb.dev/media/gGNQmVt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light fight-stance rounds",
@@ -1983,8 +1983,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light full-body tone flow",
@@ -1993,10 +1993,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "kettlebell goblet squat",
-      "gifUrl": "https://static.exercisedb.dev/media/ZA8b5hc.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light kata flow",
@@ -2005,10 +2005,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "left hook. boxing",
-      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light MMA shadow flow",
@@ -2017,10 +2017,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "left hook. boxing",
-      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light pump accessories",
@@ -2029,10 +2029,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "dead bug",
-      "gifUrl": "https://static.exercisedb.dev/media/iny3m5y.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light pump session",
@@ -2041,10 +2041,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "kettlebell goblet squat",
-      "gifUrl": "https://static.exercisedb.dev/media/ZA8b5hc.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light skill intervals",
@@ -2053,10 +2053,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "walking high knees lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Light technical shadowboxing",
@@ -2067,8 +2067,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Long exhale counting",
@@ -2077,10 +2077,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/whVGEJ7ieEU41Hx7q0/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/26FL4pjbXjrxYOc9O/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Long passive stretch",
@@ -2089,10 +2089,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "spine stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/JbC2iaV.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Long stretch for trained muscles",
@@ -2101,10 +2101,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "standing hamstring and calf stretch with strap",
-      "gifUrl": "https://static.exercisedb.dev/media/xTjr103.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Long walk cool-down",
@@ -2113,10 +2113,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "walking on incline treadmill",
-      "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Low-impact jumping jacks",
@@ -2127,8 +2127,8 @@
       "status": "found",
       "matchedName": "jack jump (male)",
       "gifUrl": "https://static.exercisedb.dev/media/1g5bPpA.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Lower-body stretch after stances",
@@ -2137,10 +2137,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "intermediate hip flexor and quad stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/tFGKm99.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Lunge jumps or reverse lunges",
@@ -2149,10 +2149,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "barbell squat jump step rear lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/RYcV1kH.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "lunge with jump",
+      "gifUrl": "https://static.exercisedb.dev/media/PM1PZjg.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Med-ball slams",
@@ -2163,8 +2163,8 @@
       "status": "found",
       "matchedName": "medicine ball overhead slam",
       "gifUrl": "https://static.exercisedb.dev/media/oHg8eop.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Medicine-ball rotational throws",
@@ -2173,10 +2173,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "medicine ball catch and overhead throw",
-      "gifUrl": "https://static.exercisedb.dev/media/PsVS1QP.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Medicine-ball slams",
@@ -2187,8 +2187,8 @@
       "status": "found",
       "matchedName": "medicine ball overhead slam",
       "gifUrl": "https://static.exercisedb.dev/media/oHg8eop.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Mitt-style combo on bag",
@@ -2199,8 +2199,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Mixed-modal finisher",
@@ -2209,10 +2209,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "jack burpee",
-      "gifUrl": "https://static.exercisedb.dev/media/mr7pkqP.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "MMA round on the bag",
@@ -2223,8 +2223,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "MMA stance punches",
@@ -2235,8 +2235,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Mountain-climber or march intervals",
@@ -2245,10 +2245,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "mountain climber",
-      "gifUrl": "https://static.exercisedb.dev/media/RJgzwny.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "high knee against wall",
+      "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Overhead press",
@@ -2257,10 +2257,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "dumbbell standing overhead press",
-      "gifUrl": "https://static.exercisedb.dev/media/A6wtbuL.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "band shoulder press",
+      "gifUrl": "https://static.exercisedb.dev/media/peAeMR3.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pad reverse punches",
@@ -2271,8 +2271,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pad-style combo practice",
@@ -2283,8 +2283,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pallof press",
@@ -2295,8 +2295,8 @@
       "status": "found",
       "matchedName": "band horizontal pallof press",
       "gifUrl": "https://static.exercisedb.dev/media/9pa4H5m.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pause squats",
@@ -2305,10 +2305,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell full squat",
-      "gifUrl": "https://static.exercisedb.dev/media/qXTaZnJ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pelvic tilts",
@@ -2319,8 +2319,8 @@
       "status": "found",
       "matchedName": "pelvic tilt",
       "gifUrl": "https://static.exercisedb.dev/media/NKJ8o6x.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pigeon both sides",
@@ -2329,10 +2329,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "seated piriformis stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/QY39eBr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pigeon or figure-four",
@@ -2341,10 +2341,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "seated piriformis stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/QY39eBr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pike or downward-dog push-ups",
@@ -2353,10 +2353,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "pike-to-cobra push-up",
-      "gifUrl": "https://static.exercisedb.dev/media/XPUDTt7.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up",
+      "gifUrl": "https://static.exercisedb.dev/media/I4hDWkc.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Plank shoulder taps",
@@ -2365,10 +2365,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "kneeling plank tap shoulder (male)",
-      "gifUrl": "https://static.exercisedb.dev/media/h1ezqSu.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "shoulder tap",
+      "gifUrl": "https://static.exercisedb.dev/media/yRpV5TC.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Posture walks",
@@ -2377,10 +2377,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "walking on incline treadmill",
-      "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Power gyaku-zuki on bag",
@@ -2391,8 +2391,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Power kicks on bag",
@@ -2401,10 +2401,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "walking high knees lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Power round on the bag",
@@ -2415,8 +2415,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Power-stance shadowboxing",
@@ -2427,8 +2427,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Precision reverse punches",
@@ -2439,8 +2439,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Prenatal sun-salute modified",
@@ -2449,10 +2449,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "butterfly yoga pose",
-      "gifUrl": "https://static.exercisedb.dev/media/bWlZvXh.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Pulse lunges",
@@ -2461,10 +2461,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "barbell lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/t8iSghb.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "forward lunge (male)",
+      "gifUrl": "https://static.exercisedb.dev/media/kMzUs9Y.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Push-up progressions",
@@ -2473,10 +2473,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "close-grip push-up (on knees)",
-      "gifUrl": "https://static.exercisedb.dev/media/v3vLFW0.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up",
+      "gifUrl": "https://static.exercisedb.dev/media/I4hDWkc.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Recovery mobility",
@@ -2485,10 +2485,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "intermediate hip flexor and quad stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/tFGKm99.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Restorative floor sequence",
@@ -2497,10 +2497,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/cOI6OPdjyvLH1k4Mh2/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/l0MYGb1LuZ3n7dRnO/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Restorative Sunday reset",
@@ -2509,10 +2509,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "side lying floor stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/jDOKRM5.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Reverse lunges",
@@ -2521,10 +2521,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "barbell rear lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/VaP75jl.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "forward lunge (male)",
+      "gifUrl": "https://static.exercisedb.dev/media/kMzUs9Y.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Romanian deadlift",
@@ -2533,10 +2533,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell romanian deadlift",
-      "gifUrl": "https://static.exercisedb.dev/media/wQ2c4XD.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell romanian deadlift",
+      "gifUrl": "https://static.exercisedb.dev/media/rR0LJzx.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Roundhouse chamber practice",
@@ -2545,10 +2545,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "walking high knees lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/J9zIWig.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Row intervals",
@@ -2557,10 +2557,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "walk elliptical cross trainer",
-      "gifUrl": "https://static.exercisedb.dev/media/rjtuP6X.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Rower fat-burn",
@@ -2569,10 +2569,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "walk elliptical cross trainer",
-      "gifUrl": "https://static.exercisedb.dev/media/rjtuP6X.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Savasana breathing",
@@ -2581,10 +2581,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/cOI6OPdjyvLH1k4Mh2/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Seated row",
@@ -2595,8 +2595,8 @@
       "status": "found",
       "matchedName": "cable seated row",
       "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Seated side stretches",
@@ -2605,10 +2605,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "dumbbell side bend",
-      "gifUrl": "https://static.exercisedb.dev/media/IpONWYv.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Seated straddle reach",
@@ -2617,10 +2617,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "exercise ball seated hamstring stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/yRYyfdA.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Seated twist and fold",
@@ -2629,10 +2629,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "band seated twist",
-      "gifUrl": "https://static.exercisedb.dev/media/S1JXDAG.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Self-defense palm strikes",
@@ -2643,8 +2643,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Short easy walk",
@@ -2653,10 +2653,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "stationary bike walk",
-      "gifUrl": "https://static.exercisedb.dev/media/a8VDgLw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Shoulder and wrist mobility",
@@ -2665,10 +2665,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "cable standing shoulder external rotation",
-      "gifUrl": "https://static.exercisedb.dev/media/FWdVhcW.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Shoulder blade squeezes",
@@ -2677,10 +2677,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "scapula dips",
-      "gifUrl": "https://static.exercisedb.dev/media/7xeukSt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Shoulder dislocates or band pass-throughs",
@@ -2689,10 +2689,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "cable standing shoulder external rotation",
-      "gifUrl": "https://static.exercisedb.dev/media/FWdVhcW.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Shoulder-opener flow",
@@ -2701,10 +2701,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "cable standing shoulder external rotation",
-      "gifUrl": "https://static.exercisedb.dev/media/FWdVhcW.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Side lunges",
@@ -2715,8 +2715,8 @@
       "status": "found",
       "matchedName": "barbell lateral lunge",
       "gifUrl": "https://static.exercisedb.dev/media/py1HSzx.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Side plank dips or holds",
@@ -2727,8 +2727,8 @@
       "status": "found",
       "matchedName": "bodyweight incline side plank",
       "gifUrl": "https://static.exercisedb.dev/media/5VXmnV5.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Side-lying clams",
@@ -2737,10 +2737,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "side lying hip adduction (male)",
-      "gifUrl": "https://static.exercisedb.dev/media/c8f5cSY.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Side-lying leg lifts",
@@ -2749,10 +2749,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "assisted lying leg raise with lateral throw down",
-      "gifUrl": "https://static.exercisedb.dev/media/UGhRD1A.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Side-lying leg lifts small",
@@ -2761,10 +2761,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "assisted lying leg raise with lateral throw down",
-      "gifUrl": "https://static.exercisedb.dev/media/UGhRD1A.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Side-lying rest pose",
@@ -2773,10 +2773,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "side lying floor stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/jDOKRM5.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Sled or prowler short pushes",
@@ -2785,10 +2785,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "sled 45° leg press (side pov)",
-      "gifUrl": "https://static.exercisedb.dev/media/2Qh2J1e.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable seated row",
+      "gifUrl": "https://static.exercisedb.dev/media/fUBheHs.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Sled pushes",
@@ -2797,10 +2797,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "sled 45° leg press (side pov)",
-      "gifUrl": "https://static.exercisedb.dev/media/2Qh2J1e.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Slip-and-roll drill",
@@ -2811,8 +2811,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Slow hip hinges",
@@ -2821,10 +2821,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell good morning",
-      "gifUrl": "https://static.exercisedb.dev/media/XlZ4lAC.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell romanian deadlift",
+      "gifUrl": "https://static.exercisedb.dev/media/rR0LJzx.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Slow push-up or wall push-up",
@@ -2835,8 +2835,8 @@
       "status": "found",
       "matchedName": "push-up (wall)",
       "gifUrl": "https://static.exercisedb.dev/media/LEH9jxP.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Slow vinyasa",
@@ -2845,10 +2845,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Slow-motion full scenario",
@@ -2857,10 +2857,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "left hook. boxing",
+      "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Speed bag or fast taps",
@@ -2871,8 +2871,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Speed jab ladder",
@@ -2883,8 +2883,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Speed skaters or lateral steps",
@@ -2895,8 +2895,8 @@
       "status": "found",
       "matchedName": "skater hops",
       "gifUrl": "https://static.exercisedb.dev/media/zfNHMN9.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Spinal twist on the floor",
@@ -2905,10 +2905,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "spine stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/JbC2iaV.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "stationary bike run v. 3",
+      "gifUrl": "https://static.exercisedb.dev/media/H1PESYI.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Split squats",
@@ -2919,8 +2919,8 @@
       "status": "found",
       "matchedName": "split squats",
       "gifUrl": "https://static.exercisedb.dev/media/9E25EOx.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Split-stance lunges",
@@ -2929,10 +2929,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "barbell split squat v. 2",
-      "gifUrl": "https://static.exercisedb.dev/media/HBYyX94.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "split squats",
+      "gifUrl": "https://static.exercisedb.dev/media/9E25EOx.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Sprawl-to-stand drill",
@@ -2943,8 +2943,8 @@
       "status": "found",
       "matchedName": "burpee",
       "gifUrl": "https://static.exercisedb.dev/media/dK9394r.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Squat to reach",
@@ -2953,10 +2953,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "squat to overhead reach",
-      "gifUrl": "https://static.exercisedb.dev/media/QChZi3x.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Stair or step-ups",
@@ -2965,10 +2965,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "barbell step-up",
-      "gifUrl": "https://static.exercisedb.dev/media/Kxquu2E.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "dumbbell step-up",
+      "gifUrl": "https://static.exercisedb.dev/media/aXtJhlg.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing balance series",
@@ -2977,10 +2977,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "balance board",
-      "gifUrl": "https://static.exercisedb.dev/media/xAySMB0.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing core twists",
@@ -2989,10 +2989,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "barbell standing twist",
-      "gifUrl": "https://static.exercisedb.dev/media/yQe5HpE.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing hamstring stretch",
@@ -3001,10 +3001,10 @@
         "karate"
       ],
       "status": "found",
-      "matchedName": "standing hamstring and calf stretch with strap",
-      "gifUrl": "https://static.exercisedb.dev/media/xTjr103.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "hamstring stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/99rWm7w.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing hip circles",
@@ -3013,10 +3013,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "roller hip stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/oMypNrz.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "low glute bridge on floor",
+      "gifUrl": "https://static.exercisedb.dev/media/u0cNiij.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing kickbacks",
@@ -3025,10 +3025,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "dumbbell standing kickback",
-      "gifUrl": "https://static.exercisedb.dev/media/UmpPAAe.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "cable kickback",
+      "gifUrl": "https://static.exercisedb.dev/media/HEJ6DIX.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing march with core",
@@ -3039,8 +3039,8 @@
       "status": "found",
       "matchedName": "high knee against wall",
       "gifUrl": "https://static.exercisedb.dev/media/ealLwvX.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Standing oblique crunches",
@@ -3049,10 +3049,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "band standing twisting crunch",
-      "gifUrl": "https://static.exercisedb.dev/media/euq4pwp.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "crunch floor",
+      "gifUrl": "https://static.exercisedb.dev/media/TFqbd8t.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Stepping punch across the room",
@@ -3063,8 +3063,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Stepping punch on pads",
@@ -3075,8 +3075,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Strong squat stands",
@@ -3085,10 +3085,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "barbell full squat",
-      "gifUrl": "https://static.exercisedb.dev/media/qXTaZnJ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Sumo squat holds",
@@ -3097,10 +3097,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "smith sumo squat",
-      "gifUrl": "https://static.exercisedb.dev/media/dzz6BiV.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Sun-salutation warm-up",
@@ -3109,10 +3109,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Superman lifts",
@@ -3123,8 +3123,8 @@
       "status": "found",
       "matchedName": "superman push-up",
       "gifUrl": "https://static.exercisedb.dev/media/4GqRrAk.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Supported squat to a chair",
@@ -3133,10 +3133,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "smith chair squat",
-      "gifUrl": "https://static.exercisedb.dev/media/Gu2rNJd.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Tabata-style squats",
@@ -3145,10 +3145,10 @@
         "hiit"
       ],
       "status": "found",
-      "matchedName": "jump squat",
-      "gifUrl": "https://static.exercisedb.dev/media/LIlE5Tn.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Technical bag work",
@@ -3159,8 +3159,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Technical karate bag work",
@@ -3171,8 +3171,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Technical kick and punch",
@@ -3181,10 +3181,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "outside leg kick push-up",
-      "gifUrl": "https://static.exercisedb.dev/media/jNU1gFQ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Technical MMA bag work",
@@ -3195,8 +3195,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Tempo squats",
@@ -3205,10 +3205,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "barbell full squat",
-      "gifUrl": "https://static.exercisedb.dev/media/qXTaZnJ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Thai-pad style kicks on bag",
@@ -3217,10 +3217,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "outside leg kick push-up",
-      "gifUrl": "https://static.exercisedb.dev/media/jNU1gFQ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up inside leg kick",
+      "gifUrl": "https://static.exercisedb.dev/media/0br45wL.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Top-set strength work",
@@ -3229,10 +3229,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "barbell full squat",
-      "gifUrl": "https://static.exercisedb.dev/media/qXTaZnJ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat",
+      "gifUrl": "https://static.exercisedb.dev/media/75Bgtjy.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Treadmill fight-pace walk",
@@ -3243,8 +3243,8 @@
       "status": "found",
       "matchedName": "walking on incline treadmill",
       "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Treadmill incline intervals",
@@ -3255,8 +3255,8 @@
       "status": "found",
       "matchedName": "walking on incline treadmill",
       "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Treadmill incline walk",
@@ -3267,8 +3267,8 @@
       "status": "found",
       "matchedName": "walking on incline treadmill",
       "gifUrl": "https://static.exercisedb.dev/media/rjiM4L3.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Triceps or close-grip press",
@@ -3277,10 +3277,10 @@
         "muscle"
       ],
       "status": "found",
-      "matchedName": "close-grip push-up",
-      "gifUrl": "https://static.exercisedb.dev/media/x6KpKpq.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "barbell close-grip bench press",
+      "gifUrl": "https://static.exercisedb.dev/media/J6Dx1Mu.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Victory pose holds",
@@ -3289,10 +3289,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "standing lateral stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/1jXLYEw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Voice + strike practice",
@@ -3304,8 +3304,8 @@
       "status": "found",
       "matchedName": "left hook. boxing",
       "gifUrl": "https://static.exercisedb.dev/media/hoXt6wv.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Walk-and-breathe outside or in place",
@@ -3314,10 +3314,10 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "walking on stepmill",
-      "gifUrl": "https://static.exercisedb.dev/media/j9Q5crt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "(web) breathing/meditation",
+      "gifUrl": "https://media.giphy.com/media/3o7TKz2b0bDBIzJ9dS/giphy.gif",
+      "source": "web",
+      "score": 100
     },
     {
       "title": "Walk-out to plank",
@@ -3326,10 +3326,10 @@
         "weight_loss"
       ],
       "status": "found",
-      "matchedName": "power point plank",
-      "gifUrl": "https://static.exercisedb.dev/media/hCjGsRQ.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "burpee",
+      "gifUrl": "https://static.exercisedb.dev/media/dK9394r.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Walking intervals easy",
@@ -3338,10 +3338,10 @@
         "pregnancy"
       ],
       "status": "found",
-      "matchedName": "walking on stepmill",
-      "gifUrl": "https://static.exercisedb.dev/media/j9Q5crt.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "farmers walk",
+      "gifUrl": "https://static.exercisedb.dev/media/qPEzJjA.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Walking lunges",
@@ -3353,8 +3353,8 @@
       "status": "found",
       "matchedName": "walking lunge",
       "gifUrl": "https://static.exercisedb.dev/media/IZVHb27.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Walking lunges loaded",
@@ -3365,8 +3365,8 @@
       "status": "found",
       "matchedName": "walking lunge",
       "gifUrl": "https://static.exercisedb.dev/media/IZVHb27.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Walking lunges with dumbbells",
@@ -3375,10 +3375,10 @@
         "tone"
       ],
       "status": "found",
-      "matchedName": "dumbbell lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/RRWFUcw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "walking lunge",
+      "gifUrl": "https://static.exercisedb.dev/media/IZVHb27.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Wall push-ups",
@@ -3389,8 +3389,8 @@
       "status": "found",
       "matchedName": "push-up (wall)",
       "gifUrl": "https://static.exercisedb.dev/media/LEH9jxP.gif",
-      "source": "rule",
-      "score": 900
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Wall push-ups with a pause",
@@ -3399,10 +3399,10 @@
         "confidence"
       ],
       "status": "found",
-      "matchedName": "push-up (wall) v. 2",
-      "gifUrl": "https://static.exercisedb.dev/media/NCmbLCw.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "push-up (wall)",
+      "gifUrl": "https://static.exercisedb.dev/media/LEH9jxP.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Wall sit or chair sit-to-stand",
@@ -3411,10 +3411,10 @@
         "postpartum"
       ],
       "status": "found",
-      "matchedName": "smith chair squat",
-      "gifUrl": "https://static.exercisedb.dev/media/Gu2rNJd.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat with support",
+      "gifUrl": "https://static.exercisedb.dev/media/b63ZzGe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Wall-sit fight stance",
@@ -3423,10 +3423,10 @@
         "boxing"
       ],
       "status": "found",
-      "matchedName": "smith chair squat",
-      "gifUrl": "https://static.exercisedb.dev/media/Gu2rNJd.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "potty squat with support",
+      "gifUrl": "https://static.exercisedb.dev/media/b63ZzGe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Warrior sequence",
@@ -3435,10 +3435,10 @@
         "yoga"
       ],
       "status": "found",
-      "matchedName": "barbell lunge",
-      "gifUrl": "https://static.exercisedb.dev/media/t8iSghb.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "World’s-greatest-stretch flow",
@@ -3447,10 +3447,10 @@
         "flexibility"
       ],
       "status": "found",
-      "matchedName": "world greatest stretch",
-      "gifUrl": "https://static.exercisedb.dev/media/DFGXwZr.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Wrist and shoulder mobility",
@@ -3459,10 +3459,10 @@
         "mma"
       ],
       "status": "found",
-      "matchedName": "wrist circles",
-      "gifUrl": "https://static.exercisedb.dev/media/2zNKRUB.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Wrist-release practice",
@@ -3471,10 +3471,10 @@
         "selfdefense"
       ],
       "status": "found",
-      "matchedName": "wrist circles",
-      "gifUrl": "https://static.exercisedb.dev/media/2zNKRUB.gif",
-      "source": "rule",
-      "score": 900
+      "matchedName": "runners stretch",
+      "gifUrl": "https://static.exercisedb.dev/media/0mB6wHO.gif",
+      "source": "file-fallback",
+      "score": 60
     },
     {
       "title": "Yoga nidra-style body scan",
@@ -3483,11 +3483,18 @@
         "stress"
       ],
       "status": "found",
-      "matchedName": "Curated breathing/relaxation animation (web)",
-      "gifUrl": "https://media.giphy.com/media/cOI6OPdjyvLH1k4Mh2/giphy.gif",
-      "source": "api",
-      "score": 500
+      "matchedName": "upward facing dog",
+      "gifUrl": "https://static.exercisedb.dev/media/01qpYSe.gif",
+      "source": "file-fallback",
+      "score": 60
     }
   ],
-  "missingTitles": []
+  "rebuiltAt": "2026-09-03T21:10:57.048Z",
+  "matchSummary": {
+    "apiHits": 18,
+    "fileFallback": 259,
+    "webHits": 13,
+    "missing": 0,
+    "total": 290
+  }
 }

@@ -7,6 +7,8 @@ export type GifHit = {
   name: string;
   id?: string;
   media?: string;
+  /** Exact ExerciseDB catalog / search name */
+  catalog?: string;
   localKey?: 'bike' | 'march' | 'jacks' | 'rope' | 'yoga' | 'jog' | 'treadmill' | 'squat' | 'pushup';
 };
 
@@ -44,6 +46,10 @@ const RULES: Rule[] = [
   { test: /push-up|push up/, name: 'Push-up', catalog: 'push-up', localKey: 'pushup' },
   { test: /mountain.?climber/, name: 'Mountain climber', catalog: 'mountain climber' },
   { test: /burpee|sprawl/, name: 'Burpee', catalog: 'burpee' },
+  // Yoga / mobility before generic plank so "down-dog to plank" maps correctly.
+  { test: /down.?dog|downward|cat-cow|cat cow/, name: 'Downward dog', localKey: 'yoga' },
+  { test: /sun.?salute|vinyasa|yoga|kata|pigeon|warrior|savasana|child|butterfly yoga/, name: 'Yoga flow', localKey: 'yoga' },
+  { test: /stand.*balance|balance/, name: 'Standing balance', localKey: 'yoga' },
   { test: /plank shoulder tap|shoulder tap/, name: 'Shoulder tap', catalog: 'shoulder tap' },
   { test: /side plank/, name: 'Side plank', catalog: 'bodyweight incline side plank' },
   { test: /plank/, name: 'Plank', catalog: 'power point plank' },
@@ -67,8 +73,6 @@ const RULES: Rule[] = [
   { test: /hamstring/, name: 'Hamstring stretch', catalog: 'hamstring stretch' },
   { test: /hip flexor/, name: 'Hip flexor stretch', catalog: 'intermediate hip flexor and quad stretch' },
   { test: /calf/, name: 'Calf stretch', catalog: 'calf stretch with hands against wall' },
-  { test: /down.?dog|downward|cat-cow|cat cow/, name: 'Upward facing dog', catalog: 'upward facing dog' },
-  { test: /sun.?salute|vinyasa|yoga|kata|pigeon|warrior|savasana|child/, name: 'Yoga flow', catalog: 'butterfly yoga pose', localKey: 'yoga' },
   { test: /stretch|mobility|hip opener|neck roll/, name: 'Full-body stretch', catalog: 'runners stretch' },
   { test: /jab|cross|hook|uppercut|shadowbox|shadow boxing|boxing|punch|palm strike|hammer-fist|bag work|bag combos|on the bag|on bag|mitt|pad-style|pad reverse/, name: 'Boxing hook', catalog: 'left hook. boxing' },
   { test: /kick chamber|front kick|roundhouse|mawashi|power kick|kick and punch|knee strike/, name: 'Leg kick', catalog: 'push-up inside leg kick' },
@@ -76,9 +80,9 @@ const RULES: Rule[] = [
   { test: /kettlebell swing/, name: 'Kettlebell swing', catalog: 'kettlebell swing' },
   { test: /pelvic tilt/, name: 'Pelvic tilt', catalog: 'pelvic tilt' },
   { test: /superman/, name: 'Superman', catalog: 'superman push-up' },
-  { test: /breath|exhale|box breathing|body scan|nervous system/, name: 'Calm breath / yoga', catalog: 'butterfly yoga pose', localKey: 'yoga' },
+  { test: /deep breath|breath|exhale|box breathing|body scan|nervous system|pranayama/, name: 'Deep breath', localKey: 'yoga' },
   { test: /footwork|stance|guard-up|parry|clinch|awareness|scenario|wrist-release|voice/, name: 'Boxing guard', catalog: 'left hook. boxing' },
-  { test: /sled|prowler|machine circuit|spin cool/, name: 'Easy jog / walk', localKey: 'jog' },
+  { test: /sled|prowler|machine circuit|spin cool/, name: 'Easy jog / walk', catalog: 'farmers walk', localKey: 'jog' },
   { test: /hollow/, name: 'Dead bug', catalog: 'dead bug' },
   { test: /core brace|anti-rotation|woodchop/, name: 'Pallof press', catalog: 'band horizontal pallof press' },
   { test: /hip escape|clams|leg lift|kickback/, name: 'Glute bridge', catalog: 'low glute bridge on floor' },
@@ -88,7 +92,7 @@ const ANIMATION_FALLBACK: Record<string, Rule> = {
   squat: { test: /.*/, name: 'Bodyweight squat', catalog: 'potty squat', localKey: 'squat' },
   lunge: { test: /.*/, name: 'Forward lunge', catalog: 'forward lunge (male)' },
   plank: { test: /.*/, name: 'Plank', catalog: 'power point plank' },
-  walk: { test: /.*/, name: 'Easy jog / walk', localKey: 'jog' },
+  walk: { test: /.*/, name: 'Easy jog / walk', catalog: 'farmers walk', localKey: 'jog' },
   jump: { test: /.*/, name: 'Jumping jacks', catalog: 'jack jump (male)', localKey: 'jacks' },
   core: { test: /.*/, name: 'Crunch', catalog: 'crunch floor' },
   hip: { test: /.*/, name: 'Glute bridge', catalog: 'low glute bridge on floor' },
@@ -96,8 +100,8 @@ const ANIMATION_FALLBACK: Record<string, Rule> = {
   guard: { test: /.*/, name: 'Boxing hook', catalog: 'left hook. boxing' },
   kick: { test: /.*/, name: 'Leg kick', catalog: 'push-up inside leg kick' },
   stretch: { test: /.*/, name: 'Full-body stretch', catalog: 'runners stretch' },
-  flow: { test: /.*/, name: 'Yoga flow', catalog: 'butterfly yoga pose', localKey: 'yoga' },
-  breath: { test: /.*/, name: 'Calm breath / yoga', catalog: 'butterfly yoga pose', localKey: 'yoga' },
+  breath: { test: /.*/, name: 'Deep breath', localKey: 'yoga' },
+  flow: { test: /.*/, name: 'Yoga flow', localKey: 'yoga' },
   prenatal: { test: /.*/, name: 'Supported squat', catalog: 'potty squat with support', localKey: 'squat' },
   recover: { test: /.*/, name: 'Full-body stretch', catalog: 'runners stretch' },
 };
@@ -118,12 +122,25 @@ export function normalizeExerciseTitle(title: string) {
 
 function resolve(rule: Rule): GifHit | null {
   const row = rule.catalog ? byName(rule.catalog) : null;
-  if (row) return { name: rule.name, id: row.i, media: row.m, localKey: rule.localKey };
+  if (row) {
+    return {
+      name: rule.name,
+      id: row.i,
+      media: row.m,
+      catalog: rule.catalog,
+      localKey: rule.localKey,
+    };
+  }
+  if (rule.catalog) return { name: rule.name, catalog: rule.catalog, localKey: rule.localKey };
   if (rule.localKey) return { name: rule.name, localKey: rule.localKey };
   return null;
 }
 
-export function matchExerciseGif(title: string, animation?: string): GifHit | null {
+export function matchExerciseGif(
+  title: string,
+  animation?: string,
+  _preferYoga?: boolean
+): GifHit | null {
   const key = normalizeExerciseTitle(title);
   const rule = RULES.find((item) => item.test.test(key));
   if (rule) {
@@ -134,8 +151,15 @@ export function matchExerciseGif(title: string, animation?: string): GifHit | nu
   return fallback ? resolve(fallback) : null;
 }
 
+/** ExerciseDB CDN gif (preferred). Falls back to GitHub mirror if media id missing. */
 export function gifUrlFor(hit: GifHit) {
-  return hit.id && hit.media
-    ? `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/videos/${hit.id}-${hit.media}.gif`
-    : '';
+  if (hit.media) return `https://static.exercisedb.dev/media/${hit.media}.gif`;
+  return '';
+}
+
+/** Preferred search phrase for ExerciseDB API matching. */
+export function searchQueryForHit(hit: GifHit | null, title?: string) {
+  if (hit?.catalog) return hit.catalog;
+  if (hit?.name) return hit.name;
+  return title ? normalizeExerciseTitle(title) : '';
 }

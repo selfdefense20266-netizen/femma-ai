@@ -27,12 +27,7 @@ export default function RevealScreen() {
 
   const handleStart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    completeOnboarding({
-      planName: plan.planName,
-      journeyDay: 1,
-      name: user ? `${user.firstName} ${user.lastName}`.trim() : '',
-    });
-    router.replace('/(tabs)');
+    router.replace('/onboarding/subscription');
   };
 
   return (

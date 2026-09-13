@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:roadmap": "node ./node_modules/typescript/bin/tsc -p scripts/tsconfig.roadmap.json && node scripts/.roadmap-out/scripts/test-exercise-roadmap.js",
     "test:gifs": "node ./node_modules/typescript/bin/tsc -p scripts/tsconfig.gifs.json && node scripts/.gif-out/scripts/test-exercise-gifs.js",
+    "map:gifs": "node ./node_modules/typescript/bin/tsc -p scripts/tsconfig.map-gifs.json && node scripts/.gif-out/scripts/map-exercise-gifs.js",
     "seed:roadmap": "node ./node_modules/typescript/bin/tsc -p scripts/tsconfig.roadmap.json && node scripts/seed-exercise-roadmap.cjs"
   },
   "devDependencies": {
@@ -64,14 +65,14 @@
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/metro-runtime": "~57.0.13",
     "@supabase/supabase-js": "2.112.4",
+    "expo": "~57.0.16",
     "expo-camera": "~57.0.4",
     "expo-crypto": "~57.0.2",
     "expo-notifications": "~57.0.15",
     "expo-video": "~57.0.2",
-    "react-native-purchases": "^9.15.2",
-    "react-native-url-polyfill": "^4.0.0",
-    "expo": "~57.0.16",
     "react": "19.2.3",
-    "react-native": "0.86.2"
+    "react-native": "0.86.2",
+    "react-native-purchases": "^9.15.2",
+    "react-native-url-polyfill": "^4.0.0"
   }
 }

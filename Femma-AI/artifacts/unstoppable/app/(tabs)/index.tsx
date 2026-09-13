@@ -170,6 +170,7 @@ export default function TodayScreen() {
           duration: String(mission.duration || 10),
           steps: (mission.steps || []).join('|'),
           missionId: mission.id,
+          category: mission.category || '',
         },
       } as never);
       return;

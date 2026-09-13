@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { localRecipeImage, type Recipe } from '@/data/recipes';
@@ -36,9 +37,9 @@ export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0 
   const source = local || (uri ? { uri } : undefined);
 
   return (
-    <View style={[style, styles.wrap, radius ? { borderRadius: radius } : null]}>
+    <View style={[styles.wrap, style, radius ? { borderRadius: radius } : null]}>
       {source ? (
-        <Image source={source} style={styles.fill} resizeMode="cover" />
+        <Image source={source} style={styles.fill} contentFit="cover" recyclingKey={recipe.id} />
       ) : (
         <LinearGradient colors={recipe.gradient} style={styles.fill}>
           <View style={styles.fallback}>
@@ -51,7 +52,7 @@ export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0 
 }
 
 const styles = StyleSheet.create({
-  wrap: { overflow: 'hidden' },
-  fill: { width: '100%', height: '100%' },
+  wrap: { overflow: 'hidden', position: 'relative' },
+  fill: { ...StyleSheet.absoluteFillObject },
   fallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

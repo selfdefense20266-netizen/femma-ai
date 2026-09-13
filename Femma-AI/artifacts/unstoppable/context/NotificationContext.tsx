@@ -3,6 +3,10 @@ import { AppState, Platform, StyleSheet, Text, TouchableOpacity, View } from 're
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { usePurchases } from '@/context/PurchaseContext';
+import { fetchSentAdminNotices, noticeMatchesMember } from '@/lib/adminNotices';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import {
   osNotificationPermission,
   requestOsNotificationPermission,
@@ -36,6 +40,7 @@ const KEYS = {
   lastJourney: 'fema-last-notified-journey',
   asked: 'fema-notify-asked',
   enabled: 'fema-notify-enabled',
+  adminBoot: 'fema-admin-notices-boot',
 };
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -80,6 +85,8 @@ function NotificationAskBanner({
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { profile, onboardingCompleted, missions } = useApp();
+  const { user } = useAuth();
+  const { isPremium } = usePurchases();
   const [notices, setNotices] = useState<AppNotice[]>([]);
   const [permission, setPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [enabled, setEnabledState] = useState(true);
@@ -195,22 +202,82 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     await AsyncStorage.setItem(KEYS.lastJourney, String(journey));
   }, [missions, onboardingCompleted, profile.journeyDay, pushNotice, ready]);
 
+  const pullAdminNotices = useCallback(async () => {
+    if (!ready || !isSupabaseConfigured) return;
+    const email = user?.email || '';
+    const rows = await fetchSentAdminNotices();
+    const matched = rows.filter((row) => noticeMatchesMember(row.audience, email, isPremium));
+    const booted = await AsyncStorage.getItem(KEYS.adminBoot);
+    if (!matched.length) {
+      if (!booted) await AsyncStorage.setItem(KEYS.adminBoot, '1');
+      return;
+    }
+
+    const known = new Set(noticesRef.current.map((item) => item.id));
+    const incoming = matched.filter((row) => !known.has(row.id));
+    if (!incoming.length) {
+      if (!booted) await AsyncStorage.setItem(KEYS.adminBoot, '1');
+      return;
+    }
+
+    const mapped: AppNotice[] = incoming.map((row) => ({
+      id: row.id,
+      title: row.title,
+      body: row.body,
+      createdAt: row.sentAt,
+      read: false,
+      href: '/notifications',
+    }));
+    persist([...mapped, ...noticesRef.current]);
+
+    if (booted && enabledRef.current) {
+      for (const row of incoming.slice(0, 3)) {
+        await sendOsNotification(row.title, row.body);
+      }
+    }
+    await AsyncStorage.setItem(KEYS.adminBoot, '1');
+  }, [isPremium, persist, ready, user?.email]);
+
   useEffect(() => {
     if (!onboardingCompleted || !ready) return;
     void checkNewTasks();
   }, [checkNewTasks, onboardingCompleted, profile.journeyDay, ready]);
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void checkNewTasks();
-    });
-    return () => sub.remove();
-  }, [checkNewTasks]);
+    if (!ready) return;
+    void pullAdminNotices();
+  }, [pullAdminNotices, ready, user?.email]);
 
   useEffect(() => {
-    const timer = setInterval(() => void checkNewTasks(), 60_000);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void checkNewTasks();
+        void pullAdminNotices();
+      }
+    });
+    return () => sub.remove();
+  }, [checkNewTasks, pullAdminNotices]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      void checkNewTasks();
+      void pullAdminNotices();
+    }, 45_000);
     return () => clearInterval(timer);
-  }, [checkNewTasks]);
+  }, [checkNewTasks, pullAdminNotices]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const channel = supabase
+      .channel('admin-notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        void pullAdminNotices();
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [pullAdminNotices]);
 
   useEffect(() => {
     if (!onboardingCompleted || !ready) return;

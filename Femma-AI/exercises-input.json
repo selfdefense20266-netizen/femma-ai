@@ -1,0 +1,3492 @@
+{
+  "generatedAt": "2026-09-03T09:09:05.392Z",
+  "api": "https://oss.exercisedb.dev/api/v1",
+  "total": 290,
+  "exercises": [
+    {
+      "title": "3-minute round shadowboxing",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "40-on / 20-off squat pulses",
+      "animation": "squat",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "90/90 hip switches",
+      "animation": "hip",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Adductor or butterfly stretch",
+      "animation": "stretch",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Alternating reverse lunges",
+      "animation": "lunge",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Assault-bike or fan-bike bursts",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Awareness turns in place",
+      "animation": "walk",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Back extension easy",
+      "animation": "core",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Backpack or book rows",
+      "animation": "core",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bag front kicks",
+      "animation": "kick",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bag hooks and uppercuts",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bag mawashi geri",
+      "animation": "kick",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bag MMA combos",
+      "animation": "punch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Balance holds",
+      "animation": "flow",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Balance kicks held at chamber",
+      "animation": "kick",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Band or towel rows",
+      "animation": "core",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Band rows",
+      "animation": "core",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Barbell or goblet squat",
+      "animation": "squat",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Battle-rope or slam intervals",
+      "animation": "core",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bench or floor press",
+      "animation": "plank",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bike easy spin",
+      "animation": "walk",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bike flush",
+      "animation": "walk",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bike intervals",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bike or rower flush",
+      "animation": "walk",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bike or rower sprints",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Block-and-counter drill",
+      "animation": "guard",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Body-shot combos",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bodyweight squat pulses",
+      "animation": "squat",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Boundary stance and palm strike",
+      "animation": "guard",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Box breathing standing",
+      "animation": "breath",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Box step-overs",
+      "animation": "lunge",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Breath-down after intensity",
+      "animation": "breath",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Breathing for calm",
+      "animation": "breath",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Breathing reset",
+      "animation": "breath",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bridge or wheel prep",
+      "animation": "hip",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Brisk march in place",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Bulgarian split squat",
+      "animation": "lunge",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Burpee step-backs or full burpees",
+      "animation": "plank",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cable kickbacks",
+      "animation": "hip",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cable or band punch-outs",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cable or band rows",
+      "animation": "core",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cable woodchops",
+      "animation": "core",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Calf and ankle rocks",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Calf raises holding a chair",
+      "animation": "prenatal",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cardio burst: knees or marches",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cat-cow",
+      "animation": "flow",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cat-cow on all fours",
+      "animation": "flow",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cat-cow to child’s pose",
+      "animation": "flow",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Chest opener on a wall",
+      "animation": "stretch",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Chest-opening stretch",
+      "animation": "stretch",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Child’s pose holds",
+      "animation": "recover",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Clinch knees on bag",
+      "animation": "kick",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Clinch-control posture",
+      "animation": "guard",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Close-stance squats",
+      "animation": "squat",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Combo: punch then kick",
+      "animation": "kick",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Combo: squat then strike",
+      "animation": "punch",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Confidence flow",
+      "animation": "flow",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Cool-down shoulder circles",
+      "animation": "stretch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Core anti-rotation holds",
+      "animation": "core",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Core boat or forearm flow",
+      "animation": "core",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Core braces",
+      "animation": "core",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Core braces between rounds",
+      "animation": "core",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Core flutter or dead bug bursts",
+      "animation": "core",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Couch or quad stretch",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Curtsy lunge sculpt",
+      "animation": "lunge",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Dead bug core",
+      "animation": "core",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Dead bug with exhale",
+      "animation": "core",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Deep breath exercise",
+      "animation": "breath",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Deep squat hold",
+      "animation": "squat",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Defensive parry drill",
+      "animation": "guard",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Down-dog to plank flow",
+      "animation": "plank",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Down-regulate the nervous system",
+      "animation": "breath",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Down-regulating breath",
+      "animation": "breath",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Downshift breathing",
+      "animation": "breath",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Dumbbell thrusters",
+      "animation": "squat",
+      "categories": [
+        "weight_loss",
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy bike flush",
+      "animation": "walk",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy fat-burn walk",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy full-body mobility",
+      "animation": "flow",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy interval walk",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy machine circuit",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy prenatal mobility",
+      "animation": "prenatal",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy spin cool-down",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Easy walk between sets",
+      "animation": "walk",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Elbow strike on air",
+      "animation": "punch",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Exit footwork after a strike",
+      "animation": "walk",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Farmer carries",
+      "animation": "walk",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Farmer-carry fight stance walk",
+      "animation": "walk",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Farmer-carry stances",
+      "animation": "walk",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Fast feet + squat combo",
+      "animation": "jump",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Fast feet in-place ladder",
+      "animation": "walk",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Fast mountain climbers",
+      "animation": "plank",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Fast punches between legs",
+      "animation": "punch",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Fast sprawls",
+      "animation": "plank",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Forearm plank holds",
+      "animation": "plank",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Forward fold hang",
+      "animation": "stretch",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Front kick chamber drill",
+      "animation": "kick",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Front-stance stepping",
+      "animation": "walk",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Full stretch",
+      "animation": "stretch",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Full-body strength flow",
+      "animation": "flow",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Full-body stretch",
+      "animation": "stretch",
+      "categories": [
+        "weight_loss",
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Gentle neck rolls",
+      "animation": "stretch",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Glute bridge marches",
+      "animation": "hip",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Glute bridge strength",
+      "animation": "hip",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Glute bridges",
+      "animation": "hip",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Glute bridges tiny range",
+      "animation": "hip",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Glute-finisher circuit",
+      "animation": "hip",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Goblet squat sculpt",
+      "animation": "squat",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Goblet squats",
+      "animation": "squat",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Grappling hip drills",
+      "animation": "hip",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Gratitude breathing",
+      "animation": "breath",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Ground bridge and recover",
+      "animation": "core",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Ground get-up to stance",
+      "animation": "lunge",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Grounding breath",
+      "animation": "breath",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Grounding squat hold",
+      "animation": "squat",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Guard-up footwork",
+      "animation": "walk",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hammer-fist combos",
+      "animation": "punch",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hamstring fold with bent knees",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hard bodyweight squats",
+      "animation": "squat",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Heavy bag jab-cross",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Heavy bag level changes",
+      "animation": "lunge",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Heel slides and core reconnection",
+      "animation": "recover",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "High-knee or fast march",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hikite pull-back punches",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip and chest stretch",
+      "animation": "stretch",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip and groin stretch",
+      "animation": "stretch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip escape if taken down",
+      "animation": "hip",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip escape on the floor",
+      "animation": "hip",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip flexor stretch",
+      "animation": "stretch",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip mobility flow",
+      "animation": "hip",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip mobility for punch rotation",
+      "animation": "hip",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip openers after boxing",
+      "animation": "hip",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip rotation for kicks",
+      "animation": "hip",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip thrust",
+      "animation": "hip",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip thrust or bridge with weight",
+      "animation": "hip",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip-flexor kneeling stretch",
+      "animation": "lunge",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip-flexor stretch supported",
+      "animation": "stretch",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hip-opening lunges",
+      "animation": "lunge",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hollow holds or dead bugs",
+      "animation": "core",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hollow-body holds",
+      "animation": "core",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Hook and uppercut air combos",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Horse-stance holds",
+      "animation": "squat",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Incline dumbbell press",
+      "animation": "plank",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Incline walk finisher",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Interval bag rounds",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Inversions or legs-up-wall",
+      "animation": "recover",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Jab-cross shadowboxing",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Jaw and shoulder release",
+      "animation": "stretch",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Jump-rope rounds",
+      "animation": "jump",
+      "categories": [
+        "boxing",
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Karate stance and reverse punch",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Kata then bag",
+      "animation": "flow",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Kata-style combination",
+      "animation": "flow",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Kettlebell deadlifts",
+      "animation": "hip",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Kettlebell goblet squats",
+      "animation": "squat",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Kettlebell swings",
+      "animation": "hip",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Kick chamber practice",
+      "animation": "kick",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Knee strike from clinch posture",
+      "animation": "kick",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Knife-hand block practice",
+      "animation": "guard",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Lat pulldown or pull-up hold",
+      "animation": "core",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Lateral raises light",
+      "animation": "stretch",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Leg press or hack squat",
+      "animation": "squat",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Leg-press or squat machine",
+      "animation": "squat",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Legs-up or reclined bound-angle",
+      "animation": "recover",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Legs-up recovery",
+      "animation": "recover",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Level-change shots in place",
+      "animation": "lunge",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light fight-stance rounds",
+      "animation": "guard",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light full-body tone flow",
+      "animation": "flow",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light kata flow",
+      "animation": "flow",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light MMA shadow flow",
+      "animation": "punch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light pump accessories",
+      "animation": "core",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light pump session",
+      "animation": "squat",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light skill intervals",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Light technical shadowboxing",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Long exhale counting",
+      "animation": "breath",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Long passive stretch",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Long stretch for trained muscles",
+      "animation": "stretch",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Long walk cool-down",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Low-impact jumping jacks",
+      "animation": "jump",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Lower-body stretch after stances",
+      "animation": "stretch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Lunge jumps or reverse lunges",
+      "animation": "lunge",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Med-ball slams",
+      "animation": "core",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Medicine-ball rotational throws",
+      "animation": "core",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Medicine-ball slams",
+      "animation": "core",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Mitt-style combo on bag",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Mixed-modal finisher",
+      "animation": "jump",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "MMA round on the bag",
+      "animation": "punch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "MMA stance punches",
+      "animation": "punch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Mountain-climber or march intervals",
+      "animation": "plank",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Overhead press",
+      "animation": "plank",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pad reverse punches",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pad-style combo practice",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pallof press",
+      "animation": "core",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pause squats",
+      "animation": "squat",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pelvic tilts",
+      "animation": "core",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pigeon both sides",
+      "animation": "hip",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pigeon or figure-four",
+      "animation": "hip",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pike or downward-dog push-ups",
+      "animation": "plank",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Plank shoulder taps",
+      "animation": "plank",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Posture walks",
+      "animation": "walk",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Power gyaku-zuki on bag",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Power kicks on bag",
+      "animation": "kick",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Power round on the bag",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Power-stance shadowboxing",
+      "animation": "punch",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Precision reverse punches",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Prenatal sun-salute modified",
+      "animation": "flow",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Pulse lunges",
+      "animation": "lunge",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Push-up progressions",
+      "animation": "plank",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Recovery mobility",
+      "animation": "recover",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Restorative floor sequence",
+      "animation": "breath",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Restorative Sunday reset",
+      "animation": "recover",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Reverse lunges",
+      "animation": "lunge",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Romanian deadlift",
+      "animation": "hip",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Roundhouse chamber practice",
+      "animation": "kick",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Row intervals",
+      "animation": "walk",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Rower fat-burn",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Savasana breathing",
+      "animation": "breath",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Seated row",
+      "animation": "core",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Seated side stretches",
+      "animation": "stretch",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Seated straddle reach",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Seated twist and fold",
+      "animation": "stretch",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Self-defense palm strikes",
+      "animation": "guard",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Short easy walk",
+      "animation": "walk",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Shoulder and wrist mobility",
+      "animation": "stretch",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Shoulder blade squeezes",
+      "animation": "stretch",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Shoulder dislocates or band pass-throughs",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Shoulder-opener flow",
+      "animation": "stretch",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Side lunges",
+      "animation": "lunge",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Side plank dips or holds",
+      "animation": "plank",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Side-lying clams",
+      "animation": "hip",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Side-lying leg lifts",
+      "animation": "hip",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Side-lying leg lifts small",
+      "animation": "hip",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Side-lying rest pose",
+      "animation": "recover",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Sled or prowler short pushes",
+      "animation": "walk",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Sled pushes",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Slip-and-roll drill",
+      "animation": "guard",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Slow hip hinges",
+      "animation": "hip",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Slow push-up or wall push-up",
+      "animation": "plank",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Slow vinyasa",
+      "animation": "flow",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Slow-motion full scenario",
+      "animation": "flow",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Speed bag or fast taps",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Speed jab ladder",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Speed skaters or lateral steps",
+      "animation": "lunge",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Spinal twist on the floor",
+      "animation": "stretch",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Split squats",
+      "animation": "lunge",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Split-stance lunges",
+      "animation": "lunge",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Sprawl-to-stand drill",
+      "animation": "plank",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Squat to reach",
+      "animation": "squat",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Stair or step-ups",
+      "animation": "lunge",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing balance series",
+      "animation": "flow",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing core twists",
+      "animation": "core",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing hamstring stretch",
+      "animation": "stretch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing hip circles",
+      "animation": "prenatal",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing kickbacks",
+      "animation": "hip",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing march with core",
+      "animation": "walk",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Standing oblique crunches",
+      "animation": "core",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Stepping punch across the room",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Stepping punch on pads",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Strong squat stands",
+      "animation": "squat",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Sumo squat holds",
+      "animation": "squat",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Sun-salutation warm-up",
+      "animation": "flow",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Superman lifts",
+      "animation": "core",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Supported squat to a chair",
+      "animation": "prenatal",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Tabata-style squats",
+      "animation": "squat",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Technical bag work",
+      "animation": "punch",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Technical karate bag work",
+      "animation": "punch",
+      "categories": [
+        "karate"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Technical kick and punch",
+      "animation": "kick",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Technical MMA bag work",
+      "animation": "punch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Tempo squats",
+      "animation": "squat",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Thai-pad style kicks on bag",
+      "animation": "kick",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Top-set strength work",
+      "animation": "squat",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Treadmill fight-pace walk",
+      "animation": "walk",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Treadmill incline intervals",
+      "animation": "walk",
+      "categories": [
+        "hiit"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Treadmill incline walk",
+      "animation": "walk",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Triceps or close-grip press",
+      "animation": "plank",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Victory pose holds",
+      "animation": "stretch",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Voice + strike practice",
+      "animation": "guard",
+      "categories": [
+        "selfdefense",
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Walk-and-breathe outside or in place",
+      "animation": "walk",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Walk-out to plank",
+      "animation": "plank",
+      "categories": [
+        "weight_loss"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Walking intervals easy",
+      "animation": "walk",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Walking lunges",
+      "animation": "lunge",
+      "categories": [
+        "weight_loss",
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Walking lunges loaded",
+      "animation": "lunge",
+      "categories": [
+        "muscle"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Walking lunges with dumbbells",
+      "animation": "lunge",
+      "categories": [
+        "tone"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Wall push-ups",
+      "animation": "plank",
+      "categories": [
+        "pregnancy"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Wall push-ups with a pause",
+      "animation": "plank",
+      "categories": [
+        "confidence"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Wall sit or chair sit-to-stand",
+      "animation": "squat",
+      "categories": [
+        "postpartum"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Wall-sit fight stance",
+      "animation": "squat",
+      "categories": [
+        "boxing"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Warrior sequence",
+      "animation": "lunge",
+      "categories": [
+        "yoga"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "World’s-greatest-stretch flow",
+      "animation": "flow",
+      "categories": [
+        "flexibility"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Wrist and shoulder mobility",
+      "animation": "stretch",
+      "categories": [
+        "mma"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Wrist-release practice",
+      "animation": "guard",
+      "categories": [
+        "selfdefense"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    },
+    {
+      "title": "Yoga nidra-style body scan",
+      "animation": "breath",
+      "categories": [
+        "stress"
+      ],
+      "status": "pending",
+      "matchedName": null,
+      "gifUrl": null,
+      "source": null,
+      "score": 0
+    }
+  ]
+}

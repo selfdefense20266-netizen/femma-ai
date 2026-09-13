@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -8,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { usePurchases } from '@/context/PurchaseContext';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { StorePackage } from '@/lib/revenueCat';
+import { purchasesUnavailableReason } from '@/context/PurchaseContext';
 
 const FALLBACK_FEATURES = [
   'Full course library and daily plan',
@@ -23,6 +31,8 @@ export default function PaywallScreen() {
   const { isPremium, packages, loading, error, configured, buy, restore, refresh } = usePurchases();
   const [selected, setSelected] = useState<string>('');
   const [features, setFeatures] = useState<string[]>(FALLBACK_FEATURES);
+  const [purchaseError, setPurchaseError] = useState('');
+  const unavailableReason = purchasesUnavailableReason();
 
   useEffect(() => {
     if (!packages.length) return;
@@ -47,12 +57,24 @@ export default function PaywallScreen() {
 
   const chosen = packages.find((item) => item.identifier === selected) || packages[0];
 
-  const onBuy = async (item: StorePackage) => {
+  const handlePurchase = async () => {
+    if (unavailableReason) {
+      setPurchaseError(unavailableReason);
+      return;
+    }
+    if (!chosen) return;
+    setPurchaseError('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const ok = await buy(item);
-    if (ok) {
-      Alert.alert('Premium is on', 'Your subscription will renew automatically until you cancel.');
-      router.back();
+    try {
+      const ok = await buy(chosen);
+      if (ok) {
+        Alert.alert('Premium Active! 🎉', 'Your subscription is now active.');
+        router.back();
+      }
+      // On failure, `error` from usePurchases() already holds the real reason
+      // (cancelled vs. an actual RevenueCat/store error) — shown above.
+    } catch (err) {
+      setPurchaseError(err instanceof Error ? err.message : 'Payment failed.');
     }
   };
 
@@ -82,7 +104,7 @@ export default function PaywallScreen() {
           {isPremium ? 'You are on Premium' : 'Keep going with Premium'}
         </Text>
         <Text style={[styles.sub, { color: colors.mutedForeground }]}>
-          Tap Continue to start monthly Premium. It renews automatically until you cancel.
+          Tap Subscribe to complete purchase via the App Store / Google Play. It renews automatically until you cancel.
         </Text>
 
         <View style={styles.features}>
@@ -110,7 +132,7 @@ export default function PaywallScreen() {
         ) : packages.length ? (
           <View style={{ gap: 10 }}>
             {packages.map((item) => {
-              const on = item.identifier === chosen?.identifier;
+              const on = item.identifier === (chosen?.identifier || packages[0]?.identifier);
               return (
                 <TouchableOpacity
                   key={item.identifier}
@@ -137,32 +159,31 @@ export default function PaywallScreen() {
           </View>
         ) : (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No products in Test Store yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Standard Premium Plan</Text>
             <Text style={[styles.empty, { color: colors.mutedForeground }]}>
-              In RevenueCat: Test Store → create a monthly (and optional yearly) subscription → attach both to the default offering and the `premium` entitlement.
+              Unlock full video library, daily roadmap, AI recipes, and AI coach chat.
             </Text>
-            <TouchableOpacity onPress={() => void refresh()} style={[styles.restoreBtn, { borderColor: colors.border }]}>
-              <Text style={[styles.restoreText, { color: colors.foreground }]}>Refresh offerings</Text>
-            </TouchableOpacity>
           </View>
         )}
 
-        {!isPremium && chosen ? (
+        {!isPremium ? (
           <TouchableOpacity
-            style={[styles.cta, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
-            disabled={loading}
-            onPress={() => void onBuy(chosen)}
+            style={[styles.cta, { backgroundColor: colors.primary, opacity: loading || !chosen ? 0.7 : 1 }]}
+            disabled={loading || !chosen}
+            onPress={() => void handlePurchase()}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <Text style={styles.ctaText}>Continue · {chosen.priceString}</Text>
-                <Text style={styles.ctaSub}>{chosen.recurring ? `Auto-renews · cancel anytime` : 'Pay once'}</Text>
+                <Text style={styles.ctaText}>{chosen ? `Subscribe · ${chosen.priceString}` : 'Subscribe'}</Text>
+                <Text style={styles.ctaSub}>{chosen?.recurring ? `Auto-renews · cancel anytime` : 'Pay once'}</Text>
               </>
             )}
           </TouchableOpacity>
         ) : null}
+
+        {purchaseError ? <Text style={[styles.empty, { color: colors.coral, marginTop: 12 }]}>{purchaseError}</Text> : null}
 
         <TouchableOpacity onPress={() => void onRestore()} disabled={loading} style={styles.restoreLink}>
           <Text style={[styles.restoreText, { color: colors.mutedForeground }]}>Restore purchases</Text>
@@ -190,11 +211,28 @@ const styles = StyleSheet.create({
   ctaText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_700Bold' },
   ctaSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
   restoreLink: { alignItems: 'center', paddingTop: 16 },
-  restoreBtn: { marginTop: 14, borderWidth: 1, borderRadius: 22, height: 44, justifyContent: 'center', alignItems: 'center' },
   restoreText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
   emptyCard: { borderWidth: 1, borderRadius: 16, padding: 16 },
   emptyTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold', marginBottom: 8 },
   empty: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19 },
   activeCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 16, padding: 16 },
   activeText: { flex: 1, fontSize: 14, fontFamily: 'Manrope_600SemiBold', lineHeight: 20 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, padding: 22, gap: 14 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modalHeaderTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  modalTitle: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold' },
+  planSummaryBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1 },
+  summaryTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
+  summaryPrice: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold' },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, borderWidth: 1 },
+  errorText: { flex: 1, fontSize: 13, fontFamily: 'Manrope_500Medium' },
+  formGroup: { gap: 6 },
+  fieldLabel: { fontSize: 12.5, fontFamily: 'Manrope_700Bold' },
+  fieldInput: { height: 48, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, fontSize: 14.5, fontFamily: 'Manrope_500Medium' },
+  cardInputRow: { flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14 },
+  cardInputText: { flex: 1, fontSize: 14.5, fontFamily: 'Manrope_500Medium' },
+  fieldRow: { flexDirection: 'row', gap: 12 },
+  paySubmitBtn: { height: 54, borderRadius: 27, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 6 },
+  paySubmitText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_700Bold' },
 });

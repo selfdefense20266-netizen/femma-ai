@@ -15,7 +15,7 @@ import {
   syncProcessingLessonVideos
 } from 'api/content';
 import { fetchMembersBundle, upsertMember, updateMemberStatus, assignMemberPlan, updatePlanPrice } from 'api/members';
-import { fetchNotifications, upsertNotification, markNotificationSent } from 'api/notifications';
+import { fetchNotifications, upsertNotification, markNotificationSent, createAndSendNotification } from 'api/notifications';
 import { DEFAULT_SETTINGS, fetchSettings, saveAppSettings } from 'api/settings';
 import { flattenLessons } from 'data/content';
 import { LEVEL_NAMES } from 'data/users';
@@ -348,6 +348,15 @@ export function AdminDataProvider({ children }) {
     return saved;
   }, []);
 
+  const sendNewNotification = useCallback(async (payload) => {
+    const saved = await createAndSendNotification(payload);
+    setNotifications((prev) => {
+      const exists = prev.some((n) => n.id === saved.id);
+      return exists ? prev.map((n) => (n.id === saved.id ? saved : n)) : [saved, ...prev];
+    });
+    return saved;
+  }, []);
+
   const saveSettings = useCallback(async (partial) => {
     const saved = await saveAppSettings(partial);
     setSettings(saved);
@@ -403,6 +412,7 @@ export function AdminDataProvider({ children }) {
       updatePremiumPrice,
       saveNotification,
       sendNotification,
+      sendNewNotification,
       saveSettings
     }),
     [
@@ -437,6 +447,7 @@ export function AdminDataProvider({ children }) {
       updatePremiumPrice,
       saveNotification,
       sendNotification,
+      sendNewNotification,
       saveSettings
     ]
   );

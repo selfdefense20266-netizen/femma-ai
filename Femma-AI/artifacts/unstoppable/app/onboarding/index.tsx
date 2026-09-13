@@ -17,63 +17,90 @@ export default function GoalStep() {
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string>('yoga');
 
   const select = (id: string) => {
     Haptics.selectionAsync();
-    setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+    setSelected(id);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4, 5].map(i => (
+          {[1, 2, 3, 4, 5].map((i) => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i === 1 ? colors.primary : colors.border }]} />
           ))}
         </View>
         <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 1 of 5</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>What do you want to train?</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>
-          Pick one or more. We build a 1, 2, or 3 month roadmap, recipes you can eat, and food-scan advice from this.
+          Pick one. We build a 1, 2, or 3 month roadmap, recipes you can eat, and food-scan advice from this.
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {GOALS.map((g, i) => (
-          <Animated.View key={g.id} entering={FadeInDown.delay(i * 60).duration(400)}>
-            <TouchableOpacity
-              style={[styles.option, { backgroundColor: selected.includes(g.id) ? colors.primary + '12' : colors.card, borderColor: selected.includes(g.id) ? colors.primary : colors.border }]}
-              onPress={() => select(g.id)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.optionIcon, { backgroundColor: selected.includes(g.id) ? colors.primary + '20' : colors.muted }]}>
-                <Feather name={g.icon as any} size={20} color={selected.includes(g.id) ? colors.primary : colors.mutedForeground} />
-              </View>
-              <View style={styles.optionText}>
-                <Text style={[styles.optionLabel, { color: colors.foreground }]}>{g.label}</Text>
-                <Text style={[styles.optionDesc, { color: colors.mutedForeground }]}>{g.desc}</Text>
-              </View>
-              {selected.includes(g.id) && <Feather name="check-circle" size={20} color={colors.primary} />}
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
+        {GOALS.map((g, i) => {
+          const isOn = selected === g.id;
+          return (
+            <Animated.View key={g.id} entering={FadeInDown.delay(i * 60).duration(400)}>
+              <TouchableOpacity
+                style={[
+                  styles.option,
+                  {
+                    backgroundColor: isOn ? colors.primary + '12' : colors.card,
+                    borderColor: isOn ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => select(g.id)}
+                activeOpacity={0.8}
+              >
+                <View
+                  style={[
+                    styles.optionIcon,
+                    {
+                      backgroundColor: isOn ? colors.primary + '20' : colors.muted,
+                    },
+                  ]}
+                >
+                  <Feather
+                    name={g.icon as never}
+                    size={20}
+                    color={isOn ? colors.primary : colors.mutedForeground}
+                  />
+                </View>
+                <View style={styles.optionText}>
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      { color: isOn || g.id === 'yoga' ? colors.primary : colors.foreground },
+                    ]}
+                  >
+                    {g.label}
+                  </Text>
+                  <Text style={[styles.optionDesc, { color: colors.mutedForeground }]}>{g.desc}</Text>
+                </View>
+                {isOn ? <Feather name="check-circle" size={20} color={colors.primary} /> : null}
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
         <View style={{ height: 120 }} />
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: botPad + 24 }]}>
         <TouchableOpacity
-          style={[styles.nextBtn, { backgroundColor: selected.length ? colors.primary : colors.muted }]}
-          disabled={!selected.length}
+          style={[styles.nextBtn, { backgroundColor: selected ? colors.primary : colors.muted }]}
+          disabled={!selected}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            updateProfile({ goal: selected.join(', ') || 'hiit' });
+            updateProfile({ goal: selected || 'yoga' });
             router.push('/onboarding/experience');
           }}
           activeOpacity={0.85}
         >
-          <Text style={[styles.nextBtnText, { color: selected.length ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
-          <Feather name="arrow-right" size={18} color={selected.length ? '#FFFFFF' : colors.mutedForeground} />
+          <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
+          <Feather name="arrow-right" size={18} color={selected ? '#FFFFFF' : colors.mutedForeground} />
         </TouchableOpacity>
       </View>
     </View>

@@ -25,7 +25,7 @@ export default function NotificationsScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 10 }}>
         {notices.length === 0 ? (
           <Text style={[styles.empty, { color: colors.mutedForeground }]}>
-            No alerts yet. When a new day starts, new tasks will show up here and on your bell.
+            No alerts yet. When a new day starts, or when Fema sends you a message, it will show up here.
           </Text>
         ) : (
           notices.map((item) => (
