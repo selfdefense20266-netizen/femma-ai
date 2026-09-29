@@ -33,7 +33,7 @@ const colors = {
     destructiveForeground: '#FFFFFF',
 
     // Borders & inputs
-    border: '#EBEDF0',
+    border: '#E4E7ED',
     input: '#F5F5F8',
 
     // ── UNSTOPPABLE brand palette ──────────────────────

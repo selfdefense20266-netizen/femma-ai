@@ -20,9 +20,6 @@ import { useNotifications } from '@/context/NotificationContext';
 import { ONBOARDING_GOALS } from '@/lib/nutritionPlan';
 import { planNameForGoal } from '@/lib/dailyMissions';
 import { generateRoadmapTrainingPlan } from '@/lib/exerciseRoadmap';
-import { DURATION_OPTIONS } from '@/lib/trainingPlan';
-
-const TIMES = ['15 min', '20–30 min', '30–45 min', '45–60 min', '60+ min'];
 const LEVELS = [
   { id: 'beginner', label: 'Beginner' },
   { id: 'intermediate', label: 'Intermediate' },
@@ -84,10 +81,8 @@ export default function SettingsScreen() {
       )
   );
   const [level, setLevel] = useState(profile.fitnessLevel || 'beginner');
-  const [time, setTime] = useState(profile.dailyTime || '20–30 min');
   const [env, setEnv] = useState(profile.environment || 'home');
   const [food, setFood] = useState(profile.foodPreference || 'Eat everything');
-  const [weeks, setWeeks] = useState(profile.planDurationWeeks || 8);
   const [pregnant, setPregnant] = useState(profile.isPregnant);
   const [week, setWeek] = useState(String(profile.pregnancyWeek || 12));
   const [sos, setSos] = useState(true);
@@ -189,32 +184,13 @@ export default function SettingsScreen() {
             <Text style={[styles.section, { color: colors.foreground }]}>Fitness level</Text>
             <View style={styles.wrap}>
               {LEVELS.map((item) => (
-                <Chip key={item.id} label={item.label} selected={level === item.id} color={colors.primary} readOnly onPress={() => {}} />
-              ))}
-            </View>
-            <Text style={[styles.section, { color: colors.foreground }]}>Daily time</Text>
-            <View style={styles.wrap}>
-              {TIMES.map((item) => (
-                <Chip key={item} label={item} selected={time === item} color={colors.primary} readOnly onPress={() => {}} />
+                <Chip key={item.id} label={item.label} selected={level === item.id || level === item.label} color={colors.primary} readOnly onPress={() => {}} />
               ))}
             </View>
             <Text style={[styles.section, { color: colors.foreground }]}>Where you train</Text>
             <View style={styles.wrap}>
               {ENVS.map((item) => (
                 <Chip key={item.id} label={item.label} selected={env === item.id} color={colors.primary} readOnly onPress={() => {}} />
-              ))}
-            </View>
-            <Text style={[styles.section, { color: colors.foreground }]}>Plan length</Text>
-            <View style={styles.wrap}>
-              {DURATION_OPTIONS.map((item) => (
-                <Chip
-                  key={item.weeks}
-                  label={item.label}
-                  selected={weeks === item.weeks}
-                  color={colors.primary}
-                  readOnly
-                  onPress={() => {}}
-                />
               ))}
             </View>
           </>

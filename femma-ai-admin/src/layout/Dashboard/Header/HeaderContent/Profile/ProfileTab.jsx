@@ -11,7 +11,6 @@ import { useAuth } from 'contexts/AuthContext';
 
 // assets
 // import EditOutlined from '@ant-design/icons/EditOutlined';
-import ProfileOutlined from '@ant-design/icons/ProfileOutlined';
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import UserOutlined from '@ant-design/icons/UserOutlined';
 // import SettingOutlined from '@ant-design/icons/SettingOutlined';
@@ -51,12 +50,6 @@ export default function ProfileTab() {
         <ListItemText primary="Settings" />
       </ListItemButton>
       */}
-      <ListItemButton onClick={() => navigate('/subscriptions')}>
-        <ListItemIcon>
-          <ProfileOutlined />
-        </ListItemIcon>
-        <ListItemText primary="Subscriptions" />
-      </ListItemButton>
       <ListItemButton onClick={handleLogout}>
         <ListItemIcon>
           <LogoutOutlined />

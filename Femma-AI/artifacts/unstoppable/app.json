@@ -2,7 +2,7 @@
   "expo": {
     "name": "Femma AI",
     "slug": "femmaai",
-    "version": "1.0.6",
+    "version": "1.0.10",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "femmaai",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAFAFC"
+      "backgroundColor": "#FDF9F6"
     },
     "ios": {
       "supportsTablet": false,
@@ -19,8 +19,12 @@
     },
     "android": {
       "package": "femmi.app",
-      "versionCode": 7,
-      "softwareKeyboardLayoutMode": "resize"
+      "versionCode": 11,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon-adaptive.png",
+        "backgroundColor": "#FDF9F6"
+      }
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -40,7 +44,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#F26BB5",
+          "color": "#0B3D3B",
           "defaultChannel": "daily-tasks"
         }
       ]

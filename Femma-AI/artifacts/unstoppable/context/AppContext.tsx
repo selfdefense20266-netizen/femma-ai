@@ -60,6 +60,9 @@ export interface Mission {
   cue?: string;
   animation?: string;
   steps?: string[];
+  /** Admin daily-plan media for Today / reveal cards */
+  mediaUrl?: string | number;
+  metaLine?: string;
 }
 
 export interface UserProfile {
@@ -76,12 +79,16 @@ export interface UserProfile {
   points: number;
   cyclePhase: CyclePhase;
   cycleDay: number;
+  /** ISO date when cycleDay was last set as "today" — used to auto-advance */
+  cycleAnchorDate?: string;
   isPregnant: boolean;
   pregnancyWeek: number;
   planStartedAt: string;
   planDurationWeeks: number;
   trainingPlan: TrainingPlan | null;
   planHistory: TrainingPlan[];
+  /** Locked admin daily plan id (activity plan matched at onboarding) */
+  dailyPlanId?: string;
 }
 
 export const LEVEL_NAMES: Record<Level, string> = {
@@ -125,6 +132,61 @@ export function phaseFromCycleDay(day: number): CyclePhase {
   return 'luteal';
 }
 
+function startOfLocalDay(date = new Date()) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+export function cycleDateKey(date = new Date()) {
+  const d = startOfLocalDay(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** Advance cycle day from the last anchored calendar day. */
+export function resolveCycleFromAnchor(profile: Pick<UserProfile, 'cyclePhase' | 'cycleDay' | 'cycleAnchorDate'>): {
+  cycleDay: number;
+  cyclePhase: CyclePhase;
+  cycleAnchorDate: string;
+  changed: boolean;
+} {
+  const todayKey = cycleDateKey();
+  if (!profile.cyclePhase || profile.cyclePhase === 'none') {
+    return { cycleDay: 0, cyclePhase: 'none', cycleAnchorDate: '', changed: false };
+  }
+  const baseDay = Math.max(1, Math.min(28, Number(profile.cycleDay) || 1));
+  const anchor = profile.cycleAnchorDate || todayKey;
+  const anchorDate = startOfLocalDay(new Date(`${anchor}T12:00:00`));
+  const today = startOfLocalDay();
+  const diff = Math.round((today.getTime() - anchorDate.getTime()) / 86400000);
+  const nextDay = ((baseDay - 1 + Math.max(0, diff)) % 28) + 1;
+  const nextPhase = phaseFromCycleDay(nextDay);
+  const changed =
+    nextDay !== baseDay ||
+    nextPhase !== profile.cyclePhase ||
+    anchor !== todayKey;
+  return {
+    cycleDay: nextDay,
+    cyclePhase: nextPhase,
+    cycleAnchorDate: todayKey,
+    changed,
+  };
+}
+
+/** Set today's cycle day (1–28) and anchor to today so tracking advances from here. */
+export function cycleUpdateForDay(cycleDay: number): Pick<UserProfile, 'cycleDay' | 'cyclePhase' | 'cycleAnchorDate' | 'isPregnant'> {
+  const day = Math.max(1, Math.min(28, Math.round(cycleDay) || 1));
+  return {
+    cycleDay: day,
+    cyclePhase: phaseFromCycleDay(day),
+    cycleAnchorDate: cycleDateKey(),
+    isPregnant: false,
+  };
+}
+
 const DEFAULT_MISSIONS: Mission[] = [
   { id: '1', title: '20 min Lower Body Sculpt', category: 'fitness', duration: 20, calories: 180, difficulty: 'Intermediate', completed: false, accentColor: colors.light.pink, icon: 'zap' },
   { id: '2', title: '10 min Stress Relief Yoga', category: 'yoga', duration: 10, calories: 60, difficulty: 'Beginner', completed: false, accentColor: colors.light.lavender, icon: 'wind' },
@@ -147,6 +209,7 @@ const DEFAULT_PROFILE: UserProfile = {
   points: 0,
   cyclePhase: 'none',
   cycleDay: 0,
+  cycleAnchorDate: '',
   isPregnant: false,
   pregnancyWeek: 0,
   planStartedAt: '',
@@ -164,7 +227,52 @@ const STORAGE_KEYS = {
   lastLesson: 'last_viewed_video_lesson',
   watch: 'lesson_watch_progress',
   coach: 'coach_chat_history',
+  owner: 'progress_owner_email',
 } as const;
+
+function emptySnapshot(): MemberProgressSnapshot {
+  return {
+    profile: { ...DEFAULT_PROFILE },
+    missions: DEFAULT_MISSIONS.map((item) => ({ ...item, completed: false, skipped: false })),
+    onboardingCompleted: false,
+    completedLessonIds: [],
+    lessonWatchProgress: {},
+    savedCourseIds: [],
+    lastViewedLessonId: null,
+    coachChatHistory: [],
+    activityLog: [],
+  };
+}
+
+function normalizeEmail(email?: string | null) {
+  return String(email || '')
+    .trim()
+    .toLowerCase();
+}
+
+/** Strip cross-account bleed: day-1 rest + leftover points from a previous local user. */
+function scrubCrossAccountPollution(snapshot: MemberProgressSnapshot): MemberProgressSnapshot {
+  const journeyDay = snapshot.profile.journeyDay || 1;
+  const points = Math.max(0, Number(snapshot.profile.points) || 0);
+  const hasDaySkip = snapshot.activityLog.some((event) => String(event.ref || '').startsWith('day-skip:'));
+  const hasDayEarn = snapshot.activityLog.some((event) => String(event.ref || '').startsWith('day-earn:'));
+  if (journeyDay !== 1 || !hasDaySkip || hasDayEarn || points <= 0) return snapshot;
+
+  return {
+    ...snapshot,
+    activityLog: snapshot.activityLog.filter((event) => {
+      const ref = String(event.ref || '');
+      return !ref.startsWith('day-skip:') && !ref.startsWith('skip:');
+    }),
+    missions: snapshot.missions.map((item) => ({ ...item, skipped: false, completed: false })),
+    profile: {
+      ...snapshot.profile,
+      points: 0,
+      streak: 0,
+      level: 1,
+    },
+  };
+}
 
 interface AppContextType {
   profile: UserProfile;
@@ -180,8 +288,10 @@ interface AppContextType {
   stagedPlan: PersonalizedPlan | null;
   buildOnboardingPlan: () => Promise<PersonalizedPlan>;
   updateProfile: (updates: Partial<UserProfile>) => void;
-  completeMission: (idOrKey: string) => boolean;
+  completeMission: (idOrKey: string, options?: { dayTaskIds?: string[] }) => boolean;
   skipMission: (idOrKey: string) => boolean;
+  /** Mark today's tasks skipped (Rest / Recovery stretch). No points. */
+  skipTodayTasks: (taskIds: string[]) => void;
   resetMissions: () => void;
   syncMissions: (catalog?: CatalogBundle) => void;
   completeOnboarding: (profile: Partial<UserProfile>) => void;
@@ -289,12 +399,13 @@ function sanitizeMissions(missions: Mission[], profile: UserProfile): Mission[] 
   return cleaned.length ? cleaned : DEFAULT_MISSIONS;
 }
 
-async function writeLocalSnapshot(snapshot: MemberProgressSnapshot) {
+async function writeLocalSnapshot(snapshot: MemberProgressSnapshot, ownerEmail?: string | null) {
   const profile = {
     ...snapshot.profile,
     trainingPlan: compactTrainingPlan(snapshot.profile.trainingPlan),
     activityLog: snapshot.activityLog,
   };
+  const owner = normalizeEmail(ownerEmail);
   try {
     await Promise.all([
       AsyncStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile)),
@@ -307,9 +418,38 @@ async function writeLocalSnapshot(snapshot: MemberProgressSnapshot) {
         ? AsyncStorage.setItem(STORAGE_KEYS.lastLesson, snapshot.lastViewedLessonId)
         : AsyncStorage.removeItem(STORAGE_KEYS.lastLesson),
       AsyncStorage.setItem(STORAGE_KEYS.coach, JSON.stringify(snapshot.coachChatHistory)),
+      owner
+        ? AsyncStorage.setItem(STORAGE_KEYS.owner, owner)
+        : AsyncStorage.removeItem(STORAGE_KEYS.owner),
     ]);
   } catch (error) {
     console.warn('Local persist failed', error);
+  }
+}
+
+async function clearLocalSnapshot() {
+  try {
+    await Promise.all([
+      AsyncStorage.removeItem(STORAGE_KEYS.profile),
+      AsyncStorage.removeItem(STORAGE_KEYS.missions),
+      AsyncStorage.removeItem(STORAGE_KEYS.onboarding),
+      AsyncStorage.removeItem(STORAGE_KEYS.lessons),
+      AsyncStorage.removeItem(STORAGE_KEYS.courses),
+      AsyncStorage.removeItem(STORAGE_KEYS.watch),
+      AsyncStorage.removeItem(STORAGE_KEYS.lastLesson),
+      AsyncStorage.removeItem(STORAGE_KEYS.coach),
+      AsyncStorage.removeItem(STORAGE_KEYS.owner),
+    ]);
+  } catch (error) {
+    console.warn('Local clear failed', error);
+  }
+}
+
+async function readLocalOwner(): Promise<string> {
+  try {
+    return normalizeEmail(await AsyncStorage.getItem(STORAGE_KEYS.owner));
+  } catch {
+    return '';
   }
 }
 
@@ -382,7 +522,7 @@ function isMissionResolved(mission: Mission) {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [missions, setMissions] = useState<Mission[]>(DEFAULT_MISSIONS);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
@@ -450,7 +590,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       applySnapshot(next);
       try {
-        await writeLocalSnapshot(next);
+        await writeLocalSnapshot(next, user?.email);
       } catch {
         // Keep the in-memory snapshot even if disk is full.
       }
@@ -469,7 +609,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
         applySnapshot(local);
         try {
-          await writeLocalSnapshot(snapshotRef.current);
+          await writeLocalSnapshot(snapshotRef.current, await readLocalOwner());
         } catch {
           // keep in-memory snapshot
         }
@@ -485,18 +625,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [applySnapshot]);
 
   useEffect(() => {
-    if (!user?.email || !syncReady) return;
+    if (!syncReady || authLoading) return;
     let mounted = true;
+    const email = normalizeEmail(user?.email);
 
     (async () => {
+      // Logged out — drop in-memory progress so the next account starts clean.
+      if (!email) {
+        applySnapshot(emptySnapshot());
+        await clearLocalSnapshot();
+        return;
+      }
+
       try {
-        const remote = await fetchMemberProgress(user.email);
+        const owner = await readLocalOwner();
+        const localBelongsToUser = owner === email;
+        if (!localBelongsToUser) {
+          // Unscoped / other-user local progress must never bleed into this account.
+          applySnapshot(emptySnapshot());
+          await clearLocalSnapshot();
+        }
+
+        const remote = await fetchMemberProgress(user?.email);
         if (!mounted) return;
-        const merged = mergeProgressSnapshots(snapshotRef.current, remote);
-        applySnapshot(merged);
-        const next = snapshotRef.current;
-        await writeLocalSnapshot(next);
-        await saveMemberProgress(next, user.email);
+
+        const base = localBelongsToUser ? snapshotRef.current : emptySnapshot();
+        let next = remote ? mergeProgressSnapshots(base, remote) : base;
+        next = scrubCrossAccountPollution(next);
+        applySnapshot(next);
+        next = snapshotRef.current;
+        await writeLocalSnapshot(next, email);
+        if (remote || next.onboardingCompleted) {
+          await saveMemberProgress(next, user?.email);
+        }
       } catch (error) {
         console.warn('Cloud progress sync failed', error);
       }
@@ -505,7 +666,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [user?.email, syncReady, applySnapshot]);
+  }, [user?.email, syncReady, authLoading, applySnapshot]);
 
   useEffect(() => {
     return () => {
@@ -562,9 +723,81 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void persistAll(next);
   };
 
-  const completeMission = useCallback((idOrKey: string) => {
+  // Auto-advance cycle day from the last anchored calendar date.
+  useEffect(() => {
+    if (!syncReady || !onboardingCompleted) return;
+    const current = snapshotRef.current.profile;
+    if (current.cyclePhase === 'none') return;
+    const resolved = resolveCycleFromAnchor(current);
+    if (!resolved.changed) return;
+    void persistAll({
+      ...snapshotRef.current,
+      profile: {
+        ...current,
+        cycleDay: resolved.cycleDay,
+        cyclePhase: resolved.cyclePhase,
+        cycleAnchorDate: resolved.cycleAnchorDate,
+      },
+    });
+  }, [syncReady, onboardingCompleted, persistAll, profile.cyclePhase, profile.cycleDay, profile.cycleAnchorDate]);
+
+  const completeMission = useCallback((idOrKey: string, options?: { dayTaskIds?: string[] }) => {
+    const dayTaskIds = (options?.dayTaskIds || []).map((id) => String(id || '').trim()).filter(Boolean);
     const index = findMissionIndex(snapshotRef.current.missions, idOrKey);
-    if (index < 0) return false;
+
+    if (index < 0) {
+      // Admin daily-plan item — log completion only; points come once when the full day is done.
+      const already = snapshotRef.current.activityLog.some(
+        (event) => event.kind === 'workout' && event.ref === idOrKey
+      );
+      let nextLog = already
+        ? snapshotRef.current.activityLog
+        : logActivity(snapshotRef.current.activityLog, {
+            kind: 'workout',
+            ref: idOrKey,
+          });
+
+      const journeyDay = snapshotRef.current.profile.journeyDay || 1;
+      const dayEarnRef = `day-earn:${journeyDay}`;
+      const daySkipRef = `day-skip:${journeyDay}`;
+      const dayAlreadyEarned = nextLog.some((event) => event.ref === dayEarnRef);
+      const daySkipped = nextLog.some((event) => event.ref === daySkipRef);
+      const dayComplete =
+        !dayAlreadyEarned &&
+        !daySkipped &&
+        dayTaskIds.length > 0 &&
+        dayTaskIds.every((id) => nextLog.some((event) => event.ref === id));
+
+      let streak = snapshotRef.current.profile.streak;
+      let points = snapshotRef.current.profile.points;
+      let level = snapshotRef.current.profile.level;
+
+      if (dayComplete) {
+        nextLog = logActivity(nextLog, { kind: 'workout', ref: dayEarnRef });
+        streak = streak + 1;
+        points = points + POINTS_PER_DAY;
+        const scored = neverLosePoints({
+          ...snapshotRef.current.profile,
+          streak,
+          points,
+        });
+        points = scored.points;
+        level = scored.level;
+      }
+
+      const next: MemberProgressSnapshot = {
+        ...snapshotRef.current,
+        activityLog: nextLog,
+        profile: {
+          ...snapshotRef.current.profile,
+          points,
+          level,
+          streak,
+        },
+      };
+      void persistAll(next, { immediateCloud: true });
+      return true;
+    }
 
     const mission = snapshotRef.current.missions[index];
     const updatedMissions = snapshotRef.current.missions.map((item, i) =>
@@ -583,6 +816,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else if (mission.category === 'nutrition') {
       nextLog = logActivity(nextLog, { kind: 'nutrition', ref: mission.id });
     }
+    // Also tag the exact mission id so carousel ticks work for roadmap + admin ids
+    nextLog = logActivity(nextLog, { kind: 'workout', ref: mission.id });
     const currentPlan = snapshotRef.current.profile.trainingPlan;
     const trainingPlan = currentPlan?.days?.length
       ? markPlanItemComplete(currentPlan, snapshotRef.current.profile.journeyDay || 1, mission.id)
@@ -645,8 +880,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ? { ...trainingPlan, status: 'completed' as const }
           : trainingPlan
         : trainingPlan;
-    const streak =
-      allResolved && anyCompleted ? snapshotRef.current.profile.streak + 1 : snapshotRef.current.profile.streak;
+    // Skipped days do not earn streak / points
+    const streak = snapshotRef.current.profile.streak;
     const { points, level } = neverLosePoints(
       {
         ...snapshotRef.current.profile,
@@ -668,6 +903,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     void persistAll(next, { immediateCloud: true });
     return true;
+  }, [persistAll]);
+
+  const skipTodayTasks = useCallback((taskIds: string[]) => {
+    const journeyDay = snapshotRef.current.profile.journeyDay || 1;
+    const daySkipRef = `day-skip:${journeyDay}`;
+    let nextLog = snapshotRef.current.activityLog;
+    if (nextLog.some((event) => event.ref === daySkipRef)) {
+      return;
+    }
+    const ids = (taskIds || []).map((id) => String(id || '').trim()).filter(Boolean);
+    // If any today task is already completed, rest/skip is not allowed.
+    if (ids.some((id) => nextLog.some((event) => event.ref === id))) {
+      return;
+    }
+    for (const id of ids) {
+      nextLog = logActivity(nextLog, { kind: 'workout', ref: `skip:${id}` });
+    }
+    nextLog = logActivity(nextLog, { kind: 'workout', ref: daySkipRef });
+
+    const updatedMissions = snapshotRef.current.missions.map((item) =>
+      item.completed ? item : { ...item, skipped: true, completed: false }
+    );
+
+    const next: MemberProgressSnapshot = {
+      ...snapshotRef.current,
+      missions: updatedMissions,
+      activityLog: nextLog,
+      profile: {
+        ...snapshotRef.current.profile,
+        // Explicitly keep points/streak — rest day earns nothing
+        points: snapshotRef.current.profile.points,
+        streak: snapshotRef.current.profile.streak,
+        level: snapshotRef.current.profile.level,
+      },
+    };
+    void persistAll(next, { immediateCloud: true });
   }, [persistAll]);
 
   const missionsForProfile = (profile: UserProfile, catalog?: CatalogBundle) => {
@@ -743,45 +1014,102 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { fetchCatalog } = await import('@/lib/catalog');
       const { generateRoadmapTrainingPlan } = await import('@/lib/exerciseRoadmap');
       const { buildRoadmapTrainingPlan } = await import('@/lib/exerciseRoadmapDb');
+      const { fetchResolvedDailyPlan, itemsForDay, itemMetaLine, assignMemberDailyPlan } = await import('@/lib/dailyPlans');
+      const { defaultMediaForDailyItem } = await import('@/lib/dailyPlanMedia');
+
       let catalog;
       try {
         catalog = await fetchCatalog();
       } catch {
         catalog = undefined;
       }
-      const existing = snapshotRef.current.profile.trainingPlan;
-      let trainingPlan = existing?.days?.length && existing.generatedBy === 'roadmap' ? existing : generateRoadmapTrainingPlan(snapshotRef.current.profile);
+
+      const profileNow = snapshotRef.current.profile;
+      let adminPlan = null as Awaited<ReturnType<typeof fetchResolvedDailyPlan>>;
       try {
-        const fromDb = await buildRoadmapTrainingPlan(snapshotRef.current.profile, catalog);
+        adminPlan = await fetchResolvedDailyPlan(profileNow, user?.email || null);
+      } catch {
+        adminPlan = null;
+      }
+
+      if (adminPlan?.id && user?.email) {
+        await assignMemberDailyPlan(user.email, adminPlan.id);
+      }
+
+      const existing = profileNow.trainingPlan;
+      let trainingPlan =
+        existing?.days?.length && existing.generatedBy === 'roadmap'
+          ? existing
+          : generateRoadmapTrainingPlan(profileNow);
+      try {
+        const fromDb = await buildRoadmapTrainingPlan(profileNow, catalog);
         if (fromDb?.days?.length) trainingPlan = fromDb;
       } catch {
-        // Keep the on-device roadmap. Do not call ChatGPT for daily plans.
+        // Keep the on-device roadmap as secondary structure.
       }
-      trainingPlan =
-        ensureYogaDeepBreathPlan(trainingPlan, snapshotRef.current.profile.goal) || trainingPlan;
+      trainingPlan = ensureYogaDeepBreathPlan(trainingPlan, profileNow.goal) || trainingPlan;
+
+      const adminDayOne = itemsForDay(adminPlan, 1, ['exercise', 'rest']);
+      const dayOneFromAdmin: Mission[] = adminDayOne.map((item) => {
+        const media = defaultMediaForDailyItem(item);
+        const accent =
+          item.itemType === 'rest'
+            ? colors.light.mint
+            : item.itemType === 'recovery'
+              ? colors.light.lavender
+              : colors.light.pink;
+        return {
+          id: item.id,
+          title: item.title,
+          category: item.itemType === 'rest' || item.itemType === 'recovery' ? 'yoga' : 'fitness',
+          duration: item.durationMinutes || 0,
+          calories: 0,
+          difficulty: item.intensityLevel || profileNow.fitnessLevel || 'Beginner',
+          completed: false,
+          skipped: false,
+          accentColor: accent,
+          icon: item.itemType === 'rest' ? 'moon' : 'activity',
+          label: item.tag || item.itemType,
+          slot: 'exercise',
+          cue: item.cue || '',
+          steps: item.steps || [],
+          mediaUrl: media,
+          metaLine: itemMetaLine(item),
+        };
+      });
+
+      const dayOneRoadmap = missionsFromPlanDay(trainingPlan, 1);
+      const dayOne = dayOneFromAdmin.length ? dayOneFromAdmin : dayOneRoadmap;
+
+      const planName = adminPlan?.title || trainingPlan.planName;
+      const durationDays = adminPlan?.durationDays || planTotalDays(trainingPlan.durationWeeks);
+      const weeks = Math.max(1, Math.ceil(durationDays / 7));
+      const dailyMinutes = dayOne.reduce((sum, item) => sum + (item.duration || 0), 0);
+
       await persistAll(
         {
           ...snapshotRef.current,
           profile: {
             ...snapshotRef.current.profile,
             trainingPlan,
-            planName: trainingPlan.planName,
-            planDurationWeeks: trainingPlan.durationWeeks,
+            planName,
+            planDurationWeeks: weeks,
+            dailyPlanId: adminPlan?.id || snapshotRef.current.profile.dailyPlanId || '',
           },
         },
         { immediateCloud: true }
       );
-      const dayOne = missionsFromPlanDay(trainingPlan, 1);
+
       const plan: PersonalizedPlan = {
-        planName: trainingPlan.planName,
-        focusLabel: trainingPlan.goal,
+        planName,
+        focusLabel: adminPlan?.userType || trainingPlan.goal,
         missions: dayOne,
         weekSchedule: weekPreviewFromPlan(trainingPlan),
         stats: {
           missionsPerDay: dayOne.length,
-          weeks: trainingPlan.durationWeeks,
+          weeks,
           focusAreas: trainingPlan.watchCourses.length,
-          dailyMinutes: dayOne.reduce((sum, item) => sum + (item.duration || 0), 0),
+          dailyMinutes,
         },
         courseIds: trainingPlan.courseIds,
         courseNames: trainingPlan.courseNames,
@@ -799,7 +1127,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       aiPlanPromiseRef.current = null;
       throw error;
     }
-  }, [persistAll]);
+  }, [persistAll, user?.email]);
 
   const completeOnboarding = (profileUpdates: Partial<UserProfile>) => {
     const name =
@@ -807,18 +1135,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       snapshotRef.current.profile.name ||
       (user ? `${user.firstName} ${user.lastName}`.trim() : '');
     const startedAt = new Date().toISOString();
-    const kept = neverLosePoints(snapshotRef.current.profile, snapshotRef.current.missions);
     const merged = {
       ...snapshotRef.current.profile,
       ...profileUpdates,
       name,
       planName: stagedPlan?.planName || profileUpdates.planName || planNameForGoal(snapshotRef.current.profile.goal || profileUpdates.goal || ''),
       planStartedAt: startedAt,
-      planDurationWeeks: stagedPlan?.trainingPlan?.durationWeeks || profileUpdates.planDurationWeeks || snapshotRef.current.profile.planDurationWeeks || 8,
+      planDurationWeeks: stagedPlan?.stats?.weeks || stagedPlan?.trainingPlan?.durationWeeks || profileUpdates.planDurationWeeks || snapshotRef.current.profile.planDurationWeeks || 8,
       journeyDay: 1,
-      streak: snapshotRef.current.profile.streak,
-      points: kept.points,
-      level: kept.level,
+      streak: 0,
+      points: 0,
+      level: 1 as Level,
+      dailyPlanId: snapshotRef.current.profile.dailyPlanId || '',
     };
     const sourcePlan = stagedPlan?.trainingPlan || snapshotRef.current.profile.trainingPlan;
     const trainingPlan = sourcePlan?.days?.length
@@ -835,13 +1163,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           courseNames: stagedPlan?.courseNames || sourcePlan?.courseNames || [],
         });
     const profile = { ...merged, trainingPlan };
+    const dayMissions =
+      stagedPlan?.missions?.length
+        ? stagedPlan.missions
+        : missionsFromPlanDay(trainingPlan, 1).length
+          ? missionsFromPlanDay(trainingPlan, 1)
+          : buildDailyMissions(profile);
     const next: MemberProgressSnapshot = {
       ...snapshotRef.current,
       profile,
-      missions: missionsFromPlanDay(trainingPlan, 1).length
-        ? missionsFromPlanDay(trainingPlan, 1)
-        : stagedPlan?.missions ?? buildDailyMissions(profile),
-      savedCourseIds: Array.from(new Set([...snapshotRef.current.savedCourseIds, ...trainingPlan.courseIds])),
+      missions: dayMissions.map((item) => ({ ...item, completed: false, skipped: false })),
+      activityLog: [],
+      completedLessonIds: [],
+      lessonWatchProgress: {},
+      savedCourseIds: Array.from(new Set([...(trainingPlan.courseIds || [])])),
       onboardingCompleted: true,
     };
     setStagedPlan(null);
@@ -1026,6 +1361,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         completeMission,
         skipMission,
+        skipTodayTasks,
         resetMissions,
         syncMissions,
         completeOnboarding,

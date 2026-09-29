@@ -22,7 +22,16 @@ import { NotificationProvider } from '@/context/NotificationContext';
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function RootLayoutNav() {
   return (
@@ -42,7 +51,9 @@ function RootLayoutNav() {
       <Stack.Screen name="nutrition" options={{ headerShown: false }} />
       <Stack.Screen name="recipe" options={{ headerShown: false }} />
       <Stack.Screen name="exercise-guide" options={{ headerShown: false }} />
+      <Stack.Screen name="recovery/[type]" options={{ headerShown: false }} />
       <Stack.Screen name="paywall" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen name="plan-gate" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
     </Stack>
@@ -61,7 +72,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) setReady(true);
-    const timer = setTimeout(() => setReady(true), 2500);
+    // Failsafe only — don't hold splash for 2.5s on every launch
+    const timer = setTimeout(() => setReady(true), 900);
     return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 

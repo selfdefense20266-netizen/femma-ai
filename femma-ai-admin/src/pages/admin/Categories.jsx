@@ -205,9 +205,9 @@ export default function Categories() {
         />
       </MainCard>
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" scroll="paper">
         <DialogTitle>{form.id ? 'Edit category' : 'Add category'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Title" fullWidth value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <TextField label="Subtitle" fullWidth value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />

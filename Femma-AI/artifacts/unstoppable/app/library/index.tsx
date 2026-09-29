@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCatalog } from '@/hooks/useCatalog';
 import { libraryPath } from '@/lib/catalog';
 import { useColors } from '@/hooks/useColors';
+import AppLoading from '@/components/AppLoading';
 
 export default function LibraryIndex() {
   const colors = useColors();
@@ -14,11 +15,7 @@ export default function LibraryIndex() {
   const topPad = insets.top + 8;
 
   if (isLoading) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: topPad }]}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <AppLoading />;
   }
 
   if (error || !data) {

@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp, LEVEL_COLORS, LEVEL_NAMES } from '@/context/AppContext';
 import BellButton from '@/components/BellButton';
+import MissionIcon from '@/components/MissionIcon';
 import { useAuth } from '@/context/AuthContext';
 import ProgressRing from '@/components/ProgressRing';
 import ProgressBar from '@/components/ProgressBar';
@@ -236,7 +237,7 @@ export default function ProgressScreen() {
           <Image
             source={{ uri: HERO_IMAGE }}
             style={styles.heroImage}
-            contentFit="cover"
+            contentFit="contain"
             contentPosition="right center"
             cachePolicy="memory-disk"
             transition={240}
@@ -379,9 +380,16 @@ export default function ProgressScreen() {
                   const icon = (Feather.glyphMap as Record<string, number>)[item.icon] ? item.icon : 'circle';
                   return (
                     <View key={item.id} style={[styles.scheduleRow, { borderColor: colors.border }]}>
-                      <View style={[styles.scheduleIcon, { backgroundColor: (item.accentColor || colors.primary) + '18' }]}>
-                        <Feather name={icon as never} size={16} color={item.accentColor || colors.primary} />
-                      </View>
+                      <MissionIcon
+                        title={item.title}
+                        animation={item.animation}
+                        category={item.category}
+                        slot={item.slot}
+                        icon={item.icon}
+                        accentColor={item.accentColor || colors.primary}
+                        size={36}
+                        iconSize={16}
+                      />
                       <View style={styles.scheduleCopy}>
                         <Text style={[styles.scheduleLabel, { color: item.accentColor || colors.primary }]}>
                           {item.label || (item.slot === 'exercise' ? 'Exercise' : item.category)}

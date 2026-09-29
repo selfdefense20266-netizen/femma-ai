@@ -1,16 +1,17 @@
 // ==============================|| PRESET THEME - FEMA AI ||============================== //
 
+// Femmi brand teal, sampled from the shield logo (assets/logo.jpeg): #014140 core.
 const femaPink = {
-  0: '#FDF0F7',
-  1: '#FCE4F1',
-  2: '#F9C9E3',
-  3: '#F5A3D0',
-  4: '#F384C2',
-  5: '#F26BB5',
-  6: '#D94A9A',
-  7: '#C23A88',
-  8: '#9E2D6E',
-  9: '#7A2255'
+  0: '#EAF3F1',
+  1: '#D3E7E3',
+  2: '#A8CFC7',
+  3: '#6EAEA2',
+  4: '#3D8B7E',
+  5: '#0B3D3B',
+  6: '#012E2D',
+  7: '#01201F',
+  8: '#011615',
+  9: '#000C0B'
 };
 
 export default function Default(colors) {
@@ -51,8 +52,8 @@ export default function Default(colors) {
       contrastText
     },
     secondary: {
-      lighter: '#E9E2FC',
-      100: '#E9E2FC',
+      lighter: '#EAF3F1',
+      100: '#EAF3F1',
       200: greyColors[200],
       light: greyColors[300],
       400: greyColors[400],

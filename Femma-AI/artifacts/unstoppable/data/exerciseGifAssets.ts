@@ -4,6 +4,7 @@ export const LOCAL_GIFS = {
   jacks: require('../assets/exercises/jumping-jacks.gif'),
   rope: require('../assets/exercises/jump-rope.gif'),
   yoga: require('../assets/exercises/yoga.gif'),
+  breath: require('../assets/exercises/breath.gif'),
   jog: require('../assets/exercises/jog.gif'),
   treadmill: require('../assets/exercises/treadmill.gif'),
   squat: require('../assets/exercises/squat.gif'),

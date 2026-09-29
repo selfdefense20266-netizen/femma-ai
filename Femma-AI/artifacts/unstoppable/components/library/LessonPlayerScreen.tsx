@@ -11,6 +11,8 @@ import { useApp } from '@/context/AppContext';
 import { libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
 import { useCatalogLesson } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
+import AppLoading from '@/components/AppLoading';
+import { Image } from 'expo-image';
 
 type Props = { categoryId: LibraryCategoryId; lessonId: string };
 
@@ -144,12 +146,7 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
   );
 
   if (isLoading) {
-    return (
-      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={[styles.missingTitle, { color: colors.foreground }]}>Loading lesson…</Text>
-      </View>
-    );
+    return <AppLoading />;
   }
 
   if (error || !context || context.category.id !== resolvedCategoryId) {
@@ -215,11 +212,18 @@ export default function LessonPlayerScreen({ categoryId, lessonId }: Props) {
               />
             ) : (
               <LinearGradient colors={['#232631', '#121319']} style={styles.placeholder}>
+                {lesson.thumbnailUrl ? (
+                  <Image
+                    source={{ uri: lesson.thumbnailUrl }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="contain"
+                  />
+                ) : null}
                 <View style={[styles.placeholderIcon, { backgroundColor: `${course.color}25`, borderColor: `${course.color}55` }]}>
-                  <Feather name="upload-cloud" size={32} color={course.color} />
+                  <Feather name={course.icon || 'book-open'} size={32} color={course.color} />
                 </View>
-                <Text style={styles.placeholderTitle}>Video not uploaded yet</Text>
-                <Text style={styles.placeholderText}>This lesson will play here once the video is added.</Text>
+                <Text style={styles.placeholderTitle}>{lesson.title}</Text>
+                <Text style={styles.placeholderText}>Guided interactive lesson · Read guidelines below and mark complete when finished.</Text>
               </LinearGradient>
             )}
           </View>

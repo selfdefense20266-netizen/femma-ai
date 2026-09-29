@@ -4,6 +4,10 @@ export const DEFAULT_SETTINGS = {
   appName: 'Fema AI',
   tagline: "Women's Transformation Platform",
   primaryColor: '#F26BB5',
+  todayTasksTitle: 'Today Tasks',
+  recoveryTitle: 'Recovery',
+  foodTitle: 'Food',
+  programTitle: 'Program',
   featureFlags: {
     mealScanner: true,
     mealPlanner: true,
@@ -20,6 +24,10 @@ export function mapSettings(row) {
     appName: row.app_name || DEFAULT_SETTINGS.appName,
     tagline: row.tagline || DEFAULT_SETTINGS.tagline,
     primaryColor: row.primary_color || DEFAULT_SETTINGS.primaryColor,
+    todayTasksTitle: row.today_tasks_title || DEFAULT_SETTINGS.todayTasksTitle,
+    recoveryTitle: row.recovery_title || DEFAULT_SETTINGS.recoveryTitle,
+    foodTitle: row.food_title || DEFAULT_SETTINGS.foodTitle,
+    programTitle: row.program_title || DEFAULT_SETTINGS.programTitle,
     featureFlags: { ...DEFAULT_SETTINGS.featureFlags, ...(row.feature_flags || {}) },
     adminEmail: row.admin_email || DEFAULT_SETTINGS.adminEmail
   };
@@ -44,6 +52,10 @@ export async function saveAppSettings(partial) {
     app_name: next.appName,
     tagline: next.tagline,
     primary_color: next.primaryColor,
+    today_tasks_title: String(next.todayTasksTitle || '').trim() || DEFAULT_SETTINGS.todayTasksTitle,
+    recovery_title: String(next.recoveryTitle || '').trim() || DEFAULT_SETTINGS.recoveryTitle,
+    food_title: String(next.foodTitle || '').trim() || DEFAULT_SETTINGS.foodTitle,
+    program_title: String(next.programTitle || '').trim() || DEFAULT_SETTINGS.programTitle,
     feature_flags: next.featureFlags,
     admin_email: next.adminEmail,
     updated_at: new Date().toISOString()

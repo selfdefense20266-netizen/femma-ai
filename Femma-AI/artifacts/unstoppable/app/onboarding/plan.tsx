@@ -18,8 +18,8 @@ import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
 
 const STEPS = [
-  { label: 'Saving your answers', hint: 'Goals, duration, and preferences' },
-  { label: 'Matching your roadmap', hint: 'Category, time, and 1 / 2 / 3 months' },
+  { label: 'Saving your answers', hint: 'Activity, level, and preferences' },
+  { label: 'Matching your plan', hint: 'Activity plan for your fitness level' },
   { label: 'Building daily tasks', hint: 'Meal, recipe, and exercises' },
   { label: 'Saving to your account', hint: 'Stored once — not rebuilt daily' },
 ];
@@ -64,16 +64,11 @@ export default function PlanLoadingScreen() {
     (async () => {
       try {
         setCurrentStep(0);
-        await new Promise((resolve) => setTimeout(resolve, 280));
-        if (cancelled) return;
         setCurrentStep(1);
-        await new Promise((resolve) => setTimeout(resolve, 280));
-        if (cancelled) return;
         setCurrentStep(2);
         await buildOnboardingPlan();
         if (cancelled) return;
         setCurrentStep(3);
-        await new Promise((resolve) => setTimeout(resolve, 400));
         if (!cancelled) router.replace('/onboarding/reveal');
       } catch (err) {
         if (!cancelled) {

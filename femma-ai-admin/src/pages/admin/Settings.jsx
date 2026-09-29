@@ -59,16 +59,56 @@ export default function Settings() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Branding, feature flags, and admin account preferences (saved to Supabase)." />
+      <PageHeader title="Settings" subtitle="Home section titles, branding, feature flags, and admin account (saved to Supabase)." />
 
       <MainCard>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+          <Tab label="Home titles" />
           <Tab label="Branding" />
           <Tab label="Feature flags" />
           <Tab label="Admin account" />
         </Tabs>
 
         <TabPanel value={tab} index={0}>
+          <Stack spacing={2} sx={{ maxWidth: 480 }}>
+            <Typography variant="body2" color="text.secondary">
+              These labels appear as section headings on the app Today screen.
+            </Typography>
+            <TextField
+              label="Today Tasks heading"
+              fullWidth
+              value={form.todayTasksTitle || ''}
+              onChange={(e) => setForm({ ...form, todayTasksTitle: e.target.value })}
+              helperText='Default: "Today Tasks"'
+            />
+            <TextField
+              label="Recovery heading"
+              fullWidth
+              value={form.recoveryTitle || ''}
+              onChange={(e) => setForm({ ...form, recoveryTitle: e.target.value })}
+              helperText='Default: "Recovery"'
+            />
+            <TextField
+              label="Food heading"
+              fullWidth
+              value={form.foodTitle || ''}
+              onChange={(e) => setForm({ ...form, foodTitle: e.target.value })}
+              helperText='Default: "Food"'
+            />
+            <TextField
+              label="Program heading"
+              fullWidth
+              value={form.programTitle || ''}
+              onChange={(e) => setForm({ ...form, programTitle: e.target.value })}
+              helperText='Default: "Program"'
+            />
+            <Button variant="contained" disabled={saving} onClick={handleSave} sx={{ alignSelf: 'flex-start' }}>
+              Save home titles
+            </Button>
+          </Stack>
+        </TabPanel>
+
+        <TabPanel value={tab} index={1}>
           <Stack spacing={2} sx={{ maxWidth: 480 }}>
             <TextField label="App name" fullWidth value={form.appName} onChange={(e) => setForm({ ...form, appName: e.target.value })} />
             <TextField label="Tagline" fullWidth value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
@@ -85,7 +125,7 @@ export default function Settings() {
           </Stack>
         </TabPanel>
 
-        <TabPanel value={tab} index={1}>
+        <TabPanel value={tab} index={2}>
           <Stack spacing={1} sx={{ maxWidth: 420 }}>
             {Object.entries(form.featureFlags || {}).map(([key, enabled]) => (
               <FormControlLabel
@@ -100,7 +140,7 @@ export default function Settings() {
           </Stack>
         </TabPanel>
 
-        <TabPanel value={tab} index={2}>
+        <TabPanel value={tab} index={3}>
           <Stack spacing={2} sx={{ maxWidth: 480 }}>
             <Typography variant="body2" color="text.secondary">
               Signed in as {user?.email || form.adminEmail}

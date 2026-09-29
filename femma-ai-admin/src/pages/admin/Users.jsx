@@ -34,14 +34,22 @@ export default function Users() {
   const {
     users,
     plans,
+    dailyPlans,
     levelNames,
     setUserStatus,
     assignPlan,
+    assignDailyPlan,
     saveUser,
     sendNewNotification,
     membersLoading,
     membersError
   } = useAdminData();
+
+  const planStats = useMemo(() => {
+    const premium = users.filter((u) => u.planId === 'premium').length;
+    return { total: users.length, premium, free: users.length - premium };
+  }, [users]);
+
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -79,11 +87,26 @@ export default function Users() {
     }
   };
 
+  const handleAssignDailyPlan = async (planId) => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await assignDailyPlan(selected.id, planId || null);
+      setSelected((prev) => ({
+        ...prev,
+        dailyPlanId: planId || '',
+        dailyPlanTitle: dailyPlans.find((p) => p.id === planId)?.title || ''
+      }));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Users"
-        subtitle="Fema AI members from Supabase — profile fields mirror the mobile app (goal, level, streak, cycle, plan)."
+        subtitle="Fema AI members from Supabase — profile fields mirror the mobile app (goal, level, streak, cycle, plan). Premium count includes both app purchases and admin-assigned plans."
       />
 
       {membersError && (
@@ -91,6 +114,12 @@ export default function Users() {
           {membersError}
         </Alert>
       )}
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2.5 }}>
+        <StatTile label="Total members" value={planStats.total} />
+        <StatTile label="Premium members" value={planStats.premium} color="success.main" />
+        <StatTile label="Free members" value={planStats.free} />
+      </Stack>
 
       <MainCard content={false}>
         {membersLoading ? (
@@ -185,10 +214,10 @@ export default function Users() {
           setNoteTitle('');
           setNoteBody('');
         }}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, height: '100%', overflow: 'hidden' } }}
       >
         {selected && (
-          <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
+          <Box sx={{ p: 3, height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', minHeight: 0 }}>
             <Typography variant="h4">{selected.name}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {selected.email}
@@ -285,6 +314,27 @@ export default function Users() {
               ))}
             </TextField>
 
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Daily plan (Today)
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="Assigned daily plan"
+              value={selected.dailyPlanId || ''}
+              onChange={(e) => handleAssignDailyPlan(e.target.value)}
+              helperText="Overrides auto-match by user type (goal). Controls Today Tasks, Recovery & Food."
+              sx={{ mb: 2 }}
+            >
+              <MenuItem value="">Auto (by goal / user type)</MenuItem>
+              {(dailyPlans || []).map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  {p.title} ({p.userType})
+                </MenuItem>
+              ))}
+            </TextField>
+
             <Stack direction="row" spacing={1}>
               {selected.status === 'active' ? (
                 <Button
@@ -341,6 +391,19 @@ export default function Users() {
         )}
       </Drawer>
     </>
+  );
+}
+
+function StatTile({ label, value, color }) {
+  return (
+    <MainCard content={false} sx={{ flex: 1, px: 2.5, py: 2 }}>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h3" sx={{ mt: 0.5, color: color || 'text.primary' }}>
+        {value}
+      </Typography>
+    </MainCard>
   );
 }
 

@@ -1,33 +1,22 @@
 // material-ui
-import { useTheme } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
+// assets
+import logo from 'assets/images/logo.jpeg';
+
 // ==============================|| LOGO MAIN - FEMA AI ||============================== //
 
 export default function LogoMain() {
-  const theme = useTheme();
-
   return (
     <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
       <Box
-        sx={{
-          width: 32,
-          height: 32,
-          borderRadius: '10px',
-          background: `linear-gradient(135deg, ${theme.vars.palette.primary.main} 0%, ${theme.vars.palette.primary.dark} 100%)`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontWeight: 800,
-          fontSize: 14,
-          letterSpacing: 0.5
-        }}
-      >
-        F
-      </Box>
+        component="img"
+        src={logo}
+        alt="Fema AI"
+        sx={{ width: 32, height: 32, borderRadius: '10px', objectFit: 'cover' }}
+      />
       <Typography
         variant="h5"
         sx={{

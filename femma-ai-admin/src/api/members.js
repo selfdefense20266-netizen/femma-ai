@@ -33,7 +33,9 @@ export function mapMember(row, plansById = {}) {
     pregnancyWeek: row.pregnancy_week ?? 0,
     status: row.status || 'active',
     completedLessons: row.completed_lessons ?? 0,
-    joinedAt: row.joined_at
+    joinedAt: row.joined_at,
+    dailyPlanId: row.daily_plan_id || '',
+    dailyPlanTitle: ''
   };
 }
 

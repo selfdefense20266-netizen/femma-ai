@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -10,6 +10,7 @@ import { getCourseLessons, courseProgressPercent, libraryPath, type LibraryCateg
 import { useCatalogCategory } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
 import ProgressBar from '@/components/ProgressBar';
+import AppLoading from '@/components/AppLoading';
 
 type Props = { categoryId: LibraryCategoryId };
 
@@ -62,12 +63,7 @@ export default function LibraryHubScreen({ categoryId }: Props) {
   };
 
   if (isLoading) {
-    return (
-      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={[styles.missingTitle, { color: colors.foreground }]}>Loading courses…</Text>
-      </View>
-    );
+    return <AppLoading />;
   }
 
   if (error || !category) {

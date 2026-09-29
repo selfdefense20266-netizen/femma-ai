@@ -17,6 +17,8 @@ import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
 import { ANIMATION_STEPS } from '@/lib/exerciseRoadmapData';
 import { lookupExerciseGif } from '@/lib/exerciseDb';
+import { defaultMediaForDailyItem } from '@/lib/dailyPlanMedia';
+import type { DailyPlanItemType } from '@/lib/dailyPlans';
 
 function first(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value || '';
@@ -97,6 +99,8 @@ export default function ExerciseGuideScreen() {
     steps?: string | string[];
     missionId?: string | string[];
     category?: string | string[];
+    mediaUrl?: string | string[];
+    dayTaskIds?: string | string[];
   }>();
   const title = first(params.title) || 'Exercise guide';
   const missionId = first(params.missionId);
@@ -114,6 +118,8 @@ function ExerciseGuideBody({
     steps?: string | string[];
     missionId?: string | string[];
     category?: string | string[];
+    mediaUrl?: string | string[];
+    dayTaskIds?: string | string[];
   };
 }) {
   const colors = useColors();
@@ -124,7 +130,14 @@ function ExerciseGuideBody({
   const cue = first(params.cue);
   const durationMin = Math.max(1, Number(first(params.duration) || 15) || 15);
   const missionId = first(params.missionId);
-  const steps = (first(params.steps) ? first(params.steps).split('|') : ANIMATION_STEPS[animation] || ANIMATION_STEPS.flow).filter(Boolean);
+  const category = first(params.category).toLowerCase();
+  const adminMediaUrl = first(params.mediaUrl).trim();
+  const dayTaskIds = first(params.dayTaskIds)
+    .split('|')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const stepsParam = first(params.steps);
+  const steps = (stepsParam ? stepsParam.split('|') : ANIMATION_STEPS[animation] || ANIMATION_STEPS.flow).filter(Boolean);
   const totalSeconds = durationMin * 60;
 
   const [remaining, setRemaining] = useState(totalSeconds);
@@ -148,6 +161,59 @@ function ExerciseGuideBody({
     setGifReady(false);
     setGifFailed(false);
     setGifMissing(false);
+
+    // 1) Admin-uploaded GIF/image wins over ExerciseDB / local guesses.
+    if (adminMediaUrl) {
+      setGifUrls([adminMediaUrl]);
+      setGifName(title);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // 2) Same local defaults as Today task cards.
+    const itemType: DailyPlanItemType =
+      category === 'yoga' || category === 'recovery' || category === 'rest'
+        ? category === 'rest'
+          ? 'rest'
+          : 'recovery'
+        : category === 'recipe' || category === 'food'
+          ? 'food'
+          : 'exercise';
+    const fallback = defaultMediaForDailyItem({
+      id: missionId || 'guide',
+      planId: '',
+      dayNumber: 1,
+      intensityLevel: 'beginner',
+      recoveryType: '',
+      itemType,
+      title,
+      tag: '',
+      subtitle: '',
+      scheduledTime: '',
+      durationMinutes: durationMin,
+      restMinutes: 0,
+      mediaUrl: null,
+      cue: cue || '',
+      steps,
+      sortOrder: 0,
+    });
+    if (typeof fallback === 'number') {
+      setGifLocal(fallback);
+      setGifName(title);
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (typeof fallback === 'string' && fallback.trim()) {
+      setGifUrls([fallback.trim()]);
+      setGifName(title);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // 3) Last resort: ExerciseDB match by title.
     void lookupExerciseGif(title, animation).then((match) => {
       if (cancelled) return;
       if (match?.missing) {
@@ -167,11 +233,29 @@ function ExerciseGuideBody({
     return () => {
       cancelled = true;
     };
-  }, [title, animation]);
+  }, [title, animation, adminMediaUrl, category, missionId, durationMin, cue, stepsParam]);
 
   const gifUrl = !gifFailed && !gifMissing ? gifUrls[gifIndex] : undefined;
   const gifSource = gifUrl ? { uri: gifUrl } : gifLocal != null ? gifLocal : undefined;
   const showGif = Boolean(gifSource);
+
+  // Fall back if a remote GIF stalls (slow/unstable connection) instead of spinning forever.
+  useEffect(() => {
+    if (!gifUrl || gifReady) return;
+    const timer = setTimeout(() => {
+      setGifReady((ready) => {
+        if (ready) return ready;
+        if (gifIndex + 1 < gifUrls.length) {
+          setGifIndex((value) => value + 1);
+        } else {
+          setGifMissing(true);
+          setGifFailed(true);
+        }
+        return ready;
+      });
+    }, 9000);
+    return () => clearTimeout(timer);
+  }, [gifUrl, gifIndex, gifUrls.length, gifReady]);
 
   useEffect(() => {
     if (!running || done) return;
@@ -188,7 +272,7 @@ function ExerciseGuideBody({
     setDone(true);
     if (fromTimer) setRemaining(0);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    if (missionId) completeMission(missionId);
+    if (missionId) completeMission(missionId, dayTaskIds.length ? { dayTaskIds } : undefined);
   };
 
   useEffect(() => {
@@ -248,7 +332,7 @@ function ExerciseGuideBody({
               <Feather name="image" size={36} color={colors.mutedForeground} />
               <Text style={[styles.missingTitle, { color: colors.foreground }]}>No GIF available</Text>
               <Text style={[styles.missingHint, { color: colors.mutedForeground }]}>
-                No matching ExerciseDB demo for this move
+                Upload a GIF or image in Admin Daily Plans for this move
               </Text>
             </View>
           )}

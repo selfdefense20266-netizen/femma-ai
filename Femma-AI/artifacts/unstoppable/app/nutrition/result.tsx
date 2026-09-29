@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, Share } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -7,8 +7,101 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
-import { getLastMealScan } from '@/lib/mealScan';
+import { getLastMealScan, getLastMealScanPhotoUri } from '@/lib/mealScan';
 import { applyScanVerdict } from '@/lib/nutritionPlan';
+
+const DAILY_VALUES: Record<string, number> = {
+  protein_g: 50,
+  carbs_g: 275,
+  fat_g: 78,
+  fiber_g: 28,
+  cholesterol_mg: 300,
+  sodium_mg: 2300,
+  calcium_mg: 1300,
+  iron_mg: 18,
+  potassium_mg: 4700,
+};
+
+type Palette = ReturnType<typeof useColors>;
+
+const reportTitle = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });
+
+function formatAmount(value: number, unit: string) {
+  const rounded = unit === 'g' || unit === 'mg' || unit === 'mcg' || unit === 'IU'
+    ? Math.abs(value - Math.round(value)) < 0.05
+      ? Math.round(value)
+      : Math.round(value * 10) / 10
+    : Math.round(value);
+  return `${rounded}${unit}`;
+}
+
+function NutrientRow({
+  label,
+  value,
+  serving,
+  unit,
+  dvKey,
+  colors,
+  indent,
+}: {
+  label: string;
+  value: number | undefined;
+  serving: number;
+  unit: string;
+  dvKey?: string;
+  colors: Palette;
+  indent?: boolean;
+}) {
+  if (value === undefined || value === null) return null;
+  const amount = Number(value) * serving;
+  const dv = dvKey ? DAILY_VALUES[dvKey] : undefined;
+  const pct = dv ? Math.round((amount / dv) * 100) : null;
+  return (
+    <View style={[styles.pairRow, indent && { paddingLeft: 10 }]}>
+      <Text style={[styles.pairLabel, { color: colors.mutedForeground }]}>{label}:</Text>
+      <Text style={[styles.pairValue, { color: colors.foreground }]}>
+        {formatAmount(amount, unit)}
+        {pct !== null ? <Text style={[styles.pairPct, { color: colors.mutedForeground }]}>  {pct}%*</Text> : null}
+      </Text>
+    </View>
+  );
+}
+
+function DietaryRow({ label, value, colors }: { label: string; value: boolean | undefined; colors: Palette }) {
+  const yes = value === true;
+  return (
+    <View style={styles.pairRow}>
+      <Text style={[styles.pairLabel, { color: colors.mutedForeground }]}>{label}</Text>
+      <Text style={[styles.pairValue, { color: yes ? colors.foreground : colors.mutedForeground, marginLeft: 'auto' }]}>
+        {yes ? 'Yes' : 'No'}
+      </Text>
+    </View>
+  );
+}
+
+function SectionTitle({ children, color }: { children: string; color: string }) {
+  return <Text style={[styles.sectionTitle, { color, fontFamily: reportTitle }]}>{children}</Text>;
+}
+
+function InsightLine({
+  label,
+  value,
+  colors,
+  accent,
+}: {
+  label: string;
+  value?: string;
+  colors: Palette;
+  accent?: string;
+}) {
+  if (!value) return null;
+  return (
+    <Text style={[styles.insightLine, { color: colors.foreground }]}>
+      <Text style={{ color: accent || colors.foreground, fontFamily: 'Manrope_700Bold' }}>{label}: </Text>
+      {value}
+    </Text>
+  );
+}
 
 export default function NutritionResultScreen() {
   const colors = useColors();
@@ -19,23 +112,7 @@ export default function NutritionResultScreen() {
   const [serving, setServing] = useState(1);
 
   const scan = getLastMealScan() ? applyScanVerdict(getLastMealScan()!, profile) : null;
-
-  const macros = useMemo(() => {
-    const calories = Number(scan?.calories) || 0;
-    const protein = Number(scan?.protein_g) || 0;
-    const carbs = Number(scan?.carbs_g) || 0;
-    const fat = Number(scan?.fat_g) || 0;
-    const fiber = Number(scan?.fiber_g) || 0;
-    const sugar = Number(scan?.sugar_g) || 0;
-    return [
-      { label: 'Calories', value: calories, unit: 'kcal', color: '#F26BB5', max: Math.max(calories * 1.4, 600) },
-      { label: 'Protein', value: protein, unit: 'g', color: '#77CDED', max: Math.max(protein * 1.6, 50) },
-      { label: 'Carbs', value: carbs, unit: 'g', color: '#FFD88A', max: Math.max(carbs * 1.5, 80) },
-      { label: 'Fat', value: fat, unit: 'g', color: '#B9A7F2', max: Math.max(fat * 1.6, 30) },
-      { label: 'Fiber', value: fiber, unit: 'g', color: '#A9E4D2', max: Math.max(fiber * 1.8, 10) },
-      { label: 'Sugar', value: sugar, unit: 'g', color: '#FF928F', max: Math.max(sugar * 1.8, 25) },
-    ];
-  }, [scan]);
+  const photoUri = getLastMealScanPhotoUri();
 
   const ingredients = scan?.ingredients?.length
     ? scan.ingredients
@@ -43,32 +120,24 @@ export default function NutritionResultScreen() {
 
   const alternatives = scan?.alternatives || [];
   const score = Number(scan?.score) || 0;
-  const verdict = scan?.verdict || (score >= 78 ? 'good' : score >= 58 ? 'okay' : 'avoid');
-  const scoreColor = verdict === 'good' ? colors.mint : verdict === 'okay' ? colors.warmYellow : colors.coral;
-  const verdictTitle =
-    scan?.verdict_label ||
-    (verdict === 'good' ? 'This is good for your plan' : verdict === 'okay' ? 'Okay for your plan' : 'Not a fit for your plan');
+  const heading = colors.deepPink;
+  const calories = Math.round((Number(scan?.calories) || 0) * serving);
 
   if (!scan) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { paddingTop: topPad }]}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
             <Feather name="x" size={22} color={colors.foreground} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Scan Result</Text>
           <View style={{ width: 22 }} />
         </View>
         <View style={{ padding: 22, gap: 12 }}>
-          <Text style={{ color: colors.foreground, fontSize: 16, fontFamily: 'Manrope_600SemiBold' }}>
-            No scan yet
-          </Text>
-          <Text style={{ color: colors.mutedForeground, fontSize: 14, fontFamily: 'Manrope_400Regular' }}>
-            Take or upload a food photo to get AI nutrition insights.
-          </Text>
+          <Text style={{ color: colors.foreground, fontSize: 16, fontFamily: 'Manrope_600SemiBold' }}>No scan yet</Text>
           <TouchableOpacity
-            style={{ marginTop: 8, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}
-            onPress={() => router.replace('/scan-food' as any)}
+            style={{ height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => router.replace('/scan-food' as never)}
           >
             <Text style={{ color: '#fff', fontFamily: 'Manrope_700Bold' }}>Open Food Scanner</Text>
           </TouchableOpacity>
@@ -77,163 +146,224 @@ export default function NutritionResultScreen() {
     );
   }
 
+  const shareResults = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Share.share({
+      message: `${scan.name} · ${calories} calories on Fema AI Meal Scanner.`,
+    }).catch(() => undefined);
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.charcoal }]}>
       <View style={[styles.header, { paddingTop: topPad }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="x" size={22} color={colors.foreground} />
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
+          <Feather name="x" size={22} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Scan Result</Text>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>{scan.name}</Text>
         <View style={{ width: 22 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 100 }}>
-        <View style={styles.body}>
-          <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-            <View style={[styles.scoreCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.scoreTop}>
-                <View style={{ flex: 1, paddingRight: 12 }}>
-                  <Text style={[styles.foodName, { color: colors.foreground }]}>{scan.name}</Text>
-                  <Text style={[styles.foodSub, { color: colors.mutedForeground }]}>
-                    {scan.summary || 'AI nutrition estimate · 1 serving'}
-                  </Text>
-                </View>
-                <View style={[styles.scoreCircle, { backgroundColor: scoreColor + '20', borderColor: scoreColor + '60' }]}>
-                  <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
-                  <Text style={[styles.scoreLabel, { color: colors.mutedForeground }]}>score</Text>
-                </View>
-              </View>
-
-              <View style={[styles.verdictCard, { backgroundColor: scoreColor + '18', borderColor: scoreColor + '50' }]}>
-                <Text style={[styles.verdictTitle, { color: scoreColor === colors.coral ? colors.coral : colors.foreground }]}>
-                  {verdict === 'good' ? 'This is good for you' : verdict === 'okay' ? 'This is okay' : 'Skip this one'}
-                </Text>
-                <Text style={[styles.verdictLabel, { color: colors.foreground }]}>{verdictTitle}</Text>
-                <Text style={[styles.verdictCals, { color: colors.mutedForeground }]}>
-                  {scan.calories_note || `${Math.round(Number(scan.calories) || 0)} kcal · ${Math.round(Number(scan.protein_g) || 0)}g protein`}
-                </Text>
-                {scan.fit_reason ? (
-                  <Text style={[styles.verdictReason, { color: colors.mutedForeground }]}>{scan.fit_reason}</Text>
-                ) : null}
-              </View>
-
-              <View style={[styles.servingRow, { backgroundColor: colors.muted, borderRadius: 12 }]}>
-                <Text style={[styles.servingLabel, { color: colors.mutedForeground }]}>Portion</Text>
-                <View style={styles.servingControls}>
-                  <TouchableOpacity
-                    style={[styles.servingBtn, { backgroundColor: colors.card }]}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setServing((s) => Math.max(0.5, s - 0.5));
-                    }}
-                  >
-                    <Feather name="minus" size={14} color={colors.foreground} />
-                  </TouchableOpacity>
-                  <Text style={[styles.servingValue, { color: colors.foreground }]}>{serving}x</Text>
-                  <TouchableOpacity
-                    style={[styles.servingBtn, { backgroundColor: colors.card }]}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setServing((s) => s + 0.5);
-                    }}
-                  >
-                    <Feather name="plus" size={14} color={colors.foreground} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 24 }}>
+        {photoUri ? (
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.photoWrap}>
+            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="contain" />
           </Animated.View>
+        ) : null}
 
-          {(scan.tips?.length || 0) > 0 && (
-            <Animated.View entering={FadeInDown.delay(120).duration(500)}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Coach Tips</Text>
-              <View style={[styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {scan.tips!.map((tip) => (
-                  <Text key={tip} style={{ color: colors.mutedForeground, fontSize: 13, fontFamily: 'Manrope_400Regular', marginBottom: 6 }}>
-                    • {tip}
-                  </Text>
-                ))}
-              </View>
-            </Animated.View>
-          )}
-
-          <Animated.View entering={FadeInDown.delay(150).duration(500)}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Nutrition Breakdown</Text>
-            <View style={[styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              {macros.map((m) => {
-                const width = Math.min(1, (m.value * serving) / (m.max || 1));
-                return (
-                  <View key={m.label} style={styles.macroRow}>
-                    <Text style={[styles.macroLabel, { color: colors.mutedForeground }]}>{m.label}</Text>
-                    <View style={[styles.macroTrack, { backgroundColor: colors.muted }]}>
-                      <View style={[styles.macroFill, { backgroundColor: m.color, width: `${width * 100}%` as any }]} />
-                    </View>
-                    <Text style={[styles.macroValue, { color: colors.foreground }]}>
-                      {Math.round(m.value * serving)}
-                      {m.unit}
-                    </Text>
-                  </View>
-                );
-              })}
+        <Animated.View entering={FadeInDown.delay(80).duration(450)} style={[styles.reportCard, { backgroundColor: '#FFFFFF' }]}>
+          <View style={styles.portionRow}>
+            <Text style={[styles.portionLabel, { color: colors.mutedForeground }]}>Portion</Text>
+            <View style={styles.portionControls}>
+              <TouchableOpacity
+                style={[styles.portionBtn, { borderColor: colors.border }]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setServing((s) => Math.max(0.5, s - 0.5));
+                }}
+              >
+                <Feather name="minus" size={14} color={colors.foreground} />
+              </TouchableOpacity>
+              <Text style={[styles.portionValue, { color: colors.foreground }]}>{serving}x</Text>
+              <TouchableOpacity
+                style={[styles.portionBtn, { borderColor: colors.border }]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setServing((s) => s + 0.5);
+                }}
+              >
+                <Feather name="plus" size={14} color={colors.foreground} />
+              </TouchableOpacity>
             </View>
-          </Animated.View>
-
-          {ingredients.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ingredients</Text>
-              <View style={[styles.ingredientCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {ingredients.map((ing, i) => (
-                  <View
-                    key={`${ing.name}-${i}`}
-                    style={[styles.ingredientRow, i < ingredients.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-                  >
-                    <Feather
-                      name={ing.concern ? 'alert-circle' : 'check-circle'}
-                      size={16}
-                      color={ing.concern ? colors.warmYellow : colors.mint}
-                    />
-                    <View style={styles.ingredientInfo}>
-                      <Text style={[styles.ingredientName, { color: colors.foreground }]}>{ing.name}</Text>
-                      {!!ing.detail && (
-                        <Text style={[styles.ingredientDetail, { color: colors.warmYellow }]}>{ing.detail}</Text>
-                      )}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </Animated.View>
-          )}
-
-          {alternatives.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(250).duration(500)}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Healthier Alternatives</Text>
-              {alternatives.map((alt) => (
-                <View key={alt.name} style={[styles.altCard, { backgroundColor: colors.mint + '12', borderColor: colors.mint + '40' }]}>
-                  <View style={[styles.altScore, { backgroundColor: colors.mint + '25', borderColor: colors.mint + '60' }]}>
-                    <Text style={[styles.altScoreNum, { color: '#2d8a6b' }]}>{alt.score}</Text>
-                  </View>
-                  <View style={styles.altInfo}>
-                    <Text style={[styles.altName, { color: colors.foreground }]}>{alt.name}</Text>
-                    <Text style={[styles.altWhy, { color: colors.mutedForeground }]}>{alt.why}</Text>
-                  </View>
-                </View>
-              ))}
-            </Animated.View>
-          )}
-
-          <View style={styles.doneWrap}>
-            <TouchableOpacity
-              style={[styles.doneBtn, { backgroundColor: colors.primary }]}
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                completeMission('nutrition');
-                router.replace('/(tabs)');
-              }}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.doneBtnText}>Save to log</Text>
-            </TouchableOpacity>
           </View>
+
+          <SectionTitle color={heading}>Nutrition & Insights</SectionTitle>
+          <View style={styles.calorieHero}>
+            <Text style={[styles.calorieNum, { color: heading, fontFamily: reportTitle }]}>{calories}</Text>
+            <Text style={[styles.calorieUnit, { color: colors.mutedForeground, fontFamily: reportTitle }]}>calories</Text>
+          </View>
+          <View style={[styles.hairline, { backgroundColor: colors.border }]} />
+
+          <View style={styles.twoCol}>
+            <View style={styles.col}>
+              <NutrientRow label="Fat" value={scan.fat_g} serving={serving} unit="g" dvKey="fat_g" colors={colors} />
+              <NutrientRow label="Cholesterol" value={scan.cholesterol_mg} serving={serving} unit="mg" dvKey="cholesterol_mg" colors={colors} />
+              <NutrientRow label="Sodium" value={scan.sodium_mg} serving={serving} unit="mg" dvKey="sodium_mg" colors={colors} />
+              <NutrientRow label="Carbohydrates" value={scan.carbs_g} serving={serving} unit="g" dvKey="carbs_g" colors={colors} />
+              <NutrientRow label="Sugars" value={scan.sugar_g} serving={serving} unit="g" colors={colors} />
+              <NutrientRow label="Added Sugars" value={scan.added_sugar_g} serving={serving} unit="g" colors={colors} indent />
+            </View>
+            <View style={styles.col}>
+              <NutrientRow label="Protein" value={scan.protein_g} serving={serving} unit="g" dvKey="protein_g" colors={colors} />
+              <NutrientRow label="Fiber" value={scan.fiber_g} serving={serving} unit="g" dvKey="fiber_g" colors={colors} />
+              <NutrientRow label="Calcium" value={scan.calcium_mg} serving={serving} unit="mg" dvKey="calcium_mg" colors={colors} />
+              <NutrientRow label="Iron" value={scan.iron_mg} serving={serving} unit="mg" dvKey="iron_mg" colors={colors} />
+              <NutrientRow label="Potassium" value={scan.potassium_mg} serving={serving} unit="mg" dvKey="potassium_mg" colors={colors} />
+              <NutrientRow label="Vitamin A" value={scan.vitamin_a_iu ?? scan.vitamin_a_mcg} serving={serving} unit={scan.vitamin_a_iu != null ? 'IU' : 'mcg'} colors={colors} />
+              <NutrientRow label="Vitamin D" value={scan.vitamin_d_mcg} serving={serving} unit="mcg" colors={colors} />
+            </View>
+          </View>
+
+          <>
+            <View style={[styles.hairline, { backgroundColor: colors.border, marginTop: 18 }]} />
+            <SectionTitle color={heading}>Dietary Information</SectionTitle>
+            <View style={styles.twoCol}>
+              <View style={styles.col}>
+                <DietaryRow label="Vegetarian" value={scan.dietary?.vegetarian} colors={colors} />
+                <DietaryRow label="Gluten Free" value={scan.dietary?.gluten_free} colors={colors} />
+                <DietaryRow label="Paleo" value={scan.dietary?.paleo} colors={colors} />
+                <DietaryRow label="Organic" value={scan.dietary?.organic} colors={colors} />
+                <DietaryRow label="Kosher" value={scan.dietary?.kosher} colors={colors} />
+              </View>
+              <View style={styles.col}>
+                <DietaryRow label="Vegan" value={scan.dietary?.vegan} colors={colors} />
+                <DietaryRow label="Keto" value={scan.dietary?.keto} colors={colors} />
+                <DietaryRow label="Low Fodmap" value={scan.dietary?.low_fodmap} colors={colors} />
+                <DietaryRow label="Halal" value={scan.dietary?.halal} colors={colors} />
+                <DietaryRow label="Low Carb" value={scan.dietary?.low_carb} colors={colors} />
+              </View>
+            </View>
+          </>
+
+          <>
+            <View style={[styles.hairline, { backgroundColor: colors.border, marginTop: 18 }]} />
+            <SectionTitle color={heading}>Preparation</SectionTitle>
+            <View style={styles.twoCol}>
+              <View style={styles.col}>
+                <View style={styles.pairRow}>
+                  <Text style={[styles.pairLabel, { color: colors.mutedForeground }]}>Method:</Text>
+                  <Text style={[styles.pairValue, { color: colors.foreground }]}>
+                    {scan.preparation?.method || '—'}
+                  </Text>
+                </View>
+                <DietaryRow label="Cooked" value={scan.preparation?.cooked} colors={colors} />
+              </View>
+              <View style={styles.col}>
+                <DietaryRow label="Processed" value={scan.preparation?.processed} colors={colors} />
+                <DietaryRow label="Raw" value={scan.preparation?.raw} colors={colors} />
+              </View>
+            </View>
+            <Text style={[styles.ingredientsText, { color: colors.mutedForeground }]}>
+              <Text style={{ color: colors.foreground, fontFamily: 'Manrope_700Bold' }}>Ingredients: </Text>
+              {scan.preparation?.ingredients_text ||
+                (ingredients.length ? ingredients.map((ing) => ing.name).join(', ') : 'Not detected')}
+            </Text>
+          </>
+
+          <>
+            <View style={[styles.hairline, { backgroundColor: colors.border, marginTop: 18 }]} />
+            <SectionTitle color={heading}>Allergen Nutrition Insights</SectionTitle>
+            <View style={{ gap: 10 }}>
+              <View style={styles.pairRow}>
+                <Text style={[styles.pairLabelStrong, { color: colors.foreground }]}>Contains: </Text>
+                <Text
+                  style={[
+                    styles.pairValue,
+                    {
+                      color: scan.allergens?.contains?.length ? colors.foreground : colors.coral,
+                      flex: 1,
+                    },
+                  ]}
+                >
+                  {scan.allergens?.contains?.length ? scan.allergens.contains.join(', ') : 'None'}
+                </Text>
+              </View>
+              <View style={styles.pairRow}>
+                <Text style={[styles.pairLabelStrong, { color: colors.foreground }]}>May contain: </Text>
+                <Text style={[styles.pairValue, { color: colors.mutedForeground, flex: 1 }]}>
+                  {scan.allergens?.may_contain?.length ? scan.allergens.may_contain.join(', ') : 'None'}
+                </Text>
+              </View>
+              <InsightLine label="Meal Timing" value={scan.allergens?.meal_timing} colors={colors} />
+              <InsightLine label="Satiety Score" value={scan.allergens?.satiety_score} colors={colors} />
+              <InsightLine label="Digestibility" value={scan.allergens?.digestibility} colors={colors} />
+              <InsightLine label="Nutrient Density" value={scan.allergens?.nutrient_density} colors={colors} />
+              <InsightLine label="Absorption Tips" value={scan.allergens?.absorption_tips} colors={colors} />
+            </View>
+          </>
+
+          <>
+            <View style={[styles.hairline, { backgroundColor: colors.border, marginTop: 18 }]} />
+            <SectionTitle color={heading}>Enhanced Nutrition</SectionTitle>
+            <View style={{ gap: 10 }}>
+              <InsightLine
+                label="Impact"
+                value={scan.enhanced_insight?.impact || scan.fit_reason || scan.summary}
+                colors={colors}
+                accent={colors.coral}
+              />
+              {scan.enhanced_insight?.inflammation ? (
+                <Text style={[styles.insightLine, { color: colors.foreground }]}>
+                  {scan.enhanced_insight.inflammation}
+                </Text>
+              ) : null}
+              {scan.enhanced_insight?.sensitivity ? (
+                <Text style={[styles.insightLine, { color: colors.foreground }]}>
+                  {scan.enhanced_insight.sensitivity}
+                </Text>
+              ) : null}
+            </View>
+          </>
+
+          {alternatives.length > 0 ? (
+            <>
+              <View style={[styles.hairline, { backgroundColor: colors.border, marginTop: 18 }]} />
+              <SectionTitle color={heading}>Healthier Alternatives</SectionTitle>
+              {alternatives.map((alt) => (
+                <Text key={alt.name} style={[styles.insightLine, { color: colors.mutedForeground }]}>
+                  <Text style={{ color: colors.foreground, fontFamily: 'Manrope_700Bold' }}>{alt.name}: </Text>
+                  {alt.why} (score {alt.score})
+                </Text>
+              ))}
+            </>
+          ) : null}
+
+          <View style={[styles.hairline, { backgroundColor: colors.border, marginTop: 20 }]} />
+          <Text style={[styles.dvFootnote, { color: colors.mutedForeground }]}>
+            * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000
+            calories a day is used for general nutrition advice. Score {score}/100 for your plan.
+          </Text>
+        </Animated.View>
+
+        <View style={styles.footerActions}>
+          <TouchableOpacity
+            style={[styles.shareBtn, { backgroundColor: colors.deepPink }]}
+            onPress={shareResults}
+            activeOpacity={0.88}
+          >
+            <Feather name="share-2" size={16} color="#FFFFFF" />
+            <Text style={styles.shareBtnText}>SHARE RESULTS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.saveBtn, { borderColor: 'rgba(255,255,255,0.35)' }]}
+            onPress={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              completeMission('nutrition');
+              router.replace('/(tabs)');
+            }}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.saveBtnText}>Save to log</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -242,45 +372,75 @@ export default function NutritionResultScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 12 },
-  headerTitle: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  body: { paddingHorizontal: 22, gap: 16 },
-  scoreCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 14 },
-  scoreTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  foodName: { fontSize: 20, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
-  foodSub: { fontSize: 13, fontFamily: 'Manrope_400Regular', marginTop: 3 },
-  scoreCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
-  scoreNum: { fontSize: 22, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
-  scoreLabel: { fontSize: 10, fontFamily: 'Manrope_400Regular' },
-  verdictCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 4 },
-  verdictTitle: { fontSize: 13, fontFamily: 'Manrope_700Bold', letterSpacing: 0.2 },
-  verdictLabel: { fontSize: 15, fontFamily: 'Manrope_600SemiBold', lineHeight: 21 },
-  verdictCals: { fontSize: 13, fontFamily: 'Manrope_600SemiBold', marginTop: 2 },
-  verdictReason: { fontSize: 12, fontFamily: 'Manrope_400Regular', lineHeight: 17, marginTop: 2 },
-  servingRow: { flexDirection: 'row', alignItems: 'center', padding: 12, justifyContent: 'space-between' },
-  servingLabel: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
-  servingControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  servingBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  servingValue: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold', minWidth: 32, textAlign: 'center' },
-  sectionTitle: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  macroCard: { padding: 16, borderRadius: 16, borderWidth: 1, gap: 12 },
-  macroRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  macroLabel: { width: 60, fontSize: 12, fontFamily: 'Manrope_400Regular' },
-  macroTrack: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
-  macroFill: { height: 6, borderRadius: 3 },
-  macroValue: { width: 52, fontSize: 12, fontWeight: '600', fontFamily: 'Manrope_600SemiBold', textAlign: 'right' },
-  ingredientCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
-  ingredientRow: { flexDirection: 'row', alignItems: 'flex-start', padding: 14, gap: 10 },
-  ingredientInfo: { flex: 1 },
-  ingredientName: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
-  ingredientDetail: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
-  altCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 8, gap: 12 },
-  altScore: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-  altScoreNum: { fontSize: 18, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
-  altInfo: { flex: 1 },
-  altName: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
-  altWhy: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
-  doneWrap: { paddingTop: 8 },
-  doneBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  headerTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold', maxWidth: '70%', textAlign: 'center' },
+  photoWrap: { marginHorizontal: 16, marginBottom: 0, borderRadius: 18, overflow: 'hidden', backgroundColor: '#111' },
+  photo: { width: '100%', height: 200 },
+  reportCard: {
+    marginHorizontal: 0,
+    marginTop: -8,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 28,
+  },
+  portionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  portionLabel: { fontSize: 13, fontFamily: 'Manrope_500Medium' },
+  portionControls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  portionBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  portionValue: { fontSize: 15, fontFamily: 'Manrope_700Bold', minWidth: 28, textAlign: 'center' },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: 4,
+    marginBottom: 12,
+    letterSpacing: -0.2,
+  },
+  calorieHero: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 4 },
+  calorieNum: { fontSize: 44, fontWeight: '700', letterSpacing: -1 },
+  calorieUnit: { fontSize: 18, fontWeight: '500' },
+  hairline: { height: StyleSheet.hairlineWidth, marginVertical: 14 },
+  twoCol: { flexDirection: 'row', gap: 18 },
+  col: { flex: 1, gap: 9 },
+  pairRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  pairLabel: { fontSize: 13, fontFamily: 'Manrope_500Medium', flexShrink: 0 },
+  pairLabelStrong: { fontSize: 13, fontFamily: 'Manrope_700Bold', flexShrink: 0 },
+  pairValue: { fontSize: 13, fontFamily: 'Manrope_600SemiBold', flexShrink: 1 },
+  pairPct: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
+  ingredientsText: { fontSize: 13, fontFamily: 'Manrope_400Regular', fontStyle: 'italic', lineHeight: 19, marginTop: 8 },
+  insightLine: { fontSize: 13.5, fontFamily: 'Manrope_400Regular', lineHeight: 20 },
+  tipLine: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19, marginBottom: 4 },
+  dvFootnote: { fontSize: 11, fontFamily: 'Manrope_400Regular', fontStyle: 'italic', lineHeight: 16 },
+  footerActions: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
+  shareBtn: {
+    height: 52,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  shareBtnText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Manrope_800ExtraBold', letterSpacing: 0.8 },
+  saveBtn: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveBtnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Manrope_600SemiBold' },
 });

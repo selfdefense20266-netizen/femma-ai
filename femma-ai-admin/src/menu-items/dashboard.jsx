@@ -2,6 +2,8 @@
 import {
   DashboardOutlined,
   BookOutlined,
+  RocketOutlined,
+  ScheduleOutlined,
   AppstoreOutlined,
   ReadOutlined,
   ClusterOutlined,
@@ -18,6 +20,8 @@ import {
 const icons = {
   DashboardOutlined,
   BookOutlined,
+  RocketOutlined,
+  ScheduleOutlined,
   AppstoreOutlined,
   ReadOutlined,
   ClusterOutlined,
@@ -52,6 +56,34 @@ const dashboard = {
       icon: icons.BookOutlined,
       children: [
         {
+          id: 'guided-journeys',
+          title: 'Guided Journeys',
+          type: 'item',
+          url: '/content/guided-journeys',
+          icon: icons.RocketOutlined
+        },
+        {
+          id: 'daily-plans',
+          title: 'Daily Plans',
+          type: 'item',
+          url: '/content/daily-plans',
+          icon: icons.ScheduleOutlined
+        },
+        {
+          id: 'recovery',
+          title: 'Recovery',
+          type: 'item',
+          url: '/content/recovery',
+          icon: icons.CloudUploadOutlined
+        },
+        {
+          id: 'program',
+          title: 'Program',
+          type: 'item',
+          url: '/content/program',
+          icon: icons.ReadOutlined
+        },
+        {
           id: 'categories',
           title: 'Categories',
           type: 'item',
@@ -71,13 +103,6 @@ const dashboard = {
           type: 'item',
           url: '/content/modules-lessons',
           icon: icons.ClusterOutlined
-        },
-        {
-          id: 'media-library',
-          title: 'Media Library',
-          type: 'item',
-          url: '/content/media',
-          icon: icons.CloudUploadOutlined
         }
       ]
     },
@@ -87,13 +112,6 @@ const dashboard = {
       type: 'item',
       url: '/users',
       icon: icons.TeamOutlined
-    },
-    {
-      id: 'subscriptions',
-      title: 'Subscriptions',
-      type: 'item',
-      url: '/subscriptions',
-      icon: icons.CreditCardOutlined
     },
     {
       id: 'analytics',
@@ -127,6 +145,13 @@ export const account = {
     //   url: '/settings',
     //   icon: icons.SettingOutlined
     // },
+    {
+      id: 'settings',
+      title: 'Settings',
+      type: 'item',
+      url: '/settings',
+      icon: icons.SettingOutlined
+    },
     {
       id: 'logout',
       title: 'Logout',

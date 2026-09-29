@@ -5,6 +5,7 @@ import { detectFocus } from '@/lib/dailyMissions';
 import { goalLabels, ONBOARDING_GOALS, recipeFitsDiet } from '@/lib/nutritionPlan';
 import catalog from '@/data/goal-recipes.json';
 import { RECIPE_IMAGES } from '@/data/recipeImageMap';
+import { EXTRA_PROTOCOL_RECIPES } from '@/data/recipeProtocol';
 
 export type Recipe = {
   id: string;
@@ -112,7 +113,7 @@ export function addGeneratedRecipes(recipes: Recipe[]) {
 }
 
 export function allRecipes(): Recipe[] {
-  return [...extraRecipes, ...CATALOG_RECIPES];
+  return [...extraRecipes, ...EXTRA_PROTOCOL_RECIPES, ...CATALOG_RECIPES];
 }
 
 export function getRecipe(id?: string): Recipe | undefined {

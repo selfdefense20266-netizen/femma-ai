@@ -68,7 +68,9 @@ What she can eat: ${foodPreference}
 Judge the meal AGAINST that selection. If it breaks her food rule (vegan, vegetarian, gluten-free, dairy-free, high protein, low carb), verdict must be "avoid".
 Say clearly whether this food is good for her plan, and give calories.
 
-Return ONLY valid JSON with this shape:
+IMPORTANT: Fill EVERY field below with best-effort estimates from the visible food. Do not leave dietary / preparation / allergen / enhanced sections empty — always provide values (use false/No/"None" when appropriate). Clients display this full report.
+
+Return ONLY valid JSON with this exact shape:
 {
   "name": "food name",
   "score": 0-100,
@@ -78,16 +80,59 @@ Return ONLY valid JSON with this shape:
   "fat_g": number,
   "fiber_g": number,
   "sugar_g": number,
+  "added_sugar_g": number,
+  "cholesterol_mg": number,
+  "sodium_mg": number,
+  "calcium_mg": number,
+  "iron_mg": number,
+  "potassium_mg": number,
+  "vitamin_a_iu": number,
+  "vitamin_d_mcg": number,
   "summary": "1-2 sentence insight",
   "verdict": "good" | "okay" | "avoid",
-  "verdict_label": "Good for your Boxing · Vegan plan",
-  "calories_note": "420 kcal · 28g protein",
+  "verdict_label": "Good for your plan",
+  "calories_note": "540 kcal · 42g protein",
   "fit_reason": "why this helps or hurts her selected plan",
   "tips": ["tip1", "tip2", "tip3"],
   "tags": ["tag1", "tag2"],
   "ingredients": [{"name": "item", "concern": false, "detail": ""}],
-  "alternatives": [{"name": "option", "score": 85, "why": "reason"}]
-}`;
+  "alternatives": [{"name": "option", "score": 85, "why": "reason"}],
+  "dietary": {
+    "vegetarian": boolean,
+    "vegan": boolean,
+    "gluten_free": boolean,
+    "keto": boolean,
+    "paleo": boolean,
+    "organic": boolean,
+    "kosher": boolean,
+    "halal": boolean,
+    "low_carb": boolean,
+    "low_fodmap": boolean
+  },
+  "preparation": {
+    "method": "e.g. Grilling",
+    "raw": boolean,
+    "cooked": boolean,
+    "processed": boolean,
+    "ingredients_text": "Beef Ribeye Steak, Arugula, Cherry Tomatoes, Lemon, Olive Oil, Black Pepper, Salt, Dried Herbs"
+  },
+  "allergens": {
+    "contains": [],
+    "may_contain": ["Soy"],
+    "meal_timing": "Best consumed for lunch or early dinner…",
+    "satiety_score": "Very High due to…",
+    "digestibility": "High, though…",
+    "nutrient_density": "High in B-vitamins…",
+    "absorption_tips": "Vitamin C from lemon…"
+  },
+  "enhanced_insight": {
+    "impact": "Glycemic / blood-sugar impact paragraph, e.g. Very low. The meal is high in protein…",
+    "inflammation": "Inflammation balance paragraph, e.g. Low to Neutral. The omega-3 content…",
+    "sensitivity": "Sensitivity / trigger paragraph, e.g. Moderate, as grilled meats…"
+  }
+}
+
+Rules for numbers: use decimals where useful (e.g. iron_mg: 4.8). vitamin_a_iu must be International Units (not mcg). If no allergens, contains should be []. Always write full allergen insight paragraphs.`;
 
   const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

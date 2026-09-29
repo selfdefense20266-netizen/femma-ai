@@ -8,14 +8,14 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
-import { useAuth } from '@/context/AuthContext';
 import { buildPersonalizedPlan } from '@/lib/dailyMissions';
-import { durationLabel, goalLabels } from '@/lib/nutritionPlan';
+import { goalLabels } from '@/lib/nutritionPlan';
+
+import MissionIcon from '@/components/MissionIcon';
 
 export default function RevealScreen() {
   const colors = useColors();
-  const { completeOnboarding, profile, stagedPlan } = useApp();
-  const { user } = useAuth();
+  const { profile, stagedPlan } = useApp();
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
@@ -24,6 +24,11 @@ export default function RevealScreen() {
     () => stagedPlan ?? buildPersonalizedPlan(profile),
     [stagedPlan, profile]
   );
+
+  const dayMissions = plan.missions || [];
+  const weeksLabel = plan.stats.weeks >= 1 ? String(plan.stats.weeks) : '4';
+  const minLabel = String(plan.stats.dailyMinutes || dayMissions.reduce((s, m) => s + (m.duration || 0), 0));
+  const tasksLabel = String(plan.stats.missionsPerDay || dayMissions.length);
 
   const handleStart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -41,33 +46,25 @@ export default function RevealScreen() {
                 <Text style={[styles.planBadgeText, { color: colors.primary }]}>Your plan is ready</Text>
               </View>
               <Text style={[styles.heroTitle, { color: colors.foreground }]}>
-                {plan.planName.replace(' Plan', '')}
+                {(plan.planName || 'Your').replace(/\s*Plan$/i, '')}
                 {'\n'}Plan
               </Text>
               <Text style={[styles.heroSubtitle, { color: colors.mutedForeground }]}>
-                {durationLabel(plan.stats.weeks)} course for{' '}
+                Built for{' '}
                 {profile.goal ? goalLabels(profile.goal).join(', ').toLowerCase() : 'your goal'}
-                {profile.foodPreference ? ` · ${profile.foodPreference}` : ''}
                 {profile.fitnessLevel ? ` · ${profile.fitnessLevel}` : ''}
-                {profile.dailyTime ? ` · ${profile.dailyTime}/day` : ''}.
+                {profile.foodPreference ? ` · ${profile.foodPreference}` : ''}.
               </Text>
-              {plan.courseNames.length > 0 && (
-                <Text style={[styles.courseLine, { color: colors.mutedForeground }]}>
-                  Courses to watch: {plan.courseNames.join(' · ')}
-                </Text>
-              )}
-              {!plan.hasCatalogLessons && (
-                <Text style={[styles.courseLine, { color: colors.mutedForeground }]}>
-                  Video lessons will appear as courses are published in admin.
-                </Text>
-              )}
+              <Text style={[styles.courseLine, { color: colors.mutedForeground }]}>
+                Day 1 tasks match your admin activity plan for your level.
+              </Text>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.statsRow}>
               {[
-                { value: String(plan.stats.weeks), label: 'Weeks', color: colors.pink },
-                { value: String(plan.stats.dailyMinutes), label: 'Min/day', color: colors.lavender },
-                { value: String(plan.courseNames.length || plan.stats.focusAreas), label: 'Courses', color: colors.skyBlue },
+                { value: weeksLabel, label: 'Weeks', color: colors.pink },
+                { value: minLabel, label: 'Min/day', color: colors.lavender },
+                { value: tasksLabel, label: 'Tasks', color: colors.skyBlue },
               ].map((s) => (
                 <View key={s.label} style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
@@ -80,60 +77,40 @@ export default function RevealScreen() {
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Day 1</Text>
-          {plan.missions.map((mission, i) => (
-            <Animated.View key={mission.id} entering={FadeInDown.delay(400 + i * 50).duration(400)}>
-              <View style={[styles.missionRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.missionIcon, { backgroundColor: `${mission.accentColor}22` }]}>
-                  <Feather name={mission.icon as never} size={16} color={mission.accentColor} />
-                </View>
-                <View style={styles.missionText}>
-                  <Text style={[styles.missionTitle, { color: colors.foreground }]}>{mission.title}</Text>
-                  <Text style={[styles.missionMeta, { color: colors.mutedForeground }]}>
-                    {mission.label || mission.category} · {mission.duration} min
-                  </Text>
-                </View>
-              </View>
-            </Animated.View>
-          ))}
-        </View>
-
-        {plan.trainingPlan?.watchCourses?.length ? (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Courses to watch</Text>
-            {plan.trainingPlan.watchCourses.map((course) => (
-              <View key={course.id} style={[styles.missionRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.missionIcon, { backgroundColor: colors.primary + '18' }]}>
-                  <Feather name="play-circle" size={16} color={colors.primary} />
-                </View>
-                <View style={styles.missionText}>
-                  <Text style={[styles.missionTitle, { color: colors.foreground }]}>{course.title}</Text>
-                  <Text style={[styles.missionMeta, { color: colors.mutedForeground }]}>
-                    {course.lessons.length} lesson{course.lessons.length === 1 ? '' : 's'} saved in your plan
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Your Week 1 schedule</Text>
-          {plan.weekSchedule.map((day, i) => (
-            <Animated.View key={day.day} entering={FadeInDown.delay(500 + i * 60).duration(400)}>
-              <View style={[styles.scheduleRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.dayBadge, { backgroundColor: i === 0 ? colors.primary : colors.muted }]}>
-                  <Text style={[styles.dayText, { color: i === 0 ? '#FFFFFF' : colors.mutedForeground }]}>{day.day}</Text>
-                </View>
-                <View style={styles.dayItems}>
-                  {day.items.map((item) => (
-                    <Text key={item} style={[styles.dayItem, { color: colors.foreground }]}>
-                      • {item}
+          {dayMissions.length === 0 ? (
+            <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>
+              No Day 1 exercises yet — admin can add them in Daily Plans.
+            </Text>
+          ) : (
+            dayMissions.map((mission, i) => (
+              <Animated.View key={mission.id} entering={FadeInDown.delay(400 + i * 50).duration(400)}>
+                <View style={[styles.missionRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <MissionIcon
+                    title={mission.title}
+                    animation={mission.animation}
+                    category={mission.category}
+                    slot={mission.slot || 'exercise'}
+                    icon={mission.icon}
+                    accentColor={mission.accentColor}
+                    size={56}
+                    iconSize={20}
+                    contentFit="contain"
+                    imageUrl={mission.mediaUrl}
+                    style={styles.missionThumb}
+                  />
+                  <View style={styles.missionText}>
+                    <Text style={[styles.missionTitle, { color: colors.foreground }]} numberOfLines={2}>
+                      {mission.title}
                     </Text>
-                  ))}
+                    <Text style={[styles.missionMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {mission.metaLine ||
+                        `${mission.label || mission.category} · ${mission.duration} min`}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </Animated.View>
-          ))}
+              </Animated.View>
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -150,7 +127,17 @@ export default function RevealScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   hero: { paddingBottom: 24 },
-  planBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, borderWidth: 1, marginBottom: 16 },
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
   planBadgeText: { fontSize: 12, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   heroTitle: { fontSize: 36, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', lineHeight: 44, marginBottom: 10 },
   heroSubtitle: { fontSize: 15, fontFamily: 'Manrope_400Regular', lineHeight: 22 },
@@ -159,19 +146,45 @@ const styles = StyleSheet.create({
   statCard: { flex: 1, padding: 14, borderRadius: 14, borderWidth: 1, alignItems: 'center', gap: 4 },
   statValue: { fontSize: 28, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
   statLabel: { fontSize: 11, fontFamily: 'Manrope_400Regular', textAlign: 'center' },
-  section: { paddingHorizontal: 24, paddingTop: 24, gap: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', fontFamily: 'Manrope_700Bold', marginBottom: 6 },
-  missionRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1, gap: 12 },
-  missionIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  missionText: { flex: 1 },
-  missionTitle: { fontSize: 13.5, fontFamily: 'Manrope_700Bold' },
-  missionMeta: { fontSize: 11, fontFamily: 'Manrope_500Medium', marginTop: 2 },
-  scheduleRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, gap: 14 },
-  dayBadge: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  dayText: { fontSize: 13, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  dayItems: { flex: 1, gap: 2 },
-  dayItem: { fontSize: 13, fontFamily: 'Manrope_400Regular' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16 },
-  startBtn: { height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
-  startBtnText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope_700Bold' },
+  section: { paddingHorizontal: 24, marginTop: 8, gap: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', marginBottom: 4 },
+  emptyHint: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19 },
+  missionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  missionThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    backgroundColor: '#FFFFFF',
+  },
+  missionText: { flex: 1, gap: 3, minWidth: 0 },
+  missionTitle: { fontSize: 15, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
+  missionMeta: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    backgroundColor: 'transparent',
+  },
+  startBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 100,
+  },
+  startBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
 });

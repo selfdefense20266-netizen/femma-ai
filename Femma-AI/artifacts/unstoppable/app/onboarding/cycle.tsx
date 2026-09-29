@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-import { useApp } from '@/context/AppContext';
+import { useApp, cycleUpdateForDay } from '@/context/AppContext';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const CYCLE_OPTIONS = [
@@ -30,11 +30,11 @@ export default function CycleStep() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4, 5].map(i => (
-            <View key={i} style={[styles.progressDot, { backgroundColor: i <= 4 ? colors.primary : colors.border }]} />
+          {[1, 2, 3, 4].map(i => (
+            <View key={i} style={[styles.progressDot, { backgroundColor: colors.primary }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 4 of 5</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 4 of 4</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>Cycle & reproductive health</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>Your data stays private and is only used to personalize your plan.</Text>
       </View>
@@ -72,17 +72,21 @@ export default function CycleStep() {
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             if (selected === 'pregnant') {
-              updateProfile({ cyclePhase: 'none', isPregnant: true, pregnancyWeek: 1, cycleDay: 0 });
+              updateProfile({ cyclePhase: 'none', isPregnant: true, pregnancyWeek: 1, cycleDay: 0, planDurationWeeks: 4 });
             } else if (selected === 'track') {
-              updateProfile({ cyclePhase: 'follicular', isPregnant: false, pregnancyWeek: 0, cycleDay: 1 });
+              updateProfile({
+                ...cycleUpdateForDay(1),
+                pregnancyWeek: 0,
+                planDurationWeeks: 4,
+              });
             } else {
-              updateProfile({ cyclePhase: 'none', isPregnant: false, pregnancyWeek: 0, cycleDay: 0 });
+              updateProfile({ cyclePhase: 'none', isPregnant: false, pregnancyWeek: 0, cycleDay: 0, planDurationWeeks: 4 });
             }
-            router.push('/onboarding/duration');
+            router.push('/onboarding/plan');
           }}
           activeOpacity={0.85}
         >
-          <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Continue</Text>
+          <Text style={[styles.nextBtnText, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>Build My Plan</Text>
           <Feather name="arrow-right" size={18} color={selected ? '#FFFFFF' : colors.mutedForeground} />
         </TouchableOpacity>
       </View>

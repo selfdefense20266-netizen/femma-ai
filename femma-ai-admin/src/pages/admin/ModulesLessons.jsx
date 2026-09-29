@@ -7,6 +7,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -14,6 +15,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
+import LinearProgress from '@mui/material/LinearProgress';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
@@ -33,12 +35,17 @@ import StatusChip from 'components/admin/StatusChip';
 import Loader from 'components/Loader';
 import { useAdminData } from 'contexts/AdminDataContext';
 
+import ThumbnailPickerModal from 'components/admin/ThumbnailPickerModal';
+
 // assets
 import DownOutlined from '@ant-design/icons/DownOutlined';
 import PlusOutlined from '@ant-design/icons/PlusOutlined';
 import EditOutlined from '@ant-design/icons/EditOutlined';
 import DeleteOutlined from '@ant-design/icons/DeleteOutlined';
 import CloudUploadOutlined from '@ant-design/icons/CloudUploadOutlined';
+import PictureOutlined from '@ant-design/icons/PictureOutlined';
+
+const GUIDED_JOURNEY_CATEGORIES = ['self-defence', 'fitness', 'cycle-pregnancy-health'];
 
 const emptyLessonForm = {
   id: '',
@@ -55,17 +62,21 @@ function lessonMediaStatus(lesson) {
 
 export default function ModulesLessons() {
   const navigate = useNavigate();
-  const { courses, saveModule, deleteModule, saveLesson, deleteLesson, contentLoading, contentError } = useAdminData();
+  const { courses, saveModule, deleteModule, saveLesson, deleteLesson, uploadLessonMedia, uploadThumbnail, updateThumbnailUrl, contentLoading, contentError } = useAdminData();
   const [courseId, setCourseId] = useState('');
   const [actionError, setActionError] = useState('');
   const [savingModule, setSavingModule] = useState(false);
   const [savingLesson, setSavingLesson] = useState(false);
+  const [uploadingLessonId, setUploadingLessonId] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeUploadLesson, setActiveUploadLesson] = useState(null);
   const [moduleDialog, setModuleDialog] = useState({ open: false, form: { id: '', title: '', description: '' } });
   const [lessonDialog, setLessonDialog] = useState({
     open: false,
     moduleId: '',
     form: emptyLessonForm
   });
+  const [thumbModal, setThumbModal] = useState({ open: false, lesson: null });
 
   useEffect(() => {
     if (!courses.length) {
@@ -182,7 +193,16 @@ export default function ModulesLessons() {
         </Alert>
       )}
 
-      <MainCard title={`${course.title} curriculum`}>
+      <MainCard
+        title={
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Typography variant="h4">{course.title} curriculum</Typography>
+            {GUIDED_JOURNEY_CATEGORIES.includes(course?.categoryId) && (
+              <Chip label="Guided Journey Course" size="small" color="primary" variant="outlined" />
+            )}
+          </Stack>
+        }
+      >
         <Stack spacing={1.5}>
           {(course.modules || []).map((module) => (
             <Accordion key={module.id} defaultExpanded disableGutters sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, '&:before': { display: 'none' } }}>
@@ -231,15 +251,41 @@ export default function ModulesLessons() {
                   <TableBody>
                     {(module.lessons || []).map((lesson) => {
                       const status = lessonMediaStatus(lesson);
+                      const isUploadingThis = uploadingLessonId === lesson.id;
                       return (
                         <TableRow key={lesson.id} hover>
                           <TableCell>
-                            <Typography variant="body2">{lesson.title}</Typography>
-                            {lesson.description && (
-                              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 280 }}>
-                                {lesson.description}
-                              </Typography>
-                            )}
+                            <Stack direction="row" spacing={1.5} alignItems="center">
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 1.5,
+                                  flexShrink: 0,
+                                  backgroundColor: 'action.hover',
+                                  backgroundImage: lesson.thumbnailUrl ? `url(${lesson.thumbnailUrl})` : 'none',
+                                  backgroundSize: 'contain',
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundPosition: 'center'
+                                }}
+                              />
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography variant="body2">{lesson.title}</Typography>
+                                {lesson.description && (
+                                  <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 280 }}>
+                                    {lesson.description}
+                                  </Typography>
+                                )}
+                                {isUploadingThis && (
+                                  <Box sx={{ width: '100%', mt: 0.5 }}>
+                                    <LinearProgress variant="determinate" value={uploadProgress} />
+                                    <Typography variant="caption" color="text.secondary">
+                                      Uploading video to Mux ({uploadProgress}%)
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Stack>
                           </TableCell>
                           <TableCell>
                             {lessonMediaStatus(lesson) === 'ready' || lesson.muxPlaybackId || lesson.videoUrl
@@ -250,8 +296,17 @@ export default function ModulesLessons() {
                             <StatusChip status={status} />
                           </TableCell>
                           <TableCell align="right">
+                            <IconButton size="small" color="primary" title="Set thumbnail (Frame/File)" onClick={() => setThumbModal({ open: true, lesson })}>
+                              <PictureOutlined />
+                            </IconButton>
                             {status === 'awaiting' && (
-                              <IconButton size="small" color="primary" title="Upload video" onClick={() => navigate('/content/media')}>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                title="Upload video file directly"
+                                disabled={isUploadingThis}
+                                onClick={() => handleDirectVideoUpload(lesson)}
+                              >
                                 <CloudUploadOutlined />
                               </IconButton>
                             )}
@@ -296,9 +351,9 @@ export default function ModulesLessons() {
         </Stack>
       </MainCard>
 
-      <Dialog open={moduleDialog.open} onClose={() => setModuleDialog((s) => ({ ...s, open: false }))} fullWidth maxWidth="sm">
+      <Dialog open={moduleDialog.open} onClose={() => setModuleDialog((s) => ({ ...s, open: false }))} fullWidth maxWidth="sm" scroll="paper">
         <DialogTitle>{moduleDialog.form.id ? 'Edit module' : 'Add module'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Title"
@@ -326,9 +381,9 @@ export default function ModulesLessons() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={lessonDialog.open} onClose={() => !savingLesson && setLessonDialog((s) => ({ ...s, open: false }))} fullWidth maxWidth="sm">
+      <Dialog open={lessonDialog.open} onClose={() => !savingLesson && setLessonDialog((s) => ({ ...s, open: false }))} fullWidth maxWidth="sm" scroll="paper">
         <DialogTitle>{isEditingLesson ? 'Edit lesson' : 'Add lesson'}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Lesson title"
@@ -397,6 +452,14 @@ export default function ModulesLessons() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ThumbnailPickerModal
+        open={thumbModal.open}
+        lesson={thumbModal.lesson}
+        onClose={() => setThumbModal({ open: false, lesson: null })}
+        onSaveUrl={updateThumbnailUrl}
+        onUploadFile={uploadThumbnail}
+      />
     </>
   );
 }

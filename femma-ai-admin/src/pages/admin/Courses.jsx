@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
@@ -32,6 +33,7 @@ import { countCourseStats } from 'data/content';
 import PlusOutlined from '@ant-design/icons/PlusOutlined';
 import EditOutlined from '@ant-design/icons/EditOutlined';
 import DeleteOutlined from '@ant-design/icons/DeleteOutlined';
+import CloudUploadOutlined from '@ant-design/icons/CloudUploadOutlined';
 
 const COURSE_LEVELS = [
   'Beginner friendly',
@@ -53,20 +55,23 @@ const emptyForm = {
   level: 'All levels',
   equipment: 'None',
   color: '#F26BB5',
+  imageUrl: '',
   status: 'draft',
   disclaimer: '',
   modules: []
 };
 
 export default function Courses() {
-  const { categories, courses, saveCourse, deleteCourse, contentLoading, contentError } = useAdminData();
+  const { categories, courses, saveCourse, deleteCourse, uploadCoursePicture, contentLoading, contentError } = useAdminData();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [actionError, setActionError] = useState('');
+  const fileInputRef = useRef(null);
 
   const rows = useMemo(() => {
     return courses
@@ -117,6 +122,24 @@ export default function Courses() {
       setActionError(err.message || 'Failed to save course');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePickImage = () => fileInputRef.current?.click();
+
+  const handleImageChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      setUploadingImage(true);
+      setActionError('');
+      const url = await uploadCoursePicture(form.id || form.title || 'course', file);
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+    } catch (err) {
+      setActionError(err.message || 'Failed to upload course image');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -192,10 +215,32 @@ export default function Courses() {
               {paginatedItems.map((row) => (
                 <TableRow hover key={row.id}>
                   <TableCell>
-                    <Typography variant="subtitle1">{row.title}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {row.equipment}
-                    </Typography>
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Box
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 1.5,
+                          flexShrink: 0,
+                          backgroundColor: row.color || '#F26BB5',
+                          backgroundImage: row.imageUrl ? `url(${row.imageUrl})` : 'none',
+                          backgroundSize: 'contain',
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'center'
+                        }}
+                      />
+                      <Box sx={{ minWidth: 0 }}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="subtitle1">{row.title}</Typography>
+                          {['self-defence', 'fitness', 'cycle-pregnancy-health'].includes(row.categoryId) && (
+                            <Chip label="Guided Journey" size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+                          )}
+                        </Stack>
+                        <Typography variant="caption" color="text.secondary">
+                          {row.equipment}
+                        </Typography>
+                      </Box>
+                    </Stack>
                   </TableCell>
                   <TableCell>{row.categoryTitle}</TableCell>
                   <TableCell>{row.level}</TableCell>
@@ -233,9 +278,9 @@ export default function Courses() {
         />
       </MainCard>
 
-      <Drawer anchor="right" open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 560, md: 640 } } }}>
-        <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+      <Drawer anchor="right" open={open} onClose={() => setOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 560, md: 640 }, height: '100%', overflow: 'hidden' } }}>
+        <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2, flexShrink: 0 }}>
             <Typography variant="h4">{form.id ? 'Edit course' : 'Add course'}</Typography>
             <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
               <Button color="secondary" onClick={() => setOpen(false)}>
@@ -246,7 +291,7 @@ export default function Courses() {
               </Button>
             </Stack>
           </Stack>
-          <Stack spacing={2} sx={{ flex: 1, overflow: 'auto' }}>
+          <Stack spacing={2} sx={{ flex: 1, minHeight: 0, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <TextField label="Title" fullWidth value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <TextField
               select
@@ -290,6 +335,37 @@ export default function Courses() {
               value={form.equipment}
               onChange={(e) => setForm({ ...form, equipment: e.target.value })}
             />
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Cover image
+              </Typography>
+              <Box
+                sx={{
+                  height: 140,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: form.color || '#F26BB5',
+                  backgroundImage: form.imageUrl ? `url(${form.imageUrl})` : 'none',
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                  mb: 1.5
+                }}
+              />
+              <Button variant="outlined" startIcon={<CloudUploadOutlined />} onClick={handlePickImage} disabled={uploadingImage}>
+                {uploadingImage ? 'Uploading…' : form.imageUrl ? 'Replace image' : 'Upload image'}
+              </Button>
+              <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleImageChange} />
+              <TextField
+                label="or paste an image URL"
+                fullWidth
+                sx={{ mt: 1.5 }}
+                value={form.imageUrl || ''}
+                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                helperText="Shown as the banner behind the course title in the app. Falls back to the accent color below when empty."
+              />
+            </Box>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
               <Box
                 component="input"

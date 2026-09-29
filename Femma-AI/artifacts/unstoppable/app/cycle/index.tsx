@@ -8,15 +8,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-import { useApp, CYCLE_PHASE_INFO, phaseFromCycleDay, type CyclePhase } from '@/context/AppContext';
+import {
+  useApp,
+  CYCLE_PHASE_INFO,
+  phaseFromCycleDay,
+  cycleUpdateForDay,
+  type CyclePhase,
+} from '@/context/AppContext';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const PHASES = [
-  { id: 'menstrual', label: 'Menstrual', days: '1-5', color: '#FF928F' },
-  { id: 'follicular', label: 'Follicular', days: '6-13', color: '#A9E4D2' },
-  { id: 'ovulation', label: 'Ovulation', days: '14', color: '#F26BB5' },
-  { id: 'luteal', label: 'Luteal', days: '15-28', color: '#B9A7F2' },
-] as const;
+  { id: 'menstrual' as const, label: 'Menstrual', days: '1–5', startDay: 1, color: '#FF928F' },
+  { id: 'follicular' as const, label: 'Follicular', days: '6–13', startDay: 6, color: '#A9E4D2' },
+  { id: 'ovulation' as const, label: 'Ovulation', days: '14', startDay: 14, color: '#F26BB5' },
+  { id: 'luteal' as const, label: 'Luteal', days: '15–28', startDay: 15, color: '#B9A7F2' },
+];
 
 const MOODS = ['Great', 'Good', 'Low', 'Irritable'];
 const ENERGY = ['High', 'Steady', 'Low'];
@@ -85,6 +91,7 @@ export default function CycleScreen() {
   const today = useMemo(() => startOfDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(today);
   const [logs, setLogs] = useState<Record<string, DayLog>>({});
+  const [pickingDay, setPickingDay] = useState(!tracking);
 
   useEffect(() => {
     AsyncStorage.getItem(CYCLE_LOGS_KEY)
@@ -95,6 +102,10 @@ export default function CycleScreen() {
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!tracking) setPickingDay(true);
+  }, [tracking]);
 
   const weekDays = useMemo(
     () =>
@@ -130,29 +141,27 @@ export default function CycleScreen() {
     persistLogs({ ...logs, [key]: { ...logs[key], ...patch } });
   };
 
-  const startTracking = () => {
-    updateProfile({ cyclePhase: 'follicular', cycleDay: 1, isPregnant: false });
+  const applyCycleDay = (day: number) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    updateProfile(cycleUpdateForDay(day));
     setSelectedDate(today);
+    setPickingDay(false);
   };
 
   const stopTracking = () => {
-    updateProfile({ cyclePhase: 'none', cycleDay: 0 });
+    updateProfile({ cyclePhase: 'none', cycleDay: 0, cycleAnchorDate: '' });
+    setPickingDay(true);
   };
 
   const logPeriod = () => {
-    Alert.alert('Log period start?', 'This sets the selected day as Day 1 of your cycle.', [
+    Alert.alert('Log period start?', 'This sets the selected calendar day as Day 1 of your cycle.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Log',
         onPress: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           const shift = daysBetween(selectedDate, today);
           const nextDay = cycleDayForOffset(1, shift);
-          updateProfile({
-            cyclePhase: phaseFromCycleDay(nextDay),
-            cycleDay: nextDay,
-            isPregnant: false,
-          });
+          applyCycleDay(nextDay);
         },
       },
     ]);
@@ -175,15 +184,22 @@ export default function CycleScreen() {
     Alert.alert(
       'Cycle settings',
       tracking
-        ? 'Workouts and nutrition tips follow your cycle. You can turn this off anytime.'
-        : 'Turn tracking on to personalize workouts around your cycle.',
+        ? 'Workouts tip follow your cycle phase. You can change your day or turn tracking off.'
+        : 'Turn tracking on and pick which day of your cycle you are on today.',
       tracking
         ? [
+            {
+              text: 'Change cycle day',
+              onPress: () => setPickingDay(true),
+            },
             { text: 'Stop tracking', style: 'destructive', onPress: stopTracking },
             { text: 'Close', style: 'cancel' },
           ]
         : [
-            { text: 'Start tracking', onPress: startTracking },
+            {
+              text: 'Start tracking',
+              onPress: () => setPickingDay(true),
+            },
             { text: 'Close', style: 'cancel' },
           ]
     );
@@ -208,14 +224,19 @@ export default function CycleScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: botPad + 32 }}>
         <View style={styles.body}>
-          <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-            <LinearGradient colors={[phaseInfo.color + 'EE', phaseInfo.color + '88']} style={styles.phaseCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <Animated.View entering={FadeInDown.delay(80).duration(500)}>
+            <LinearGradient
+              colors={[phaseInfo.color + 'EE', phaseInfo.color + '88']}
+              style={styles.phaseCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
               <View style={styles.phaseTop}>
-                <View>
+                <View style={{ flex: 1, paddingRight: 12 }}>
                   <Text style={styles.phaseCardLabel}>{isTodaySelected ? 'Current phase' : 'Predicted phase'}</Text>
                   <Text style={styles.phaseCardName}>{phaseInfo.name}</Text>
                   <Text style={styles.phaseCardDay}>
-                    {tracking ? `Day ${previewDay} of your cycle` : 'Tracking is off'}
+                    {tracking ? `Day ${previewDay} of your cycle` : 'Pick your cycle day to start tracking'}
                   </Text>
                 </View>
                 <View style={[styles.phaseRing, { borderColor: 'rgba(255,255,255,0.5)' }]}>
@@ -224,118 +245,203 @@ export default function CycleScreen() {
               </View>
               <View style={[styles.phaseInsight, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                 <Text style={styles.phaseInsightText}>
-                  {phaseInfo.insight || 'Turn tracking on to get phase-based workout and nutrition tips.'}
+                  {phaseInfo.insight || 'Select which day of your cycle you are on today. Tips update with your phase.'}
                 </Text>
               </View>
             </LinearGradient>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(150).duration(500)}>
-            <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>This Week</Text>
-              <View style={styles.weekRow}>
-                {weekDays.map((day) => {
-                  const selected = day.key === dateKey(selectedDate);
-                  return (
-                    <TouchableOpacity
-                      key={day.key}
-                      style={[styles.dayCell, selected && { backgroundColor: colors.primary }]}
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        setSelectedDate(day.date);
-                      }}
-                    >
-                      <Text style={[styles.dayLabel, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>{day.dayLabel}</Text>
-                      <Text style={[styles.dayNum, { color: selected ? '#FFFFFF' : colors.foreground }]}>{day.dateNum}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {(selectedLog.mood || selectedLog.energy) ? (
-                <Text style={[styles.logSummary, { color: colors.mutedForeground }]}>
-                  {selectedLog.mood ? `Mood: ${selectedLog.mood}` : ''}
-                  {selectedLog.mood && selectedLog.energy ? ' · ' : ''}
-                  {selectedLog.energy ? `Energy: ${selectedLog.energy}` : ''}
+          {pickingDay ? (
+            <Animated.View entering={FadeInDown.delay(120).duration(500)}>
+              <View style={[styles.pickerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Where are you in your cycle?</Text>
+                <Text style={[styles.pickerHint, { color: colors.mutedForeground }]}>
+                  Tap today’s cycle day (1–28). Phase updates automatically.
                 </Text>
-              ) : null}
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-            <View style={styles.logRow}>
-              {[
-                { icon: 'droplet', label: 'Log Period', color: colors.coral, action: logPeriod },
-                {
-                  icon: 'smile',
-                  label: selectedLog.mood ? selectedLog.mood : 'Log Mood',
-                  color: colors.lavender,
-                  action: () => pickValue('How is your mood?', MOODS, (value) => patchSelectedLog({ mood: value })),
-                },
-                {
-                  icon: 'zap',
-                  label: selectedLog.energy ? selectedLog.energy : 'Log Energy',
-                  color: colors.warmYellow,
-                  action: () => pickValue('How is your energy?', ENERGY, (value) => patchSelectedLog({ energy: value })),
-                },
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.icon}
-                  style={[styles.logBtn, { backgroundColor: item.color + '18', borderColor: item.color + '40' }]}
-                  onPress={item.action}
-                  activeOpacity={0.8}
-                >
-                  <Feather name={item.icon as never} size={20} color={item.color} />
-                  <Text style={[styles.logBtnText, { color: colors.foreground }]}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(250).duration(500)}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Cycle Phases</Text>
-            {PHASES.map((phase) => (
-              <View
-                key={phase.id}
-                style={[
-                  styles.phaseRow,
-                  { backgroundColor: colors.card, borderColor: phase.id === previewPhase ? phase.color + '50' : colors.border },
-                ]}
-              >
-                <View style={[styles.phaseDot, { backgroundColor: phase.color }]} />
-                <View style={styles.phaseInfo}>
-                  <Text style={[styles.phaseLabel, { color: colors.foreground }]}>{phase.label}</Text>
-                  <Text style={[styles.phaseDays, { color: colors.mutedForeground }]}>Days {phase.days}</Text>
+                <View style={styles.dayGrid}>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => {
+                    const selected = tracking && profile.cycleDay === day && !pickingDay;
+                    const active = pickingDay && profile.cycleDay === day;
+                    const phase = phaseFromCycleDay(day);
+                    const phaseColor = CYCLE_PHASE_INFO[phase].color;
+                    return (
+                      <TouchableOpacity
+                        key={day}
+                        style={[
+                          styles.dayChip,
+                          {
+                            borderColor: active || selected ? phaseColor : colors.border,
+                            backgroundColor: active || selected ? phaseColor + '22' : colors.muted,
+                          },
+                        ]}
+                        onPress={() => applyCycleDay(day)}
+                        activeOpacity={0.85}
+                      >
+                        <Text
+                          style={[
+                            styles.dayChipText,
+                            { color: active || selected ? phaseColor : colors.foreground },
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                {phase.id === previewPhase ? (
-                  <View style={[styles.currentBadge, { backgroundColor: phase.color + '20', borderColor: phase.color + '50' }]}>
-                    <Text style={[styles.currentText, { color: phase.color }]}>{isTodaySelected ? 'Now' : 'This day'}</Text>
-                  </View>
+                <View style={styles.phaseLegend}>
+                  {PHASES.map((phase) => (
+                    <View key={phase.id} style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: phase.color }]} />
+                      <Text style={[styles.legendText, { color: colors.mutedForeground }]}>
+                        {phase.label} · {phase.days}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {tracking ? (
+                  <TouchableOpacity onPress={() => setPickingDay(false)} style={styles.cancelPick}>
+                    <Text style={[styles.cancelPickText, { color: colors.mutedForeground }]}>Cancel</Text>
+                  </TouchableOpacity>
                 ) : null}
               </View>
-            ))}
-          </Animated.View>
+            </Animated.View>
+          ) : null}
 
-          <Animated.View entering={FadeInDown.delay(300).duration(500)}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Phase Recommendations</Text>
-            {recs.map((rec) => (
-              <View key={rec.category} style={[styles.recCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.recIcon, { backgroundColor: rec.color + '20' }]}>
-                  <Feather name={rec.icon as never} size={18} color={rec.color} />
+          {!pickingDay ? (
+            <>
+              <Animated.View entering={FadeInDown.delay(150).duration(500)}>
+                <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.calendarHeader}>
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>This Week</Text>
+                    <TouchableOpacity onPress={() => setPickingDay(true)} hitSlop={8}>
+                      <Text style={[styles.editLink, { color: colors.primary }]}>Edit day</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.weekRow}>
+                    {weekDays.map((day) => {
+                      const selected = day.key === dateKey(selectedDate);
+                      return (
+                        <TouchableOpacity
+                          key={day.key}
+                          style={[styles.dayCell, selected && { backgroundColor: colors.primary }]}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            setSelectedDate(day.date);
+                          }}
+                        >
+                          <Text style={[styles.dayLabel, { color: selected ? '#FFFFFF' : colors.mutedForeground }]}>
+                            {day.dayLabel}
+                          </Text>
+                          <Text style={[styles.dayNum, { color: selected ? '#FFFFFF' : colors.foreground }]}>
+                            {day.dateNum}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {(selectedLog.mood || selectedLog.energy) ? (
+                    <Text style={[styles.logSummary, { color: colors.mutedForeground }]}>
+                      {selectedLog.mood ? `Mood: ${selectedLog.mood}` : ''}
+                      {selectedLog.mood && selectedLog.energy ? ' · ' : ''}
+                      {selectedLog.energy ? `Energy: ${selectedLog.energy}` : ''}
+                    </Text>
+                  ) : null}
                 </View>
-                <View style={styles.recInfo}>
-                  <Text style={[styles.recCategory, { color: rec.color }]}>{rec.category}</Text>
-                  <Text style={[styles.recText, { color: colors.foreground }]}>{rec.rec}</Text>
-                </View>
-              </View>
-            ))}
+              </Animated.View>
 
-            <View style={[styles.disclaimer, { backgroundColor: colors.muted }]}>
-              <Feather name="info" size={14} color={colors.mutedForeground} />
-              <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>
-                Predictions are estimates based on your logged data. Always consult your healthcare provider for medical advice.
-              </Text>
-            </View>
-          </Animated.View>
+              <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+                <View style={styles.logRow}>
+                  {[
+                    { icon: 'droplet', label: 'Log Period', color: colors.coral, action: logPeriod },
+                    {
+                      icon: 'smile',
+                      label: selectedLog.mood ? selectedLog.mood : 'Log Mood',
+                      color: colors.lavender,
+                      action: () => pickValue('How is your mood?', MOODS, (value) => patchSelectedLog({ mood: value })),
+                    },
+                    {
+                      icon: 'zap',
+                      label: selectedLog.energy ? selectedLog.energy : 'Log Energy',
+                      color: colors.warmYellow,
+                      action: () =>
+                        pickValue('How is your energy?', ENERGY, (value) => patchSelectedLog({ energy: value })),
+                    },
+                  ].map((item) => (
+                    <TouchableOpacity
+                      key={item.icon}
+                      style={[styles.logBtn, { backgroundColor: item.color + '18', borderColor: item.color + '40' }]}
+                      onPress={item.action}
+                      activeOpacity={0.8}
+                    >
+                      <Feather name={item.icon as never} size={20} color={item.color} />
+                      <Text style={[styles.logBtnText, { color: colors.foreground }]}>{item.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </Animated.View>
+
+              <Animated.View entering={FadeInDown.delay(250).duration(500)}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Cycle Phases</Text>
+                {PHASES.map((phase) => (
+                  <TouchableOpacity
+                    key={phase.id}
+                    style={[
+                      styles.phaseRow,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: phase.id === previewPhase ? phase.color + '50' : colors.border,
+                      },
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      Alert.alert(`Jump to ${phase.label}?`, `Sets today to day ${phase.startDay} of your cycle.`, [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Set', onPress: () => applyCycleDay(phase.startDay) },
+                      ]);
+                    }}
+                  >
+                    <View style={[styles.phaseDot, { backgroundColor: phase.color }]} />
+                    <View style={styles.phaseInfo}>
+                      <Text style={[styles.phaseLabel, { color: colors.foreground }]}>{phase.label}</Text>
+                      <Text style={[styles.phaseDays, { color: colors.mutedForeground }]}>Days {phase.days}</Text>
+                    </View>
+                    {phase.id === previewPhase ? (
+                      <View style={[styles.currentBadge, { backgroundColor: phase.color + '20', borderColor: phase.color + '50' }]}>
+                        <Text style={[styles.currentText, { color: phase.color }]}>
+                          {isTodaySelected ? 'Now' : 'This day'}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </Animated.View>
+
+              <Animated.View entering={FadeInDown.delay(300).duration(500)}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Phase Recommendations</Text>
+                {recs.map((rec) => (
+                  <View key={rec.category} style={[styles.recCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={[styles.recIcon, { backgroundColor: rec.color + '20' }]}>
+                      <Feather name={rec.icon as never} size={18} color={rec.color} />
+                    </View>
+                    <View style={styles.recInfo}>
+                      <Text style={[styles.recCategory, { color: rec.color }]}>{rec.category}</Text>
+                      <Text style={[styles.recText, { color: colors.foreground }]}>{rec.rec}</Text>
+                    </View>
+                  </View>
+                ))}
+
+                <View style={[styles.disclaimer, { backgroundColor: colors.muted }]}>
+                  <Feather name="info" size={14} color={colors.mutedForeground} />
+                  <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>
+                    Predictions are estimates based on your logged data. Always consult your healthcare provider for medical advice.
+                  </Text>
+                </View>
+              </Animated.View>
+            </>
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -345,20 +451,65 @@ export default function CycleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   headerGrad: { paddingBottom: 8 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 12 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingBottom: 12,
+  },
   title: { fontSize: 20, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
-  settingsBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
   body: { paddingHorizontal: 22, gap: 16 },
   phaseCard: { borderRadius: 20, padding: 20, gap: 12 },
   phaseTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  phaseCardLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontFamily: 'Manrope_600SemiBold', marginBottom: 4 },
+  phaseCardLabel: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 12,
+    fontFamily: 'Manrope_600SemiBold',
+    marginBottom: 4,
+  },
   phaseCardName: { color: '#FFFFFF', fontSize: 26, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
   phaseCardDay: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontFamily: 'Manrope_400Regular', marginTop: 4 },
-  phaseRing: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+  phaseRing: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   phaseRingNum: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
   phaseInsight: { padding: 12, borderRadius: 12 },
   phaseInsightText: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Manrope_400Regular', lineHeight: 21 },
+  pickerCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 12 },
+  pickerHint: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19, marginTop: -4 },
+  dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  dayChip: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayChipText: { fontSize: 14, fontFamily: 'Manrope_700Bold' },
+  phaseLegend: { gap: 6, marginTop: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 12, fontFamily: 'Manrope_500Medium' },
+  cancelPick: { alignSelf: 'center', paddingVertical: 6 },
+  cancelPickText: { fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
   calendarCard: { padding: 16, borderRadius: 18, borderWidth: 1, gap: 14 },
+  calendarHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  editLink: { fontSize: 13, fontFamily: 'Manrope_700Bold' },
   sectionTitle: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
   dayCell: { alignItems: 'center', padding: 8, borderRadius: 12, gap: 4, minWidth: 38 },
@@ -368,18 +519,41 @@ const styles = StyleSheet.create({
   logRow: { flexDirection: 'row', gap: 10 },
   logBtn: { flex: 1, alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, gap: 6 },
   logBtnText: { fontSize: 12, fontWeight: '600', fontFamily: 'Manrope_600SemiBold', textAlign: 'center' },
-  phaseRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, gap: 12, marginBottom: 8 },
+  phaseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 8,
+  },
   phaseDot: { width: 12, height: 12, borderRadius: 6 },
   phaseInfo: { flex: 1 },
   phaseLabel: { fontSize: 14, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   phaseDays: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
   currentBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100, borderWidth: 1 },
   currentText: { fontSize: 11, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  recCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 8, gap: 12 },
+  recCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 12,
+  },
   recIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  recInfo: { flex: 1, gap: 3 },
-  recCategory: { fontSize: 11, fontWeight: '700', fontFamily: 'Manrope_700Bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  recInfo: { flex: 1, gap: 2 },
+  recCategory: { fontSize: 12, fontFamily: 'Manrope_700Bold' },
   recText: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19 },
-  disclaimer: { padding: 14, borderRadius: 12, flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  disclaimer: {
+    flexDirection: 'row',
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 4,
+    alignItems: 'flex-start',
+  },
   disclaimerText: { flex: 1, fontSize: 12, fontFamily: 'Manrope_400Regular', lineHeight: 18 },
 });

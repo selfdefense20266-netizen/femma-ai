@@ -1,4 +1,5 @@
 import { supabase } from 'lib/supabase';
+import { uploadThumbnail } from 'api/uploadThumbnail';
 
 function slugify(text, fallbackPrefix = 'item') {
   const base = String(text || '')
@@ -66,6 +67,7 @@ export function mapCourse(row, moduleRows = [], lessonRows = []) {
     description: row.description || '',
     icon: row.icon || 'book',
     color: row.color || '#F26BB5',
+    imageUrl: row.image_url || '',
     level: row.level || 'All levels',
     equipment: row.equipment || 'None',
     status: row.status || 'draft',
@@ -142,6 +144,7 @@ export async function upsertCourse(payload) {
     description: payload.description || null,
     icon: payload.icon || 'book',
     color: payload.color || '#F26BB5',
+    image_url: payload.imageUrl || null,
     level: payload.level || 'All levels',
     equipment: payload.equipment || 'None',
     status: payload.status || 'draft',
@@ -157,6 +160,10 @@ export async function upsertCourse(payload) {
 export async function removeCourse(id) {
   const { error } = await supabase.from('courses').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function uploadCourseImage(courseId, file) {
+  return uploadThumbnail(`courses/${courseId || 'new'}`, file);
 }
 
 export async function upsertModule(courseId, payload) {
@@ -343,4 +350,21 @@ export async function syncProcessingLessonVideos() {
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+export async function uploadLessonThumbnail(lessonId, file) {
+  const publicUrl = await uploadThumbnail(`lesson-thumbs/${lessonId || 'new'}`, file);
+  return setLessonThumbnailUrl(lessonId, publicUrl);
+}
+
+export async function setLessonThumbnailUrl(lessonId, thumbnailUrl) {
+  const { data, error } = await supabase
+    .from('lessons')
+    .update({ thumbnail_url: thumbnailUrl || null })
+    .eq('id', lessonId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return mapLesson(data);
 }

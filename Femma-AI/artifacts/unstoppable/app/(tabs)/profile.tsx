@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Modal, Pressable, ActivityIndicator, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Modal, Pressable, ActivityIndicator, Switch, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -191,6 +191,34 @@ export default function ProfileScreen() {
               </View>
               <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
             </TouchableOpacity>
+
+            {isPremium ? (
+              <TouchableOpacity
+                style={[styles.settingsItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  const url =
+                    Platform.OS === 'ios'
+                      ? 'itms-apps://apps.apple.com/account/subscriptions'
+                      : 'https://play.google.com/store/account/subscriptions?sku=premium:monthly&package=femmi.app';
+                  Linking.openURL(url).catch(() => {
+                    Alert.alert('Could not open subscription settings', 'Please manage your subscription from the Play Store or App Store app directly.');
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.settingsIcon, { backgroundColor: colors.destructive + '18' }]}>
+                  <Feather name="x-circle" size={17} color={colors.destructive} />
+                </View>
+                <View style={styles.settingsCopy}>
+                  <Text style={[styles.settingsLabel, { color: colors.foreground }]}>Cancel Subscription</Text>
+                  <Text style={[styles.settingsDetail, { color: colors.mutedForeground }]}>
+                    Manage or cancel via {Platform.OS === 'ios' ? 'App Store' : 'Google Play'}
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            ) : null}
 
             <TouchableOpacity
               style={[styles.settingsItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}

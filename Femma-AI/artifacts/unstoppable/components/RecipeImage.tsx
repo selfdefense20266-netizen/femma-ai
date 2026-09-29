@@ -11,9 +11,10 @@ type Props = {
   style?: StyleProp<ViewStyle>;
   iconSize?: number;
   rounded?: number;
+  contentFit?: 'cover' | 'contain';
 };
 
-export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0 }: Props) {
+export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0, contentFit = 'cover' }: Props) {
   const local = localRecipeImage(recipe.image);
   const [uri, setUri] = useState<string | undefined>(local ? undefined : recipe.imageUrl);
 
@@ -39,7 +40,7 @@ export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0 
   return (
     <View style={[styles.wrap, style, radius ? { borderRadius: radius } : null]}>
       {source ? (
-        <Image source={source} style={styles.fill} contentFit="cover" recyclingKey={recipe.id} />
+        <Image source={source} style={styles.fill} contentFit={contentFit} recyclingKey={recipe.id} />
       ) : (
         <LinearGradient colors={recipe.gradient} style={styles.fill}>
           <View style={styles.fallback}>

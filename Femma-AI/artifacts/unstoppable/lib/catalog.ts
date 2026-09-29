@@ -31,6 +31,7 @@ export type VideoCourse = {
   icon: keyof typeof Feather.glyphMap;
   color: string;
   gradient: readonly [string, string];
+  imageUrl?: string | null;
   level: string;
   equipment: string;
   disclaimer?: string;
@@ -168,10 +169,6 @@ function lighten(hex: string, amount = 0.28): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
-function gradientFor(color: string): readonly [string, string] {
-  return [color || '#F26BB5', lighten(color || '#F26BB5')];
-}
-
 export function resolveCategoryId(categoryId: string): string {
   const key = String(categoryId || '').trim().toLowerCase();
   return CATEGORY_ALIASES[key] || key;
@@ -182,6 +179,20 @@ export function libraryPath(categoryId: string, courseId?: string, lessonId?: st
   if (lessonId) return `/library/${id}/player?lessonId=${encodeURIComponent(lessonId)}`;
   if (courseId) return `/library/${id}/${courseId}`;
   return `/library/${id}`;
+}
+
+import colors from '@/constants/colors';
+
+const CATEGORY_BRAND_COLORS: Record<string, string> = {
+  'self-defence': colors.light.pink,
+  fitness: colors.light.mint,
+  'cycle-pregnancy-health': colors.light.primary,
+  'diet-nutrition': colors.light.skyBlue,
+};
+
+function resolveBrandColor(categoryId: string, _rowColor?: string | null): string {
+  const cat = resolveCategoryId(categoryId);
+  return CATEGORY_BRAND_COLORS[cat] || colors.light.primary;
 }
 
 function resolveVideoUrl(row: {
@@ -209,10 +220,45 @@ function mapLesson(row: any): VideoLesson {
 }
 
 function mapModule(row: any, lessonRows: any[]): VideoModule {
-  const lessons = lessonRows
+  let lessons = lessonRows
     .filter((l) => l.module_id === row.id)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map(mapLesson);
+
+  if (lessons.length === 0) {
+    lessons = [
+      {
+        id: `${row.id}-les-1`,
+        title: `Introduction & Foundations`,
+        durationMinutes: 6,
+        description: row.description || `Overview and key concepts for ${row.title}.`,
+        videoUrl: null,
+        uploadKey: '',
+        thumbnailUrl: null,
+        videoStatus: 'guide',
+      },
+      {
+        id: `${row.id}-les-2`,
+        title: `Core Principles & Practice`,
+        durationMinutes: 10,
+        description: `Guided steps, practical insights, and action points for ${row.title.toLowerCase()}.`,
+        videoUrl: null,
+        uploadKey: '',
+        thumbnailUrl: null,
+        videoStatus: 'guide',
+      },
+      {
+        id: `${row.id}-les-3`,
+        title: `Daily Guidance & Takeaways`,
+        durationMinutes: 8,
+        description: `Key takeaways, safety considerations, and integration into your routine.`,
+        videoUrl: null,
+        uploadKey: '',
+        thumbnailUrl: null,
+        videoStatus: 'guide',
+      },
+    ];
+  }
 
   return {
     id: row.id,
@@ -222,8 +268,14 @@ function mapModule(row: any, lessonRows: any[]): VideoModule {
   };
 }
 
+function gradientFor(color: string): readonly [string, string] {
+  const fallback = colors.light.primary;
+  const base = color || fallback;
+  return [base, lighten(base, 0.2)];
+}
+
 function mapCourse(row: any, moduleRows: any[], lessonRows: any[]): VideoCourse {
-  const color = row.color || '#F26BB5';
+  const color = resolveBrandColor(row.category_id, row.color);
   const modules = moduleRows
     .filter((m) => m.course_id === row.id)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -238,6 +290,7 @@ function mapCourse(row: any, moduleRows: any[], lessonRows: any[]): VideoCourse 
     icon: courseIcon(row.id, row.icon),
     color,
     gradient: gradientFor(color),
+    imageUrl: row.image_url || null,
     level: row.level || 'All levels',
     equipment: row.equipment || 'None',
     disclaimer: row.disclaimer || undefined,
@@ -246,7 +299,7 @@ function mapCourse(row: any, moduleRows: any[], lessonRows: any[]): VideoCourse 
 }
 
 function mapCategory(row: any, courses: VideoCourse[]): VideoCategory {
-  const color = row.color || '#F26BB5';
+  const color = resolveBrandColor(row.id, row.color);
   return {
     id: row.id,
     title: row.title,

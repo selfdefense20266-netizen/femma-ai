@@ -114,9 +114,17 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
     addCustomerInfoListener((info) => {
       if (!mounted) return;
       const hasEntitlement = isPremiumFromCustomer(info);
-      setIsPremium(hasEntitlement);
-      setCurrentPlanId(hasEntitlement ? 'premium' : 'free');
-      if (user?.email) void syncPlanToSupabase(hasEntitlement ? 'premium' : 'free', user.email);
+      if (hasEntitlement) {
+        setIsPremium(true);
+        setCurrentPlanId('premium');
+        if (user?.email) void syncPlanToSupabase('premium', user.email);
+      } else {
+        // No active store subscription — this does NOT mean "downgrade to free":
+        // the user may have been granted premium manually (e.g. by an admin) in
+        // Supabase, which isn't a RevenueCat entitlement. Defer to the DB instead
+        // of blindly overwriting it back to free.
+        void syncPlanFromDb();
+      }
     }).then((unsub) => {
       unsubscribe = unsub;
     });
@@ -124,7 +132,7 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       unsubscribe?.();
     };
-  }, [apiKey, user?.email]);
+  }, [apiKey, user?.email, syncPlanFromDb]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -205,9 +213,9 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
         if (user?.email) await syncPlanToSupabase('premium', user.email);
         return true;
       }
-      setIsPremium(false);
-      setCurrentPlanId('free');
-      if (user?.email) await syncPlanToSupabase('free', user.email);
+      // No store purchase found to restore — don't force the account back to
+      // free here either; it may already be on an admin-granted premium plan.
+      await syncPlanFromDb();
       return false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Restore failed.');
@@ -215,7 +223,7 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user?.email]);
+  }, [user?.email, syncPlanFromDb]);
 
   const value = useMemo(
     () => ({

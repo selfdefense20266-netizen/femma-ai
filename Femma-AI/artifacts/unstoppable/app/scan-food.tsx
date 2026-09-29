@@ -8,7 +8,6 @@ import {
   Alert,
   Image,
   Platform,
-  ActivityIndicator,
   Modal,
   useWindowDimensions,
 } from 'react-native';
@@ -30,7 +29,13 @@ import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePurchases } from '@/context/PurchaseContext';
-import { getLastMealScan, scanMealFromBase64, setLastMealScan } from '@/lib/mealScan';
+import {
+  getLastMealScan,
+  getLastMealScanPhotoUri,
+  scanMealFromBase64,
+  setLastMealScan,
+  setLastMealScanPhotoUri,
+} from '@/lib/mealScan';
 import {
   formatScanTime,
   loadMealScans,
@@ -42,7 +47,6 @@ import ProgressBar from '@/components/ProgressBar';
 import SectionHeader from '@/components/SectionHeader';
 
 type Palette = ReturnType<typeof useColors>;
-type ScanMode = 'photo' | 'barcode';
 
 const DAILY_GOALS = {
   calories: 1800,
@@ -113,7 +117,6 @@ export default function ScanScreen() {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedMealScan[]>([]);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<ScanMode>('photo');
 
   const scanLineAnim = useSharedValue(0);
   const scanLineStyle = useAnimatedStyle(() => ({ transform: [{ translateY: scanLineAnim.value }] }));
@@ -142,7 +145,7 @@ export default function ScanScreen() {
         }
         const last = getLastMealScan();
         if (last?.name) {
-          const saved = await saveMealScan(last, user?.email);
+          const saved = await saveMealScan(last, user?.email, getLastMealScanPhotoUri());
           if (active) setHistory(saved);
           return;
         }
@@ -179,9 +182,9 @@ export default function ScanScreen() {
       setError('');
       setPreviewUri(asset.uri);
       setScanning(true);
-      const sweep = Math.max(220, windowHeight - 160);
+      const sweep = Math.max(180, Math.min(windowHeight * 0.55, 340));
       scanLineAnim.value = 0;
-      scanLineAnim.value = withRepeat(withTiming(sweep, { duration: 1600 }), -1, true);
+      scanLineAnim.value = withRepeat(withTiming(sweep, { duration: 1400 }), -1, true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       const result = await scanMealFromBase64({
@@ -193,7 +196,8 @@ export default function ScanScreen() {
         dailyTime: profile?.dailyTime,
       });
 
-      const rows = await saveMealScan(result, user?.email);
+      setLastMealScanPhotoUri(asset.uri);
+      const rows = await saveMealScan(result, user?.email, asset.uri);
       setHistory(rows);
       completeMission('nutrition');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -230,50 +234,110 @@ export default function ScanScreen() {
 
   const startCameraScan = async () => {
     if (!checkPremiumAccess()) return;
-    if (mode === 'barcode') {
-      Alert.alert('Coming soon', 'Barcode scanning will be available in a future update.');
-      return;
-    }
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Camera permission', 'Allow camera access to scan food, or use Gallery instead.');
-      return;
-    }
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Camera permission', 'Allow camera access to scan food, or use Gallery instead.');
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.5,
-      base64: true,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.5,
+        base64: true,
+      });
 
-    if (!result.canceled && result.assets?.[0]) {
-      await runScan(result.assets[0]);
+      if (!result.canceled && result.assets?.[0]) {
+        await runScan(result.assets[0]);
+      }
+    } catch (err) {
+      console.error('[ScanScreen] camera capture failed', err);
+      Alert.alert('Camera unavailable', err instanceof Error ? err.message : 'Could not open the camera. Try Gallery instead.');
     }
   };
 
   const pickImage = async () => {
     if (!checkPremiumAccess()) return;
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Photo permission', 'Allow photo library access to scan food.');
-      return;
-    }
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Photo permission', 'Allow photo library access to scan food.');
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.5,
-      base64: true,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.5,
+        base64: true,
+      });
 
-    if (!result.canceled && result.assets?.[0]) {
-      await runScan(result.assets[0]);
+      if (!result.canceled && result.assets?.[0]) {
+        await runScan(result.assets[0]);
+      }
+    } catch (err) {
+      console.error('[ScanScreen] gallery picker failed', err);
+      Alert.alert('Gallery unavailable', err instanceof Error ? err.message : 'Could not open your photo library.');
     }
   };
 
   const openHistory = (item: SavedMealScan) => {
     setLastMealScan(item.result);
+    setLastMealScanPhotoUri(item.photoUri || null);
     router.push('/nutrition/result' as never);
   };
+
+  if (!isPremium) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={[colors.softLavender, colors.background]}
+          style={[styles.hero, { paddingTop: topPad, paddingBottom: 0 }]}
+        >
+          <View style={styles.heroTop}>
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.back()}
+              accessibilityLabel="Go back"
+            >
+              <Feather name="arrow-left" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+            <View style={[styles.aiPill, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '28' }]}>
+              <Feather name="zap" size={12} color={colors.primary} />
+              <Text style={[styles.aiPillText, { color: colors.primary }]}>Fema AI</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.lockedWrap}>
+          <View style={[styles.lockedIcon, { backgroundColor: colors.primary + '14' }]}>
+            <Feather name="lock" size={28} color={colors.primary} />
+          </View>
+          <Text style={[styles.lockedTitle, { color: colors.foreground }]}>Meal Scanner is a Premium feature</Text>
+          <Text style={[styles.lockedSub, { color: colors.mutedForeground }]}>
+            Upgrade to Premium to instantly analyze calories, macros, and nutrition score from a photo of your meal.
+          </Text>
+          <TouchableOpacity
+            style={{ width: '100%' }}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/paywall');
+            }}
+            activeOpacity={0.88}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.deepPink]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.lockedCta}
+            >
+              <Feather name="star" size={18} color="#FFFFFF" />
+              <Text style={styles.lockedCtaText}>Upgrade to Premium</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -309,40 +373,6 @@ export default function ScanScreen() {
                 : 'Snap a photo for instant macros, score, and coach tips'}
             </Text>
           </Animated.View>
-
-          {/* Mode switch */}
-          <View style={[styles.modeRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {([
-              { id: 'photo' as const, label: 'Photo scan', icon: 'camera' as const },
-              { id: 'barcode' as const, label: 'Barcode', icon: 'maximize' as const, soon: true },
-            ]).map((item) => {
-              const active = mode === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.modeBtn,
-                    active && { backgroundColor: colors.primary + '14' },
-                  ]}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setMode(item.id);
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <Feather name={item.icon} size={15} color={active ? colors.primary : colors.mutedForeground} />
-                  <Text style={[styles.modeLabel, { color: active ? colors.primary : colors.mutedForeground }]}>
-                    {item.label}
-                  </Text>
-                  {item.soon ? (
-                    <View style={[styles.soonPill, { backgroundColor: colors.lavender + '35' }]}>
-                      <Text style={[styles.soonText, { color: colors.foreground }]}>Soon</Text>
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
         </LinearGradient>
 
         <View style={styles.body}>
@@ -352,7 +382,7 @@ export default function ScanScreen() {
               <View style={styles.viewfinderWrap}>
                 <View style={styles.viewfinder}>
                   {previewUri ? (
-                    <Image source={{ uri: previewUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+                    <Image source={{ uri: previewUri }} style={StyleSheet.absoluteFillObject} resizeMode="contain" />
                   ) : (
                     <LinearGradient
                       colors={[colors.softLavender, colors.lavender + '66', colors.primary + '22']}
@@ -397,16 +427,30 @@ export default function ScanScreen() {
                   ))}
 
                   {scanning ? (
-                    <Animated.View style={[styles.scanLine, { backgroundColor: colors.primary }, scanLineStyle]} />
+                    <>
+                      <View style={styles.viewfinderProcessDim} />
+                      <Animated.View
+                        style={[
+                          styles.scanLine,
+                          { backgroundColor: colors.primary, shadowColor: colors.primary },
+                          scanLineStyle,
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.processingBadge,
+                          { backgroundColor: 'rgba(23, 24, 28, 0.78)', borderColor: colors.primary + 'AA' },
+                        ]}
+                      >
+                        <Feather name="refresh-cw" size={13} color={colors.primary} />
+                        <Text style={[styles.processingBadgeText, { color: colors.primary }]}>PROCESSING...</Text>
+                      </View>
+                    </>
                   ) : null}
 
+                  {!scanning ? (
                   <View style={styles.viewfinderCenter}>
-                    {scanning ? (
-                      <View style={[styles.scanningBadge, { backgroundColor: 'rgba(255,255,255,0.88)' }]}>
-                        <ActivityIndicator color={colors.primary} size="small" />
-                        <Text style={[styles.scanningText, { color: colors.foreground }]}>Analyzing this meal…</Text>
-                      </View>
-                    ) : previewUri ? (
+                    {previewUri ? (
                       <Text style={styles.viewfinderHint}>Ready to scan this photo</Text>
                     ) : (
                       <>
@@ -417,6 +461,7 @@ export default function ScanScreen() {
                       </>
                     )}
                   </View>
+                  ) : null}
                 </View>
               </View>
 
@@ -564,12 +609,16 @@ export default function ScanScreen() {
                         onPress={() => openHistory(item)}
                         activeOpacity={0.85}
                       >
-                        <LinearGradient
-                          colors={[colors.softLavender, colors.lavender + '44']}
-                          style={styles.historyThumb}
-                        >
-                          <Feather name="coffee" size={18} color={colors.primary} />
-                        </LinearGradient>
+                        {item.photoUri ? (
+                          <Image source={{ uri: item.photoUri }} style={styles.historyThumb} resizeMode="contain" />
+                        ) : (
+                          <LinearGradient
+                            colors={[colors.softLavender, colors.lavender + '44']}
+                            style={styles.historyThumb}
+                          >
+                            <Feather name="coffee" size={18} color={colors.primary} />
+                          </LinearGradient>
+                        )}
                         <View style={styles.historyInfo}>
                           <Text style={[styles.historyName, { color: colors.foreground }]} numberOfLines={1}>
                             {item.result.name}
@@ -598,12 +647,31 @@ export default function ScanScreen() {
 
       <Modal visible={scanning && Boolean(previewUri)} animationType="fade" transparent statusBarTranslucent>
         <View style={styles.scanOverlay}>
-          <Image source={{ uri: previewUri || '' }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
-          <View style={styles.scanOverlayDim} />
-          <Animated.View style={[styles.scanOverlayLine, { backgroundColor: colors.primary }, scanLineStyle]} />
-          <View style={[styles.scanningBadge, styles.scanOverlayBadge, { backgroundColor: 'rgba(255,255,255,0.94)' }]}>
-            <ActivityIndicator color={colors.primary} size="small" />
-            <Text style={[styles.scanningText, { color: colors.foreground }]}>Analyzing this meal…</Text>
+          <View style={styles.scanOverlayCard}>
+            <Image source={{ uri: previewUri || '' }} style={styles.scanOverlayPhoto} resizeMode="contain" />
+            <View style={styles.scanOverlayDim} />
+            <Animated.View
+              style={[
+                styles.scanOverlayLine,
+                {
+                  backgroundColor: colors.primary,
+                  shadowColor: colors.primary,
+                },
+                scanLineStyle,
+              ]}
+            />
+            <View
+              style={[
+                styles.processingBadge,
+                {
+                  backgroundColor: 'rgba(23, 24, 28, 0.78)',
+                  borderColor: colors.primary + 'AA',
+                },
+              ]}
+            >
+              <Feather name="refresh-cw" size={14} color={colors.primary} />
+              <Text style={[styles.processingBadgeText, { color: colors.primary }]}>PROCESSING...</Text>
+            </View>
           </View>
         </View>
       </Modal>
@@ -613,6 +681,20 @@ export default function ScanScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  lockedWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 14 },
+  lockedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  lockedTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold', textAlign: 'center' },
+  lockedSub: { fontSize: 14, fontFamily: 'Manrope_400Regular', textAlign: 'center', lineHeight: 20, marginBottom: 8 },
+  lockedCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 54,
+    borderRadius: 27,
+    paddingHorizontal: 20,
+  },
+  lockedCtaText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Manrope_700Bold' },
   hero: { paddingHorizontal: 20, paddingBottom: 18, gap: 14 },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   iconBtn: {
@@ -646,32 +728,31 @@ const styles = StyleSheet.create({
   heroBadgeText: { fontSize: 10, fontFamily: 'Manrope_700Bold', letterSpacing: 0.6 },
   title: { fontSize: 30, fontFamily: 'Manrope_800ExtraBold', letterSpacing: -0.6, lineHeight: 36 },
   subtitle: { fontSize: 14, fontFamily: 'Manrope_400Regular', lineHeight: 20, maxWidth: 320 },
-  modeRow: {
-    flexDirection: 'row',
-    padding: 4,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 4,
-  },
-  modeBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  modeLabel: { fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
-  soonPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 100 },
-  soonText: { fontSize: 9, fontFamily: 'Manrope_700Bold' },
   body: { paddingHorizontal: 20, gap: 16, marginTop: 4 },
   scannerCard: { borderRadius: 24, borderWidth: 1, padding: 14, gap: 14 },
   viewfinderWrap: { borderRadius: 20, overflow: 'hidden' },
   viewfinder: { height: 260, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   viewfinderShade: { ...StyleSheet.absoluteFillObject },
   corner: { position: 'absolute', width: 28, height: 28, borderRadius: 4 },
-  scanLine: { position: 'absolute', left: 24, right: 24, height: 2, opacity: 0.85 },
+  scanLine: {
+    position: 'absolute',
+    left: 18,
+    right: 18,
+    top: 12,
+    height: 3,
+    borderRadius: 2,
+    opacity: 0.95,
+    zIndex: 3,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  viewfinderProcessDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    zIndex: 2,
+  },
   viewfinderCenter: { alignItems: 'center', gap: 10, zIndex: 2 },
   viewfinderIcon: {
     width: 64,
@@ -690,6 +771,24 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   scanningText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
+  processingBadge: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '46%',
+    zIndex: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 100,
+    borderWidth: 1.5,
+  },
+  processingBadgeText: {
+    fontSize: 12,
+    fontFamily: 'Manrope_800ExtraBold',
+    letterSpacing: 1.2,
+  },
   tipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tipChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
   tipText: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
@@ -746,8 +845,37 @@ const styles = StyleSheet.create({
   scoreBadge: { minWidth: 36, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100, borderWidth: 1, alignItems: 'center' },
   scoreBadgeText: { fontSize: 13, fontFamily: 'Manrope_800ExtraBold' },
   historyTime: { fontSize: 10.5, fontFamily: 'Manrope_400Regular' },
-  scanOverlay: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
-  scanOverlayDim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.28)' },
-  scanOverlayLine: { position: 'absolute', left: 28, right: 28, top: 80, height: 2, opacity: 0.9, zIndex: 2 },
-  scanOverlayBadge: { zIndex: 3 },
+  scanOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.82)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  scanOverlayCard: {
+    width: '100%',
+    maxWidth: 420,
+    aspectRatio: 1,
+    borderRadius: 22,
+    overflow: 'hidden',
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanOverlayPhoto: { ...StyleSheet.absoluteFillObject },
+  scanOverlayDim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 },
+  scanOverlayLine: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 16,
+    height: 3,
+    borderRadius: 2,
+    opacity: 0.95,
+    zIndex: 2,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 10,
+    elevation: 5,
+  },
 });

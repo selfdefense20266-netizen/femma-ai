@@ -124,24 +124,47 @@ function mergeCoachHistory(
     .slice(-100);
 }
 
+// Several independent parts of the app (PurchaseContext, AppContext, etc.) all
+// resolve the member id on load. Cache in-flight/resolved lookups per email so
+// they share one round trip instead of each firing their own, which was
+// stacking up latency and making premium/plan state settle noticeably late.
+const memberIdCache = new Map<string, Promise<string | null>>();
+
 export async function resolveMemberId(emailHint?: string): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) return null;
-  const { data } = await supabase.auth.getUser();
-  const email = (data.user?.email || emailHint || '').toLowerCase();
+  const cacheKey = (emailHint || '').toLowerCase().trim() || '__session__';
+  const cached = memberIdCache.get(cacheKey);
+  if (cached) return cached;
 
-  if (email) {
-    const byEmail = await supabase.from('members').select('id').eq('email', email).maybeSingle();
-    if (!byEmail.error && byEmail.data?.id) return byEmail.data.id as string;
-  }
+  const lookup = (async () => {
+    // The `members` table has open RLS (read/write by email lookup), so an active
+    // Supabase Auth session isn't required to resolve a member id — only used
+    // here as an enhancement when available (e.g. to also match by auth uid).
+    let email = (emailHint || '').toLowerCase();
+    let authId: string | undefined;
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData.session) {
+      const { data } = await supabase.auth.getUser();
+      email = (data.user?.email || email).toLowerCase();
+      authId = data.user?.id;
+    }
 
-  const authId = data.user?.id;
-  if (!authId) return null;
+    if (email) {
+      const byEmail = await supabase.from('members').select('id').eq('email', email).maybeSingle();
+      if (!byEmail.error && byEmail.data?.id) return byEmail.data.id as string;
+    }
 
-  const byId = await supabase.from('members').select('id').eq('id', authId).maybeSingle();
-  if (!byId.error && byId.data?.id) return byId.data.id as string;
-  return authId;
+    if (!authId) return null;
+
+    const byId = await supabase.from('members').select('id').eq('id', authId).maybeSingle();
+    if (!byId.error && byId.data?.id) return byId.data.id as string;
+    return authId;
+  })();
+
+  memberIdCache.set(cacheKey, lookup);
+  const result = await lookup;
+  if (!result) memberIdCache.delete(cacheKey); // don't cache a failed lookup — allow retry
+  return result;
 }
 
 export async function fetchMemberProgress(emailHint?: string): Promise<MemberProgressSnapshot | null> {
@@ -318,8 +341,6 @@ export async function saveMemberProgress(
   emailHint?: string
 ): Promise<boolean> {
   if (!isSupabaseConfigured) return false;
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) return false;
   const memberId = await resolveMemberId(emailHint);
   if (!memberId) return false;
 

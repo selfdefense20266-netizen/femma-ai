@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -10,6 +10,8 @@ import { getCourseLessons, courseProgressPercent, libraryPath, resolveCategoryId
 import { useCatalogCourse } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
 import ProgressBar from '@/components/ProgressBar';
+import AppLoading from '@/components/AppLoading';
+import { Image } from 'expo-image';
 
 type Props = { categoryId: LibraryCategoryId; courseId: string };
 
@@ -30,12 +32,7 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const firstIncomplete = lessons.find((item) => !completedLessonIds.includes(item.id)) ?? lessons[0];
 
   if (isLoading) {
-    return (
-      <View style={[styles.missing, { backgroundColor: colors.background, paddingTop: topPad }]}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={[styles.missingTitle, { color: colors.foreground }]}>Loading course…</Text>
-      </View>
-    );
+    return <AppLoading />;
   }
 
   if (error || !course || course.categoryId !== resolvedCategoryId) {
@@ -69,35 +66,69 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: botPad + 28, flexGrow: 1 }}
       >
-        <LinearGradient colors={[course.gradient[0], course.gradient[1]]} style={[styles.hero, { paddingTop: topPad }]}> 
-          <View style={styles.navRow}>
-            <TouchableOpacity accessibilityLabel="Go back" onPress={() => router.back()} style={styles.glassButton}>
-              <Feather name="arrow-left" size={21} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityLabel={isSaved ? 'Remove saved course' : 'Save course'}
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => undefined);
-                toggleSavedCourse(course.id);
-              }}
-              style={styles.glassButton}
-            >
-              <Feather name="bookmark" size={20} color="#FFFFFF" />
-              {isSaved && <View style={styles.savedDot} />}
-            </TouchableOpacity>
-          </View>
-          <View style={styles.heroIcon}>
-            <Feather name={course.icon} size={28} color="#FFFFFF" />
-          </View>
-          <Text style={styles.heroEyebrow}>{resolvedCategoryId.replace(/-/g, ' ').toUpperCase()} COURSE</Text>
-          <Text style={styles.heroTitle}>{course.title}</Text>
-          <Text style={styles.heroDescription}>{course.description}</Text>
-          <View style={styles.heroMeta}>
-            <View style={styles.heroMetaItem}><Feather name="layers" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{course.modules.length} modules</Text></View>
-            <View style={styles.heroMetaItem}><Feather name="play-circle" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{lessons.length} lessons</Text></View>
-            <View style={styles.heroMetaItem}><Feather name="bar-chart-2" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{course.level}</Text></View>
-          </View>
-        </LinearGradient>
+        {course.imageUrl ? (
+          <ImageBackground
+            source={{ uri: course.imageUrl }}
+            style={[styles.hero, { paddingTop: topPad }]}
+            imageStyle={styles.heroImage}
+          >
+            <View style={styles.heroOverlay} />
+            <View style={styles.navRow}>
+              <TouchableOpacity accessibilityLabel="Go back" onPress={() => router.back()} style={styles.glassButton}>
+                <Feather name="arrow-left" size={21} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityLabel={isSaved ? 'Remove saved course' : 'Save course'}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => undefined);
+                  toggleSavedCourse(course.id);
+                }}
+                style={styles.glassButton}
+              >
+                <Feather name="bookmark" size={20} color="#FFFFFF" />
+                {isSaved && <View style={styles.savedDot} />}
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.heroEyebrow}>{resolvedCategoryId.replace(/-/g, ' ').toUpperCase()} COURSE</Text>
+            <Text style={styles.heroTitle}>{course.title}</Text>
+            <Text style={styles.heroDescription}>{course.description}</Text>
+            <View style={styles.heroMeta}>
+              <View style={styles.heroMetaItem}><Feather name="layers" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{course.modules.length} modules</Text></View>
+              <View style={styles.heroMetaItem}><Feather name="play-circle" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{lessons.length} lessons</Text></View>
+              <View style={styles.heroMetaItem}><Feather name="bar-chart-2" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{course.level}</Text></View>
+            </View>
+          </ImageBackground>
+        ) : (
+          <LinearGradient colors={[course.gradient[0], course.gradient[1]]} style={[styles.hero, { paddingTop: topPad }]}>
+            <View style={styles.navRow}>
+              <TouchableOpacity accessibilityLabel="Go back" onPress={() => router.back()} style={styles.glassButton}>
+                <Feather name="arrow-left" size={21} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityLabel={isSaved ? 'Remove saved course' : 'Save course'}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => undefined);
+                  toggleSavedCourse(course.id);
+                }}
+                style={styles.glassButton}
+              >
+                <Feather name="bookmark" size={20} color="#FFFFFF" />
+                {isSaved && <View style={styles.savedDot} />}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.heroIcon}>
+              <Feather name={course.icon} size={28} color="#FFFFFF" />
+            </View>
+            <Text style={styles.heroEyebrow}>{resolvedCategoryId.replace(/-/g, ' ').toUpperCase()} COURSE</Text>
+            <Text style={styles.heroTitle}>{course.title}</Text>
+            <Text style={styles.heroDescription}>{course.description}</Text>
+            <View style={styles.heroMeta}>
+              <View style={styles.heroMetaItem}><Feather name="layers" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{course.modules.length} modules</Text></View>
+              <View style={styles.heroMetaItem}><Feather name="play-circle" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{lessons.length} lessons</Text></View>
+              <View style={styles.heroMetaItem}><Feather name="bar-chart-2" size={13} color="rgba(255,255,255,0.8)" /><Text style={styles.heroMetaText}>{course.level}</Text></View>
+            </View>
+          </LinearGradient>
+        )}
 
         <View style={styles.body}>
           {firstIncomplete ? (
@@ -123,9 +154,9 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
               <ProgressBar progress={progress} color={course.color} trackColor={colors.muted} height={6} />
             </View>
             <View style={styles.uploadStatus}>
-              <Feather name={uploadedCount === lessons.length ? 'check-circle' : 'upload-cloud'} size={14} color={uploadedCount ? course.color : colors.mutedForeground} />
+              <Feather name={uploadedCount > 0 ? 'video' : 'book-open'} size={14} color={course.color} />
               <Text style={[styles.uploadStatusText, { color: colors.mutedForeground }]}>
-                {uploadedCount} of {lessons.length} videos ready
+                {uploadedCount > 0 ? `${uploadedCount} of ${lessons.length} videos ready` : `${lessons.length} interactive lessons available`}
               </Text>
             </View>
           </View>
@@ -168,16 +199,24 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
                       const complete = completedLessonIds.includes(item.id);
                       return (
                         <TouchableOpacity key={item.id} onPress={() => openLesson(item.id)} activeOpacity={0.78} style={styles.lessonRow}>
-                          <View style={[styles.lessonStatus, { backgroundColor: complete ? course.color : colors.muted }]}> 
-                            <Feather name={complete ? 'check' : item.videoUrl ? 'play' : 'video'} size={13} color={complete ? '#FFFFFF' : item.videoUrl ? course.color : colors.mutedForeground} />
-                          </View>
+                          {item.thumbnailUrl ? (
+                            <Image
+                              source={{ uri: item.thumbnailUrl }}
+                              style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: colors.muted }}
+                              contentFit="contain"
+                            />
+                          ) : (
+                            <View style={[styles.lessonStatus, { backgroundColor: complete ? course.color : colors.muted }]}> 
+                              <Feather name={complete ? 'check' : item.videoUrl ? 'play' : 'video'} size={13} color={complete ? '#FFFFFF' : item.videoUrl ? course.color : colors.mutedForeground} />
+                            </View>
+                          )}
                           <View style={styles.lessonText}>
                             <Text numberOfLines={2} style={[styles.lessonTitle, { color: colors.foreground }]}>{lessonIndex + 1}. {item.title}</Text>
                             <View style={styles.lessonMetaRow}>
                               <Text style={[styles.lessonMeta, { color: colors.mutedForeground }]}>{item.durationMinutes} min</Text>
                               <View style={[styles.lessonMetaDot, { backgroundColor: colors.border }]} />
                               <Text style={[styles.lessonMeta, { color: item.videoUrl ? course.color : colors.mutedForeground }]}>
-                                {item.videoUrl ? 'Ready to watch' : 'Awaiting upload'}
+                                {item.videoUrl ? 'Ready to watch' : 'Guided lesson'}
                               </Text>
                             </View>
                           </View>
@@ -209,7 +248,16 @@ const styles = StyleSheet.create({
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
   missingTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
   missingButton: { borderRadius: 20, paddingHorizontal: 22, paddingVertical: 12 },
-  hero: { paddingHorizontal: 20, paddingBottom: 25, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  hero: { paddingHorizontal: 20, paddingBottom: 25, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden' },
+  heroImage: { resizeMode: 'contain' },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+  },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   glassButton: { width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   savedDot: { position: 'absolute', right: 8, top: 8, width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFFFFF' },

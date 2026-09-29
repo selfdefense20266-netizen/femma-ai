@@ -28,14 +28,14 @@ export default function GoalStep() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1, 2, 3, 4].map((i) => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i === 1 ? colors.primary : colors.border }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 1 of 5</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 1 of 4</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>What do you want to train?</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>
-          Pick one. We build a 1, 2, or 3 month roadmap, recipes you can eat, and food-scan advice from this.
+          Pick one activity. We match you to that plan and tailor workouts to your level.
         </Text>
       </View>
 

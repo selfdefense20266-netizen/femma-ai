@@ -9,7 +9,7 @@ export type GifHit = {
   media?: string;
   /** Exact ExerciseDB catalog / search name */
   catalog?: string;
-  localKey?: 'bike' | 'march' | 'jacks' | 'rope' | 'yoga' | 'jog' | 'treadmill' | 'squat' | 'pushup';
+  localKey?: 'bike' | 'march' | 'jacks' | 'rope' | 'yoga' | 'jog' | 'treadmill' | 'squat' | 'pushup' | 'breath';
 };
 
 type Rule = {
@@ -49,7 +49,7 @@ const RULES: Rule[] = [
   // Yoga / mobility before generic plank so "down-dog to plank" maps correctly.
   { test: /down.?dog|downward|cat-cow|cat cow/, name: 'Downward dog', localKey: 'yoga' },
   { test: /sun.?salute|vinyasa|yoga|kata|pigeon|warrior|savasana|child|butterfly yoga/, name: 'Yoga flow', localKey: 'yoga' },
-  { test: /stand.*balance|balance/, name: 'Standing balance', localKey: 'yoga' },
+  { test: /stand.*balance|\bbalance\b/, name: 'Standing balance', localKey: 'yoga' },
   { test: /plank shoulder tap|shoulder tap/, name: 'Shoulder tap', catalog: 'shoulder tap' },
   { test: /side plank/, name: 'Side plank', catalog: 'bodyweight incline side plank' },
   { test: /plank/, name: 'Plank', catalog: 'power point plank' },
@@ -80,7 +80,7 @@ const RULES: Rule[] = [
   { test: /kettlebell swing/, name: 'Kettlebell swing', catalog: 'kettlebell swing' },
   { test: /pelvic tilt/, name: 'Pelvic tilt', catalog: 'pelvic tilt' },
   { test: /superman/, name: 'Superman', catalog: 'superman push-up' },
-  { test: /deep breath|breath|exhale|box breathing|body scan|nervous system|pranayama/, name: 'Deep breath', localKey: 'yoga' },
+  { test: /deep breath|breath|exhale|box breathing|body scan|nervous system|pranayama/, name: 'Deep breath', localKey: 'breath' },
   { test: /footwork|stance|guard-up|parry|clinch|awareness|scenario|wrist-release|voice/, name: 'Boxing guard', catalog: 'left hook. boxing' },
   { test: /sled|prowler|machine circuit|spin cool/, name: 'Easy jog / walk', catalog: 'farmers walk', localKey: 'jog' },
   { test: /hollow/, name: 'Dead bug', catalog: 'dead bug' },
@@ -100,7 +100,7 @@ const ANIMATION_FALLBACK: Record<string, Rule> = {
   guard: { test: /.*/, name: 'Boxing hook', catalog: 'left hook. boxing' },
   kick: { test: /.*/, name: 'Leg kick', catalog: 'push-up inside leg kick' },
   stretch: { test: /.*/, name: 'Full-body stretch', catalog: 'runners stretch' },
-  breath: { test: /.*/, name: 'Deep breath', localKey: 'yoga' },
+  breath: { test: /.*/, name: 'Deep breath', localKey: 'breath' },
   flow: { test: /.*/, name: 'Yoga flow', localKey: 'yoga' },
   prenatal: { test: /.*/, name: 'Supported squat', catalog: 'potty squat with support', localKey: 'squat' },
   recover: { test: /.*/, name: 'Full-body stretch', catalog: 'runners stretch' },

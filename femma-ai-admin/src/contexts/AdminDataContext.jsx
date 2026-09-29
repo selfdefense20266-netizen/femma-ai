@@ -12,8 +12,22 @@ import {
   upsertLesson,
   removeLesson,
   uploadLessonVideo,
-  syncProcessingLessonVideos
+  uploadLessonThumbnail,
+  setLessonThumbnailUrl,
+  syncProcessingLessonVideos,
+  uploadCourseImage
 } from 'api/content';
+import { fetchJourneys, upsertJourney, removeJourney, uploadJourneyImage } from 'api/journeys';
+import {
+  fetchDailyPlans,
+  upsertDailyPlan,
+  removeDailyPlan,
+  uploadDailyPlanMedia,
+  assignMemberDailyPlan,
+  fetchExerciseLibrary,
+  upsertExerciseLibraryItem,
+  removeExerciseLibraryItem
+} from 'api/dailyPlans';
 import { fetchMembersBundle, upsertMember, updateMemberStatus, assignMemberPlan, updatePlanPrice } from 'api/members';
 import { fetchNotifications, upsertNotification, markNotificationSent, createAndSendNotification } from 'api/notifications';
 import { DEFAULT_SETTINGS, fetchSettings, saveAppSettings } from 'api/settings';
@@ -86,6 +100,14 @@ function buildAnalytics({ users, categories, courses }) {
 export function AdminDataProvider({ children }) {
   const [categories, setCategories] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [journeys, setJourneys] = useState([]);
+  const [journeysLoading, setJourneysLoading] = useState(true);
+  const [journeysError, setJourneysError] = useState(null);
+  const [dailyPlans, setDailyPlans] = useState([]);
+  const [dailyPlansLoading, setDailyPlansLoading] = useState(true);
+  const [dailyPlansError, setDailyPlansError] = useState(null);
+  const [exerciseLibrary, setExerciseLibrary] = useState([]);
+  const [exerciseLibraryLoading, setExerciseLibraryLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
@@ -107,6 +129,26 @@ export function AdminDataProvider({ children }) {
     setCourses(catalog.courses);
     setContentError(null);
     return catalog;
+  }, []);
+
+  const refreshJourneys = useCallback(async () => {
+    const rows = await fetchJourneys();
+    setJourneys(rows);
+    setJourneysError(null);
+    return rows;
+  }, []);
+
+  const refreshDailyPlans = useCallback(async () => {
+    const rows = await fetchDailyPlans();
+    setDailyPlans(rows);
+    setDailyPlansError(null);
+    return rows;
+  }, []);
+
+  const refreshExerciseLibrary = useCallback(async () => {
+    const rows = await fetchExerciseLibrary();
+    setExerciseLibrary(rows);
+    return rows;
   }, []);
 
   const refreshMembers = useCallback(async () => {
@@ -149,6 +191,49 @@ export function AdminDataProvider({ children }) {
       mounted = false;
     };
   }, [refreshCatalog]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setJourneysLoading(true);
+        await refreshJourneys();
+      } catch (err) {
+        if (!mounted) return;
+        setJourneysError(err.message || 'Failed to load guided journeys from Supabase');
+        setJourneys([]);
+      } finally {
+        if (mounted) setJourneysLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [refreshJourneys]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setDailyPlansLoading(true);
+        setExerciseLibraryLoading(true);
+        await Promise.all([refreshDailyPlans(), refreshExerciseLibrary()]);
+      } catch (err) {
+        if (!mounted) return;
+        setDailyPlansError(err.message || 'Failed to load daily plans from Supabase');
+        setDailyPlans([]);
+        setExerciseLibrary([]);
+      } finally {
+        if (mounted) {
+          setDailyPlansLoading(false);
+          setExerciseLibraryLoading(false);
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [refreshDailyPlans, refreshExerciseLibrary]);
 
   useEffect(() => {
     let mounted = true;
@@ -202,6 +287,10 @@ export function AdminDataProvider({ children }) {
   const deleteCourse = useCallback(async (id) => {
     await removeCourse(id);
     setCourses((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
+  const uploadCoursePicture = useCallback(async (courseId, file) => {
+    return uploadCourseImage(courseId, file);
   }, []);
 
   const saveModule = useCallback(async (courseId, modulePayload) => {
@@ -278,6 +367,101 @@ export function AdminDataProvider({ children }) {
     );
     return saved;
   }, []);
+
+  const uploadThumbnail = useCallback(async (lessonId, file) => {
+    const saved = await uploadLessonThumbnail(lessonId, file);
+    setCourses((prev) =>
+      prev.map((course) => ({
+        ...course,
+        modules: course.modules.map((module) => ({
+          ...module,
+          lessons: module.lessons.map((lesson) => (lesson.id === lessonId ? { ...lesson, ...saved } : lesson))
+        }))
+      }))
+    );
+    return saved;
+  }, []);
+
+  const updateThumbnailUrl = useCallback(async (lessonId, url) => {
+    const saved = await setLessonThumbnailUrl(lessonId, url);
+    setCourses((prev) =>
+      prev.map((course) => ({
+        ...course,
+        modules: course.modules.map((module) => ({
+          ...module,
+          lessons: module.lessons.map((lesson) => (lesson.id === lessonId ? { ...lesson, ...saved } : lesson))
+        }))
+      }))
+    );
+    return saved;
+  }, []);
+
+  // Guided journeys
+  const saveJourney = useCallback(async (payload) => {
+    const saved = await upsertJourney(payload);
+    setJourneys((prev) => {
+      const exists = prev.some((j) => j.id === saved.id);
+      return exists ? prev.map((j) => (j.id === saved.id ? saved : j)) : [...prev, saved];
+    });
+    return saved;
+  }, []);
+
+  const deleteJourney = useCallback(async (id) => {
+    await removeJourney(id);
+    setJourneys((prev) => prev.filter((j) => j.id !== id));
+  }, []);
+
+  const uploadJourneyPicture = useCallback(async (journeyId, file) => {
+    return uploadJourneyImage(journeyId, file);
+  }, []);
+
+  const saveDailyPlan = useCallback(async (payload) => {
+    const saved = await upsertDailyPlan(payload);
+    setDailyPlans((prev) => {
+      const exists = prev.some((p) => p.id === saved.id);
+      return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [...prev, saved];
+    });
+    return saved;
+  }, []);
+
+  const deleteDailyPlan = useCallback(async (id) => {
+    await removeDailyPlan(id);
+    setDailyPlans((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const uploadDailyPlanPicture = useCallback(async (planId, file) => {
+    return uploadDailyPlanMedia(planId, file);
+  }, []);
+
+  const saveExerciseLibraryItem = useCallback(async (payload) => {
+    const saved = await upsertExerciseLibraryItem(payload);
+    setExerciseLibrary((prev) => {
+      const without = prev.filter((p) => p.id !== saved.id);
+      return [saved, ...without];
+    });
+    return saved;
+  }, []);
+
+  const deleteExerciseLibraryItem = useCallback(async (id) => {
+    await removeExerciseLibraryItem(id);
+    setExerciseLibrary((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const assignDailyPlan = useCallback(async (userId, planId) => {
+    const row = await assignMemberDailyPlan(userId, planId || null);
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              dailyPlanId: row.daily_plan_id || '',
+              dailyPlanTitle: dailyPlans.find((p) => p.id === row.daily_plan_id)?.title || ''
+            }
+          : u
+      )
+    );
+    return row;
+  }, [dailyPlans]);
 
   const saveUser = useCallback(
     async (payload) => {
@@ -387,12 +571,23 @@ export function AdminDataProvider({ children }) {
       settings,
       categories,
       courses,
+      journeys,
+      journeysLoading,
+      journeysError,
+      dailyPlans,
+      dailyPlansLoading,
+      dailyPlansError,
+      exerciseLibrary,
+      exerciseLibraryLoading,
       contentLoading,
       membersLoading,
       contentError,
       membersError,
       refreshCatalog,
       refreshMembers,
+      refreshJourneys,
+      refreshDailyPlans,
+      refreshExerciseLibrary,
       lessons,
       stats,
       analytics,
@@ -401,11 +596,23 @@ export function AdminDataProvider({ children }) {
       deleteCategory,
       saveCourse,
       deleteCourse,
+      uploadCoursePicture,
       saveModule,
       deleteModule,
       saveLesson,
       deleteLesson,
       uploadLessonMedia,
+      uploadThumbnail,
+      updateThumbnailUrl,
+      saveJourney,
+      deleteJourney,
+      uploadJourneyPicture,
+      saveDailyPlan,
+      deleteDailyPlan,
+      uploadDailyPlanPicture,
+      saveExerciseLibraryItem,
+      deleteExerciseLibraryItem,
+      assignDailyPlan,
       saveUser,
       setUserStatus,
       assignPlan,
@@ -423,12 +630,23 @@ export function AdminDataProvider({ children }) {
       settings,
       categories,
       courses,
+      journeys,
+      journeysLoading,
+      journeysError,
+      dailyPlans,
+      dailyPlansLoading,
+      dailyPlansError,
+      exerciseLibrary,
+      exerciseLibraryLoading,
       contentLoading,
       membersLoading,
       contentError,
       membersError,
       refreshCatalog,
       refreshMembers,
+      refreshJourneys,
+      refreshDailyPlans,
+      refreshExerciseLibrary,
       lessons,
       stats,
       analytics,
@@ -436,11 +654,23 @@ export function AdminDataProvider({ children }) {
       deleteCategory,
       saveCourse,
       deleteCourse,
+      uploadCoursePicture,
       saveModule,
       deleteModule,
       saveLesson,
       deleteLesson,
       uploadLessonMedia,
+      uploadThumbnail,
+      updateThumbnailUrl,
+      saveJourney,
+      deleteJourney,
+      uploadJourneyPicture,
+      saveDailyPlan,
+      deleteDailyPlan,
+      uploadDailyPlanPicture,
+      saveExerciseLibraryItem,
+      deleteExerciseLibraryItem,
+      assignDailyPlan,
       saveUser,
       setUserStatus,
       assignPlan,

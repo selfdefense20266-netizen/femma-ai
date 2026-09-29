@@ -5,6 +5,7 @@ export type SavedMealScan = {
   id: string;
   scannedAt: string;
   result: MealScanResult;
+  photoUri?: string;
 };
 
 const MAX_SCANS = 40;
@@ -27,12 +28,14 @@ export async function loadMealScans(email?: string | null): Promise<SavedMealSca
 
 export async function saveMealScan(
   result: MealScanResult,
-  email?: string | null
+  email?: string | null,
+  photoUri?: string | null
 ): Promise<SavedMealScan[]> {
   const next: SavedMealScan = {
     id: `scan-${Date.now()}`,
     scannedAt: new Date().toISOString(),
     result,
+    ...(photoUri ? { photoUri } : {}),
   };
   const current = await loadMealScans(email);
   const all = [next, ...current].slice(0, MAX_SCANS);
