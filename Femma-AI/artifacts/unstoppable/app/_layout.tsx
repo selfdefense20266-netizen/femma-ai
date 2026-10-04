@@ -49,6 +49,7 @@ function RootLayoutNav() {
       <Stack.Screen name="safety" options={{ headerShown: false }} />
       <Stack.Screen name="cycle" options={{ headerShown: false }} />
       <Stack.Screen name="nutrition" options={{ headerShown: false }} />
+      <Stack.Screen name="diet" options={{ headerShown: false }} />
       <Stack.Screen name="recipe" options={{ headerShown: false }} />
       <Stack.Screen name="exercise-guide" options={{ headerShown: false }} />
       <Stack.Screen name="recovery/[type]" options={{ headerShown: false }} />

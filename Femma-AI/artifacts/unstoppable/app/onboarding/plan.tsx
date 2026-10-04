@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   retryBtn: {
     marginTop: 20,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

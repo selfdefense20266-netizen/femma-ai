@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 8, fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.65)', textAlign: 'center', fontFamily: 'Manrope_400Regular' },
   form: { gap: 16 },
   formError: { fontSize: 13, fontFamily: 'Manrope_500Medium', textAlign: 'center' },
-  primaryBtn: { height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  primaryBtn: { height: 56, borderRadius: 100, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   primaryBtnText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope_700Bold' },
   switchBtn: { marginTop: 22, alignItems: 'center' },
   switchText: { fontSize: 15, color: 'rgba(255,255,255,0.65)', fontFamily: 'Manrope_400Regular' },

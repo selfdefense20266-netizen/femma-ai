@@ -35,6 +35,7 @@ import {
   ensureYogaDeepBreathPlan,
   primaryRoadmapCategory,
 } from '@/lib/exerciseRoadmap';
+import { prefetchAiDietPlan } from '@/lib/dietPlanAi';
 
 export type MissionCategory = 'fitness' | 'yoga' | 'safety' | 'nutrition' | 'recipe';
 export type MissionSlot = 'course' | 'meal' | 'recipe' | 'exercise';
@@ -89,6 +90,9 @@ export interface UserProfile {
   planHistory: TrainingPlan[];
   /** Locked admin daily plan id (activity plan matched at onboarding) */
   dailyPlanId?: string;
+  /** Body metrics for personalized diet calories */
+  heightCm?: number;
+  weightKg?: number;
 }
 
 export const LEVEL_NAMES: Record<Level, string> = {
@@ -216,6 +220,8 @@ const DEFAULT_PROFILE: UserProfile = {
   planDurationWeeks: 8,
   trainingPlan: null,
   planHistory: [],
+  heightCm: 0,
+  weightKg: 0,
 };
 
 const STORAGE_KEYS = {
@@ -285,6 +291,8 @@ interface AppContextType {
   coachChatHistory: CoachChatHistoryMessage[];
   activityLog: ActivityEvent[];
   syncReady: boolean;
+  /** True after local load + first cloud merge (or clear) for the current auth user. */
+  accountReady: boolean;
   stagedPlan: PersonalizedPlan | null;
   buildOnboardingPlan: () => Promise<PersonalizedPlan>;
   updateProfile: (updates: Partial<UserProfile>) => void;
@@ -533,6 +541,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [coachChatHistory, setCoachChatHistory] = useState<CoachChatHistoryMessage[]>([]);
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
   const [syncReady, setSyncReady] = useState(false);
+  const [accountReady, setAccountReady] = useState(false);
   const [stagedPlan, setStagedPlan] = useState<PersonalizedPlan | null>(null);
   const cloudTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiPlanPromiseRef = useRef<Promise<PersonalizedPlan> | null>(null);
@@ -628,16 +637,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!syncReady || authLoading) return;
     let mounted = true;
     const email = normalizeEmail(user?.email);
+    setAccountReady(false);
 
     (async () => {
-      // Logged out — drop in-memory progress so the next account starts clean.
-      if (!email) {
-        applySnapshot(emptySnapshot());
-        await clearLocalSnapshot();
-        return;
-      }
-
       try {
+        // Logged out — drop in-memory progress so the next account starts clean.
+        if (!email) {
+          applySnapshot(emptySnapshot());
+          await clearLocalSnapshot();
+          return;
+        }
+
         const owner = await readLocalOwner();
         const localBelongsToUser = owner === email;
         if (!localBelongsToUser) {
@@ -660,6 +670,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.warn('Cloud progress sync failed', error);
+      } finally {
+        if (mounted) setAccountReady(true);
       }
     })();
 
@@ -1025,6 +1037,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       const profileNow = snapshotRef.current.profile;
+      const { fetchMemberDailyPlanId } = await import('@/lib/dailyPlans');
       let adminPlan = null as Awaited<ReturnType<typeof fetchResolvedDailyPlan>>;
       try {
         adminPlan = await fetchResolvedDailyPlan(profileNow, user?.email || null);
@@ -1032,7 +1045,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         adminPlan = null;
       }
 
-      if (adminPlan?.id && user?.email) {
+      // Never overwrite an admin-assigned plan. Only seed auto-match when none is set.
+      const existingAssigned = user?.email ? await fetchMemberDailyPlanId(user.email) : null;
+      if (!existingAssigned && adminPlan?.id && user?.email) {
         await assignMemberDailyPlan(user.email, adminPlan.id);
       }
 
@@ -1181,6 +1196,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setStagedPlan(null);
     void persistAll(next, { immediateCloud: true });
+    // Generate AI 30-day diet (height/weight/activity) and save to DB in background.
+    prefetchAiDietPlan(profile, user?.email);
   };
 
   const advanceTestDay = useCallback(() => {
@@ -1356,6 +1373,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         coachChatHistory,
         activityLog,
         syncReady,
+        accountReady,
         stagedPlan,
         buildOnboardingPlan,
         updateProfile,

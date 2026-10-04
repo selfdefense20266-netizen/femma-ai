@@ -61,6 +61,7 @@ export function calorieTarget(profile: NutritionProfile) {
 
 export function foodRule(preference?: string) {
   const food = (preference || '').toLowerCase();
+  if (food.includes('carnivore')) return 'carnivore';
   if (food.includes('vegan')) return 'vegan';
   if (food.includes('vegetarian')) return 'vegetarian';
   if (food.includes('gluten')) return 'gluten-free';
@@ -88,6 +89,7 @@ export function recipeCoachNotes(profile: NutritionProfile) {
   const notes = [
     `Only suggest meals she can eat: ${profile.foodPreference || 'Eat everything'}.`,
     food === 'vegan' ? 'No meat, fish, eggs, or dairy.' : '',
+    food === 'carnivore' ? 'Animal-based only: meat, fish, eggs, and animal fats. Skip plants, grains, and sugars.' : '',
     food === 'vegetarian' ? 'No meat or fish.' : '',
     food === 'gluten-free' ? 'No wheat, barley, rye, or regular soy sauce.' : '',
     food === 'dairy-free' ? 'No milk, cheese, yogurt, or butter.' : '',
@@ -109,6 +111,7 @@ export function recipeFitsDiet(input: { title?: string; tags?: string[]; ingredi
   const hay = `${input.title || ''} ${(input.tags || []).join(' ')} ${(input.ingredients || []).join(' ')}`.toLowerCase();
   const veganTag = (input.tags || []).some((tag) => /vegan/i.test(tag));
   if (rule === 'vegan') return veganTag || (!MEAT.test(hay) && !FISH.test(hay) && !DAIRY.test(hay) && !EGG.test(hay));
+  if (rule === 'carnivore') return MEAT.test(hay) || FISH.test(hay) || EGG.test(hay) || DAIRY.test(hay);
   if (rule === 'vegetarian') return !MEAT.test(hay) && !FISH.test(hay);
   if (rule === 'dairy-free') return !DAIRY.test(hay);
   if (rule === 'gluten-free') return !GLUTEN.test(hay);

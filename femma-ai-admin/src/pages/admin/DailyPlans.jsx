@@ -22,6 +22,7 @@ import StatusChip from 'components/admin/StatusChip';
 import Loader from 'components/Loader';
 import { useAdminData } from 'contexts/AdminDataContext';
 import { ITEM_TYPE_OPTIONS, USER_TYPE_OPTIONS, INTENSITY_OPTIONS } from 'api/dailyPlans';
+import { isVideoMediaUrl } from 'utils/mediaUrl';
 
 // assets
 import PlusOutlined from '@ant-design/icons/PlusOutlined';
@@ -38,8 +39,8 @@ const emptyLibrary = () => ({
   itemType: 'exercise',
   tag: '',
   subtitle: '',
-  durationMinutes: 10,
-  restMinutes: 0,
+  durationMinutes: 300,
+  restMinutes: 30,
   mediaUrl: '',
   cue: '',
   steps: [],
@@ -53,6 +54,14 @@ function typeLabel(type) {
 
 function userLabel(id) {
   return USER_TYPE_OPTIONS.find((o) => o.id === id)?.label || id;
+}
+
+function formatSec(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem ? `${m}m ${rem}s` : `${m}m`;
 }
 
 const scrollBoxSx = {
@@ -99,19 +108,38 @@ function ExerciseCard({ item, onEdit, onDelete }) {
         }}
       >
         {item.mediaUrl ? (
-          <Box
-            component="img"
-            src={item.mediaUrl}
-            alt={item.title}
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              objectPosition: 'center'
-            }}
-          />
+          isVideoMediaUrl(item.mediaUrl) ? (
+            <Box
+              component="video"
+              src={item.mediaUrl}
+              muted
+              loop
+              autoPlay
+              playsInline
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                objectPosition: 'center'
+              }}
+            />
+          ) : (
+            <Box
+              component="img"
+              src={item.mediaUrl}
+              alt={item.title}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                objectPosition: 'center'
+              }}
+            />
+          )
         ) : (
           <Stack alignItems="center" justifyContent="center" sx={{ height: '100%', color: 'text.disabled' }}>
             <FireOutlined style={{ fontSize: 28 }} />
@@ -127,7 +155,7 @@ function ExerciseCard({ item, onEdit, onDelete }) {
         />
         <Chip
           size="small"
-          label={`${item.durationMinutes} min`}
+          label={formatSec(item.durationMinutes)}
           sx={{
             position: 'absolute',
             top: 10,
@@ -168,7 +196,7 @@ function ExerciseCard({ item, onEdit, onDelete }) {
       >
         <Typography variant="caption" color="text.secondary" noWrap display="block">
           {item.tag || typeLabel(item.itemType)}
-          {item.restMinutes ? ` · rest ${item.restMinutes}m` : ''}
+          {item.restMinutes ? ` · rest ${formatSec(item.restMinutes)}` : ''}
         </Typography>
         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
           <IconButton size="small" onClick={onEdit} sx={{ bgcolor: 'primary.lighter' }}>
@@ -213,7 +241,7 @@ export default function DailyPlans() {
     return (exerciseLibrary || [])
       .filter((item) => {
         const type = String(item.itemType || 'exercise').toLowerCase();
-        return type === 'exercise' || type === 'rest';
+        return type === 'exercise';
       })
       .slice()
       .sort((a, b) => {
@@ -248,7 +276,7 @@ export default function DailyPlans() {
       setError('');
       await saveExerciseLibraryItem({
         ...libForm,
-        itemType: libForm.itemType || 'exercise',
+        itemType: 'exercise',
         sortOrder: libForm.id ? libForm.sortOrder : Date.now()
       });
       await refreshExerciseLibrary();
@@ -711,40 +739,46 @@ export default function DailyPlans() {
       </MainCard>
 
       {/* Exercise drawer */}
-      <input ref={libFileRef} type="file" accept="image/*,.gif" hidden onChange={onLibUpload} />
+      <input ref={libFileRef} type="file" accept="image/*,.gif,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" hidden onChange={onLibUpload} />
       <Drawer anchor="right" open={libOpen} onClose={() => setLibOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, height: '100%', overflow: 'hidden' } }}>
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
           <Typography variant="h4" sx={{ mb: 0.5, fontWeight: 800, flexShrink: 0 }}>
             {libForm.id ? 'Edit exercise' : 'New exercise'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flexShrink: 0 }}>
-            Add a name and GIF — then place it on any plan day.
+            Add a name and video or GIF — then place it on any plan day.
           </Typography>
           <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Stack spacing={1.75}>
-              <TextField select label="Type" value={libForm.itemType} onChange={(e) => setLibForm((p) => ({ ...p, itemType: e.target.value }))}>
-                {ITEM_TYPE_OPTIONS.map((o) => (
-                  <MenuItem key={o.id} value={o.id}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </TextField>
               <TextField label="Name" fullWidth value={libForm.title} onChange={(e) => setLibForm((p) => ({ ...p, title: e.target.value }))} placeholder="e.g. Bodyweight Squats" />
               <Stack direction="row" spacing={1}>
-                <TextField type="number" label="Minutes" fullWidth value={libForm.durationMinutes} onChange={(e) => setLibForm((p) => ({ ...p, durationMinutes: Number(e.target.value) || 0 }))} />
-                <TextField type="number" label="Rest (min)" fullWidth value={libForm.restMinutes} onChange={(e) => setLibForm((p) => ({ ...p, restMinutes: Number(e.target.value) || 0 }))} />
+                <TextField type="number" label="Work (sec)" fullWidth value={libForm.durationMinutes} onChange={(e) => setLibForm((p) => ({ ...p, durationMinutes: Number(e.target.value) || 0 }))} helperText="e.g. 300 = 5m, 45 = 45s" />
+                <TextField type="number" label="Rest after (sec)" fullWidth value={libForm.restMinutes} onChange={(e) => setLibForm((p) => ({ ...p, restMinutes: Number(e.target.value) || 0 }))} helperText="e.g. 30 or 10" />
               </Stack>
               <TextField label="Tip (optional)" fullWidth multiline minRows={2} value={libForm.cue} onChange={(e) => setLibForm((p) => ({ ...p, cue: e.target.value }))} />
               <Button variant="outlined" startIcon={<CloudUploadOutlined />} onClick={() => libFileRef.current?.click()} disabled={libUploading}>
-                {libUploading ? 'Uploading…' : 'Upload photo / GIF'}
+                {libUploading ? 'Uploading…' : 'Upload video / GIF / photo'}
               </Button>
               {libForm.mediaUrl ? (
-                <Box
-                  component="img"
-                  src={libForm.mediaUrl}
-                  alt=""
-                  sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}
-                />
+                isVideoMediaUrl(libForm.mediaUrl) ? (
+                  <Box
+                    component="video"
+                    src={libForm.mediaUrl}
+                    controls
+                    muted
+                    loop
+                    autoPlay
+                    playsInline
+                    sx={{ width: '100%', maxHeight: 220, objectFit: 'contain', borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}
+                  />
+                ) : (
+                  <Box
+                    component="img"
+                    src={libForm.mediaUrl}
+                    alt=""
+                    sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'grey.50' }}
+                  />
+                )
               ) : null}
             </Stack>
           </Box>

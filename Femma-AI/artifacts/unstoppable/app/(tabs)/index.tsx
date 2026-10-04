@@ -27,7 +27,7 @@ import { useAppHomeTitles } from '@/hooks/useAppSettings';
 import { useProgramCards } from '@/hooks/useProgramCards';
 import { DEFAULT_HOME_TITLES } from '@/lib/appSettings';
 import { itemMetaLine, itemsForDay, intensityFromProfile, userTypeFromProfile, type DailyPlanItem } from '@/lib/dailyPlans';
-import { defaultMediaForDailyItem } from '@/lib/dailyPlanMedia';
+import { defaultMediaForDailyItem, isVideoMediaUrl } from '@/lib/dailyPlanMedia';
 import { sectionExercisesForLevel } from '@/lib/recoverySections';
 import { Image } from 'expo-image';
 
@@ -118,9 +118,10 @@ export default function TodayScreen() {
     activityLog,
     completeMission,
     skipTodayTasks,
+    updateProfile,
   } = useApp();
   const { user } = useAuth();
-  const { isPremium, ready: purchasesReady } = usePurchases();
+  const { isPremium, hasAccess, needsResumePaywall, inGracePeriod, graceDaysLeft, ready: purchasesReady } = usePurchases();
   const { data: catalog } = useCatalog();
   const { data: adminDailyPlan } = useDailyPlan();
   const { data: recoverySections = [] } = useRecoverySections();
@@ -130,6 +131,7 @@ export default function TodayScreen() {
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
   const [restModalOpen, setRestModalOpen] = useState(false);
+  const [recoverConfirmId, setRecoverConfirmId] = useState<string | null>(null);
   const programItems: CarouselItem[] = programCards.map((card) => ({
     id: card.id,
     tag: 'Program',
@@ -150,20 +152,28 @@ export default function TodayScreen() {
 
 
   useEffect(() => {
-    if (!onboardingCompleted || !purchasesReady || isPremium || planGateShownThisSession) return;
-    // Debounce: premium status can settle a beat after `ready` flips (DB sync,
-    // RevenueCat listener correction, etc). Wait briefly and re-check instead
-    // of navigating immediately — if isPremium corrects to true in the
-    // meantime, this effect re-runs and the cleanup below cancels the timer,
-    // so the gate never shows (no push-then-immediately-dismiss flash).
-    // 1.8s covers the realistic worst case of several chained Supabase
-    // round trips needed to resolve the member/plan on a cold start.
+    if (!onboardingCompleted || !purchasesReady || hasAccess) return;
+    // Resume paywall always; soft gate once per session otherwise.
+    if (!needsResumePaywall && planGateShownThisSession) return;
     const timer = setTimeout(() => {
       planGateShownThisSession = true;
-      router.push('/plan-gate');
-    }, 1800);
+      router.push({
+        pathname: '/plan-gate',
+        params: { mode: needsResumePaywall ? 'resume' : 'subscribe' },
+      } as never);
+    }, 1200);
     return () => clearTimeout(timer);
-  }, [onboardingCompleted, purchasesReady, isPremium]);
+  }, [onboardingCompleted, purchasesReady, hasAccess, needsResumePaywall]);
+
+  // Keep local profile in sync when admin changes Assigned daily plan (Yoga, Boxing, …).
+  useEffect(() => {
+    if (!adminDailyPlan?.id) return;
+    if (profile.dailyPlanId === adminDailyPlan.id && profile.planName === adminDailyPlan.title) return;
+    updateProfile({
+      dailyPlanId: adminDailyPlan.id,
+      planName: adminDailyPlan.title,
+    });
+  }, [adminDailyPlan?.id, adminDailyPlan?.title, profile.dailyPlanId, profile.planName, updateProfile]);
 
   useEffect(() => {
     if (!onboardingCompleted) return;
@@ -216,15 +226,19 @@ export default function TodayScreen() {
     return colors.primary;
   };
 
-  const adminItemToCarousel = (item: DailyPlanItem, dayTaskIds = ''): CarouselItem => {
+  const adminItemToCarousel = (item: DailyPlanItem, dayTaskIds = '', dayTasksJson = ''): CarouselItem => {
     const levelTag = (item.intensityLevel || 'guided').replace(/-/g, ' ');
     const planTitle = (adminDailyPlan?.title || adminDailyPlan?.userType || 'plan').replace(/-/g, ' ');
     const planTag = adminDailyPlan ? `${planTitle} • ${levelTag}`.toUpperCase() : null;
     const completed = isItemCompleted(item.id);
     const skipped = !completed && (daySkipped || isItemSkipped(item.id));
-    const media = item.mediaUrl?.trim()
-      ? item.mediaUrl.trim()
-      : defaultMediaForDailyItem({ ...item, mediaUrl: null });
+    const adminUrl = item.mediaUrl?.trim() || '';
+    // Cards use image/GIF thumbnails; videos play on the exercise-guide screen.
+    const thumb =
+      adminUrl && !isVideoMediaUrl(adminUrl)
+        ? adminUrl
+        : defaultMediaForDailyItem({ ...item, mediaUrl: null });
+    const guideMedia = adminUrl || (typeof thumb === 'string' ? thumb : '');
     return {
       id: item.id,
       tag: planTag || item.tag || `${item.itemType} • Guided`,
@@ -243,7 +257,7 @@ export default function TodayScreen() {
           iconSize={36}
           style={styles.carouselMedia}
           contentFit="contain"
-          imageUrl={media}
+          imageUrl={thumb}
           lockMedia
         />
       ),
@@ -259,12 +273,14 @@ export default function TodayScreen() {
             title: item.title,
             animation: 'flow',
             cue: item.cue || '',
-            duration: String(item.durationMinutes || 10),
+            duration: String(item.durationMinutes || 300),
             steps: (item.steps || []).join('|'),
             missionId: item.id,
             category: item.itemType === 'recovery' || item.itemType === 'rest' ? 'yoga' : 'fitness',
-            mediaUrl: typeof media === 'string' ? media : '',
+            mediaUrl: guideMedia,
+            restMinutes: String(item.restMinutes || 0),
             dayTaskIds,
+            dayTasks: dayTasksJson,
           },
         } as never);
       },
@@ -273,7 +289,26 @@ export default function TodayScreen() {
 
   const adminTaskRaw = itemsForDay(adminDailyPlan, profile.journeyDay || 1, ['exercise', 'rest']);
   const dayTaskIdsParam = adminTaskRaw.map((item) => item.id).join('|');
-  const adminTaskItems = adminTaskRaw.map((item) => adminItemToCarousel(item, dayTaskIdsParam));
+  const dayTasksParam = JSON.stringify(
+    adminTaskRaw.map((item) => {
+      const adminUrl = item.mediaUrl?.trim() || '';
+      const thumb =
+        adminUrl && !isVideoMediaUrl(adminUrl)
+          ? adminUrl
+          : defaultMediaForDailyItem({ ...item, mediaUrl: null });
+      return {
+        id: item.id,
+        title: item.title,
+        duration: item.durationMinutes || 300,
+        restMinutes: item.restMinutes || 0,
+        mediaUrl: adminUrl || (typeof thumb === 'string' ? thumb : ''),
+        cue: item.cue || '',
+        steps: (item.steps || []).join('|'),
+        category: item.itemType === 'recovery' || item.itemType === 'rest' ? 'yoga' : 'fitness',
+      };
+    })
+  );
+  const adminTaskItems = adminTaskRaw.map((item) => adminItemToCarousel(item, dayTaskIdsParam, dayTasksParam));
   const todayTaskIdList = adminTaskRaw.map((item) => item.id);
 
   const fallbackTaskItems: CarouselItem[] = taskMissions.map((mission) => {
@@ -393,7 +428,22 @@ export default function TodayScreen() {
     if (!anyTodayTaskStarted && !daySkipped) {
       skipTodayTasks(skipTargetIds);
     }
+    setRecoverConfirmId(null);
     router.push(`/recovery/${sectionId}` as never);
+  };
+
+  const requestRecoveryStretch = (sectionId: string) => {
+    Haptics.selectionAsync();
+    if (!anyTodayTaskStarted && !daySkipped) {
+      setRecoverConfirmId(sectionId);
+      return;
+    }
+    startRecoveryStretch(sectionId);
+  };
+
+  const confirmRecoveryStretch = () => {
+    if (!recoverConfirmId) return;
+    startRecoveryStretch(recoverConfirmId);
   };
 
   const planFinished =
@@ -417,11 +467,12 @@ export default function TodayScreen() {
           title: mission.title,
           animation: mission.animation || 'flow',
           cue: mission.cue || '',
-          duration: String(mission.duration || 10),
+          duration: String((mission.duration || 10) * 60),
           steps: (mission.steps || []).join('|'),
           missionId: mission.id,
           category: mission.category || '',
           mediaUrl: typeof mission.mediaUrl === 'string' ? mission.mediaUrl : '',
+          restMinutes: '30',
         },
       } as never);
       return;
@@ -503,16 +554,16 @@ export default function TodayScreen() {
               <Text style={[styles.heroPlan, { color: colors.foreground }]} numberOfLines={1}>
                 {planDisplayName}
               </Text>
-              <View style={[styles.dayPill, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '28' }]}>
-                <Text style={[styles.dayPillText, { color: colors.primary }]}>Day {profile.journeyDay}</Text>
+              <View style={[styles.dayPill, { backgroundColor: colors.primary + '55', borderColor: colors.deepPink }]}>
+                <Text style={[styles.dayPillText, { color: colors.foreground }]}>Day {profile.journeyDay}</Text>
               </View>
             </View>
             <View style={styles.planTypeRow}>
-              <View style={[styles.planTypePill, { backgroundColor: colors.lavender + '22', borderColor: colors.lavender + '40' }]}>
-                <Text style={[styles.planTypeText, { color: colors.lavender }]}>{planActivityLabel}</Text>
+              <View style={[styles.planTypePill, { backgroundColor: colors.lavender + '55', borderColor: '#7B68C9' }]}>
+                <Text style={[styles.planTypeText, { color: colors.foreground }]}>{planActivityLabel}</Text>
               </View>
-              <View style={[styles.planTypePill, { backgroundColor: colors.mint + '22', borderColor: colors.mint + '50' }]}>
-                <Text style={[styles.planTypeText, { color: '#239B7A' }]}>{planLevelLabel}</Text>
+              <View style={[styles.planTypePill, { backgroundColor: colors.mint + '55', borderColor: '#1F8A6C' }]}>
+                <Text style={[styles.planTypeText, { color: colors.foreground }]}>{planLevelLabel}</Text>
               </View>
             </View>
             <View style={styles.contextRow}>
@@ -523,6 +574,18 @@ export default function TodayScreen() {
                 {greeting} · {dateLabel}
               </Text>
             </View>
+            {inGracePeriod ? (
+              <TouchableOpacity
+                style={[styles.graceBanner, { backgroundColor: colors.warmYellow + '33', borderColor: '#C9952A' }]}
+                activeOpacity={0.88}
+                onPress={() => router.push({ pathname: '/plan-gate', params: { mode: 'subscribe' } } as never)}
+              >
+                <Feather name="clock" size={14} color="#C9952A" />
+                <Text style={[styles.graceBannerText, { color: colors.foreground }]}>
+                  Trial ends in {graceDaysLeft} day{graceDaysLeft === 1 ? '' : 's'} — renew to keep access
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </Animated.View>
 
           <Animated.View
@@ -685,6 +748,73 @@ export default function TodayScreen() {
             onSeeAll={() => router.push('/(tabs)/explore')}
           />
 
+          <View style={styles.foodSection}>
+            <View style={styles.foodHeader}>
+              <Text style={[styles.foodTitle, { color: colors.foreground }]}>{homeTitles.foodTitle}</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.foodOptionsRow}
+              decelerationRate="fast"
+            >
+              <TouchableOpacity
+                style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={0.9}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (!hasAccess) {
+                    router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
+                    return;
+                  }
+                  router.push('/diet' as never);
+                }}
+              >
+                <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.mint + '28' }]}>
+                  <Ionicons name="restaurant-outline" size={36} color="#2FA88F" />
+                </View>
+                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Diet plan</Text>
+                <Text style={[styles.foodOptionMeta, { color: '#2FA88F' }]}>Meals for today</Text>
+              </TouchableOpacity>
+
+              {isPremium ? (
+                <TouchableOpacity
+                  style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push('/scan-food' as never);
+                  }}
+                >
+                  <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.warmYellow + '33' }]}>
+                    <Ionicons name="scan-outline" size={36} color="#C9952A" />
+                  </View>
+                  <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Scan meal</Text>
+                  <Text style={[styles.foodOptionMeta, { color: '#C9952A' }]}>Plate analysis</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              <TouchableOpacity
+                style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={0.9}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (!hasAccess) {
+                    router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
+                    return;
+                  }
+                  router.push('/recipe' as never);
+                }}
+              >
+                <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.primary + '18' }]}>
+                  <Ionicons name="book-outline" size={36} color={colors.primary} />
+                </View>
+                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Recipes</Text>
+                <Text style={[styles.foodOptionMeta, { color: colors.primary }]}>Cook with AI</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+
           <View style={styles.recoverySection}>
             <View style={styles.recoveryHeader}>
               <Text style={[styles.recoveryTitle, { color: colors.foreground }]}>{homeTitles.recoveryTitle}</Text>
@@ -713,7 +843,7 @@ export default function TodayScreen() {
                         setRestModalOpen(true);
                         return;
                       }
-                      startRecoveryStretch(section.id);
+                      requestRecoveryStretch(section.id);
                     }}
                   >
                     <View style={styles.recoveryMediaWrap}>
@@ -760,48 +890,6 @@ export default function TodayScreen() {
               cardWidth={168}
             />
           ) : null}
-
-          <View style={styles.foodSection}>
-            <View style={styles.foodHeader}>
-              <Text style={[styles.foodTitle, { color: colors.foreground }]}>{homeTitles.foodTitle}</Text>
-            </View>
-            <View style={styles.foodOptionsRow}>
-              {isPremium ? (
-                <TouchableOpacity
-                  style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  activeOpacity={0.88}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push('/scan-food' as never);
-                  }}
-                >
-                  <View style={[styles.foodOptionIcon, { backgroundColor: colors.warmYellow + '22' }]}>
-                    <Feather name="aperture" size={22} color={colors.warmYellow} />
-                  </View>
-                  <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Scan Meal</Text>
-                  <Text style={[styles.foodOptionMeta, { color: colors.mutedForeground }]}>Premium · plate scan</Text>
-                </TouchableOpacity>
-              ) : null}
-              <TouchableOpacity
-                style={[
-                  styles.foodOptionCard,
-                  !isPremium && styles.foodOptionCardWide,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-                activeOpacity={0.88}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push('/recipe' as never);
-                }}
-              >
-                <View style={[styles.foodOptionIcon, { backgroundColor: colors.primary + '18' }]}>
-                  <Feather name="coffee" size={22} color={colors.primary} />
-                </View>
-                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Recipes</Text>
-                <Text style={[styles.foodOptionMeta, { color: colors.mutedForeground }]}>Browse all recipes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </Animated.View>
 
         <View style={styles.bodyPad}>
@@ -864,6 +952,35 @@ export default function TodayScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={Boolean(recoverConfirmId)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRecoverConfirmId(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.modalIcon, { backgroundColor: colors.lavender + '22' }]}>
+              <Feather name="wind" size={28} color={colors.lavender} />
+            </View>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Skip today’s tasks?</Text>
+            <Text style={[styles.modalBody, { color: colors.mutedForeground }]}>
+              Are you sure you want to skip today’s tasks and recover? Today’s tasks will be marked skipped and you won’t earn points for this day.
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalPrimary, { backgroundColor: colors.primary }]}
+              onPress={confirmRecoveryStretch}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.modalPrimaryText}>Yes, skip & recover</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalCancel} onPress={() => setRecoverConfirmId(null)} activeOpacity={0.8}>
+              <Text style={[styles.modalCancelText, { color: colors.mutedForeground }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -898,6 +1015,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Manrope_400Regular',
     lineHeight: 18,
+  },
+  graceBanner: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  graceBannerText: {
+    flex: 1,
+    fontSize: 12.5,
+    fontFamily: 'Manrope_600SemiBold',
+    lineHeight: 17,
   },
   greetingIconWrap: {
     width: 22,
@@ -1172,33 +1305,48 @@ const styles = StyleSheet.create({
   modalPrimaryText: { color: '#fff', fontSize: 16, fontFamily: 'Manrope_700Bold' },
   modalCancel: { paddingVertical: 8 },
   modalCancelText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
-  foodHeader: { paddingHorizontal: 22, marginBottom: 14 },
+  foodHeader: { paddingHorizontal: 22, marginBottom: 12 },
   foodTitle: {
     fontSize: 20,
     fontWeight: '700',
     fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.3,
   },
-  foodOptionsRow: { flexDirection: 'row', paddingHorizontal: 22, gap: 12 },
-  foodOptionCard: {
-    flex: 1,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    gap: 6,
+  foodOptionsRow: {
+    paddingHorizontal: 22,
+    gap: 12,
+    paddingBottom: 2,
   },
-  foodOptionCardWide: { flex: 1 },
-  foodOptionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  foodOptionCard: {
+    width: 148,
+    minHeight: 168,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingVertical: 20,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  foodOptionLabel: { fontSize: 16, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
-  foodOptionMeta: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
+  foodOptionIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  foodOptionLabel: {
+    fontSize: 16,
+    fontFamily: 'Manrope_800ExtraBold',
+    letterSpacing: -0.2,
+    textAlign: 'center',
+  },
+  foodOptionMeta: {
+    fontSize: 12,
+    fontFamily: 'Manrope_500Medium',
+    marginTop: 4,
+    textAlign: 'center',
+  },
   programMedia: { width: '100%', height: '100%' },
   programMediaFallback: {
     width: '100%',

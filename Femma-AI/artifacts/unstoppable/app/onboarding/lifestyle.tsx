@@ -13,7 +13,7 @@ const ENVIRONMENTS = [
   { id: 'both', label: 'Both', icon: 'repeat', desc: 'Mix of home & gym' },
 ];
 
-const FOOD_STYLES = ['Eat everything', 'Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
+const FOOD_STYLES = ['Eat everything', 'Vegetarian', 'Carnivore', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
 
 export default function LifestyleStep() {
   const colors = useColors();
@@ -41,11 +41,11 @@ export default function LifestyleStep() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i <= 3 ? colors.primary : colors.border }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 3 of 4</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 3 of 6</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>Your lifestyle</Text>
       </View>
 
@@ -81,11 +81,11 @@ export default function LifestyleStep() {
             {FOOD_STYLES.map(f => (
               <TouchableOpacity
                 key={f}
-                style={[styles.chip, { backgroundColor: food === f ? colors.mint + '30' : colors.muted, borderColor: food === f ? colors.mint : colors.border }]}
+                style={[styles.chip, { backgroundColor: food === f ? colors.mint : colors.muted, borderColor: food === f ? colors.mint : colors.border }]}
                 onPress={() => { Haptics.selectionAsync(); setFood(f); }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.chipText, { color: food === f ? '#2d8a6b' : colors.mutedForeground }]}>{f}</Text>
+                <Text style={[styles.chipText, { color: food === f ? '#FFFFFF' : colors.mutedForeground }]}>{f}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -103,7 +103,7 @@ export default function LifestyleStep() {
               environment: selectedEnv?.label || env || '',
               foodPreference: food || 'Eat everything',
             });
-            router.push('/onboarding/cycle');
+            router.push('/onboarding/height');
           }}
           activeOpacity={0.85}
         >
@@ -126,13 +126,13 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 24 },
   label: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold', marginBottom: 12 },
   envRow: { flexDirection: 'row', gap: 10 },
-  envCard: { padding: 16, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', gap: 6 },
+  envCard: { padding: 16, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', gap: 6 },
   envLabel: { fontSize: 14, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   envDesc: { fontSize: 11, fontFamily: 'Manrope_400Regular', textAlign: 'center' },
   foodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 100, borderWidth: 1.5 },
   chipText: { fontSize: 13, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12 },
-  nextBtn: { height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  nextBtn: { height: 56, borderRadius: 100, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   nextBtnText: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
 });

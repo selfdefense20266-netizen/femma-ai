@@ -1,6 +1,14 @@
 import { LOCAL_GIFS } from '@/data/exerciseGifAssets';
 import type { DailyPlanItem } from '@/lib/dailyPlans';
 
+/** True when media_url points at a video (admin upload), not a GIF/image. */
+export function isVideoMediaUrl(url?: string | number | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  if (/^data:video\//i.test(url)) return true;
+  const clean = url.split('?')[0].split('#')[0].toLowerCase();
+  return /\.(mp4|webm|mov|m4v|avi)$/i.test(clean);
+}
+
 /** Local fallbacks when admin media_url is empty. */
 export function defaultMediaForDailyItem(item: DailyPlanItem): string | number {
   if (item.mediaUrl) return item.mediaUrl;

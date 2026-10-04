@@ -82,11 +82,12 @@ export default function RecoverySessionScreen() {
                       title: item.title,
                       animation: 'flow',
                       cue: item.cue || '',
-                      duration: String(item.durationMinutes || 10),
+                      duration: String(item.durationMinutes || 300),
                       steps: (item.steps || []).join('|'),
                       missionId: item.id,
                       category: 'yoga',
                       mediaUrl: typeof item.mediaUrl === 'string' ? item.mediaUrl : '',
+                      restMinutes: String(item.restMinutes || 0),
                     },
                   } as never);
                 }}

@@ -41,9 +41,9 @@ export default function RevealScreen() {
         <LinearGradient colors={[colors.softLavender, colors.background]} style={styles.hero}>
           <View style={{ paddingTop: topPad + 24, paddingHorizontal: 24 }}>
             <Animated.View entering={FadeInDown.delay(100).duration(600)}>
-              <View style={[styles.planBadge, { backgroundColor: colors.primary + '18', borderColor: colors.primary + '40' }]}>
-                <Feather name="star" size={14} color={colors.primary} />
-                <Text style={[styles.planBadgeText, { color: colors.primary }]}>Your plan is ready</Text>
+              <View style={[styles.planBadge, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                <Feather name="star" size={14} color="#FFFFFF" />
+                <Text style={[styles.planBadgeText, { color: '#FFFFFF' }]}>Your plan is ready</Text>
               </View>
               <Text style={[styles.heroTitle, { color: colors.foreground }]}>
                 {(plan.planName || 'Your').replace(/\s*Plan$/i, '')}

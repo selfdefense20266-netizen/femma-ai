@@ -30,11 +30,11 @@ export default function CycleStep() {
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </TouchableOpacity>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <View key={i} style={[styles.progressDot, { backgroundColor: colors.primary }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 4 of 4</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 6 of 6</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>Cycle & reproductive health</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>Your data stays private and is only used to personalize your plan.</Text>
       </View>
@@ -104,12 +104,12 @@ const styles = StyleSheet.create({
   subtext: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19 },
   scroll: { flex: 1 },
   body: { paddingHorizontal: 24, gap: 10, paddingTop: 8 },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1.5, gap: 14 },
-  optionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  option: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1.5, gap: 14 },
+  optionIcon: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   optionText: { flex: 1 },
   optionLabel: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   optionDesc: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12 },
-  nextBtn: { height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  nextBtn: { height: 56, borderRadius: 100, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   nextBtnText: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
 });

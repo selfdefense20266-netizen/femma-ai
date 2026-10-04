@@ -21,7 +21,9 @@ export function useDailyPlan() {
       dailyPlanId,
     ],
     queryFn: () => fetchResolvedDailyPlan(profile, email),
-    enabled: Boolean(profile.goal || profile.fitnessLevel || dailyPlanId),
-    staleTime: 60_000,
+    enabled: Boolean(email || profile.goal || profile.fitnessLevel || dailyPlanId),
+    staleTime: 15_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }

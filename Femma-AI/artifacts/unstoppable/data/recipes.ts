@@ -190,6 +190,10 @@ export function recipesForProfile(profile: UserProfile, filter: string): Recipe[
     if (recipeFitsTraining(recipe, profile)) n += 8;
     if (profile.isPregnant || goalIds.includes('pregnancy')) n += hasTag(recipe, 'Pregnancy') ? 10 : 0;
     if (food.includes('vegan')) n += hasTag(recipe, 'Vegan') ? 8 : 0;
+    if (food.includes('carnivore')) {
+      n += hasTag(recipe, 'High Protein') ? 8 : 0;
+      n += Math.min(10, Math.round(recipe.protein / 6));
+    }
     if (food.includes('protein') || goalIds.some((id) => COMBAT_FOCUS.has(id === 'selfdefense' ? 'self-defense' : id))) {
       n += hasTag(recipe, 'High Protein') ? 6 : 0;
       n += Math.min(8, Math.round(recipe.protein / 8));
