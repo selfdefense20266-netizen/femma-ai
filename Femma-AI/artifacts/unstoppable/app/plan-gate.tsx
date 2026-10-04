@@ -7,35 +7,54 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  BackHandler,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { useAuth } from '@/context/AuthContext';
 import { usePurchases, purchasesUnavailableReason } from '@/context/PurchaseContext';
 import { fetchDbPlans, type PlanDefinition, FALLBACK_PLANS } from '@/lib/plans';
 import type { StorePackage } from '@/lib/revenueCat';
+import { GRACE_TRIAL_DAYS, PLAN_PERIOD_DAYS } from '@/lib/subscriptionAccess';
 
 export default function PlanGateScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { isPremium, packages, buy, restore, error: purchaseError } = usePurchases();
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const isResume = params.mode === 'resume';
+  const { logout } = useAuth();
+  const {
+    hasAccess,
+    packages,
+    buy,
+    restore,
+    refresh,
+    error: purchaseError,
+    inGracePeriod,
+    graceDaysLeft,
+  } = usePurchases();
 
   const [plans, setPlans] = useState<PlanDefinition[]>(FALLBACK_PLANS);
-  const [selectedType, setSelectedType] = useState<'premium' | 'free'>('premium');
   const [submitting, setSubmitting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const unavailableReason = purchasesUnavailableReason();
 
-  // Hard safety net: never show this to a premium user, even if it was
-  // triggered before their premium status had fully settled.
   useEffect(() => {
-    if (!isPremium) return;
+    if (!hasAccess) return;
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
-  }, [isPremium]);
+  }, [hasAccess]);
+
+  useEffect(() => {
+    if (!isResume) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, [isResume]);
 
   const topPad = insets.top + 12;
   const botPad = Math.max(insets.bottom, 16);
@@ -54,22 +73,31 @@ export default function PlanGateScreen() {
     };
   }, []);
 
-  if (isPremium) return null;
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-  const freeDbPlan = plans.find((p) => p.id === 'free') || FALLBACK_PLANS[0];
-  const premiumDbPlan = plans.find((p) => p.id === 'premium') || FALLBACK_PLANS[1];
-
-  const chosenPackage: StorePackage | undefined = packages[0];
-  const priceDisplay = chosenPackage?.priceString || '';
-
-  const dismiss = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/(tabs)');
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.replace('/welcome');
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
-  const handleContinueWithFree = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    dismiss();
+  if (hasAccess) return null;
+
+  const premiumDbPlan = plans.find((p) => p.id === 'premium') || FALLBACK_PLANS.find((p) => p.id === 'premium')!;
+  const chosenPackage: StorePackage | undefined = packages[0];
+  const priceDisplay = chosenPackage?.priceString || premiumDbPlan.price_label;
+
+  const dismiss = () => {
+    if (isResume) return;
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
   };
 
   const handleSubscribe = async () => {
@@ -79,10 +107,10 @@ export default function PlanGateScreen() {
     try {
       const success = await buy(chosenPackage);
       if (success) {
-        Alert.alert('Payment Successful! 🎉', 'Your subscription is now active. Welcome to Premium!');
+        Alert.alert('Payment Successful', 'Your subscription is active again. Welcome back!');
         dismiss();
+        router.replace('/(tabs)');
       }
-      // On failure, `purchaseError` already holds the real reason (cancelled vs. an actual error).
     } finally {
       setSubmitting(false);
     }
@@ -94,7 +122,7 @@ export default function PlanGateScreen() {
       const restored = await restore();
       if (restored) {
         Alert.alert('Restored Successfully', 'Your previous subscription has been restored.');
-        dismiss();
+        router.replace('/(tabs)');
       } else {
         Alert.alert('No Subscription Found', 'No active subscription was found for your account.');
       }
@@ -111,19 +139,51 @@ export default function PlanGateScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: topPad, paddingBottom: botPad + 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity onPress={dismiss} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="x" size={22} color={colors.foreground} />
-        </TouchableOpacity>
+        <View style={styles.topRow}>
+          {!isResume ? (
+            <TouchableOpacity onPress={dismiss} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="x" size={22} color={colors.foreground} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.closeBtn} />
+          )}
+          <TouchableOpacity
+            onPress={() => void handleLogout()}
+            disabled={loggingOut}
+            style={styles.logoutBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            {loggingOut ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <>
+                <Feather name="log-out" size={16} color={colors.mutedForeground} />
+                <Text style={[styles.logoutText, { color: colors.mutedForeground }]}>Log out</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
 
         <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-          <View style={[styles.badge, { backgroundColor: colors.primary + '18', borderColor: colors.primary + '35' }]}>
-            <Feather name="shield" size={14} color={colors.primary} />
-            <Text style={[styles.badgeText, { color: colors.primary }]}>Choose Your Plan</Text>
+          <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+            <Feather name={isResume ? 'lock' : 'shield'} size={14} color="#FFFFFF" />
+            <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>
+              {isResume ? 'Subscription required' : 'Premium access'}
+            </Text>
           </View>
-          <Text style={[styles.title, { color: colors.foreground }]}>Select Your Access Level</Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Start with full Premium transformation tools, or continue with our generous Free tier.
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            {isResume ? 'Pay to resume your plan' : 'Unlock Premium'}
           </Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+            {isResume
+              ? `Your ${PLAN_PERIOD_DAYS}-day plan ended and payment was not renewed. A ${GRACE_TRIAL_DAYS}-day trial has finished — subscribe again to continue.`
+              : `Full access is paid only. Plans run ${PLAN_PERIOD_DAYS} days. If renewal fails, you get a ${GRACE_TRIAL_DAYS}-day trial, then must pay to resume.`}
+          </Text>
+          {inGracePeriod ? (
+            <Text style={[styles.graceNote, { color: colors.primary }]}>
+              Grace trial: {graceDaysLeft} day{graceDaysLeft === 1 ? '' : 's'} left
+            </Text>
+          ) : null}
         </Animated.View>
 
         {purchaseError ? (
@@ -134,29 +194,24 @@ export default function PlanGateScreen() {
         ) : null}
 
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-          <TouchableOpacity
+          <View
             style={[
               styles.planCard,
               {
                 backgroundColor: colors.card,
-                borderColor: selectedType === 'premium' ? colors.primary : colors.border,
-                borderWidth: selectedType === 'premium' ? 2 : 1,
+                borderColor: colors.primary,
+                borderWidth: 2,
               },
             ]}
-            onPress={() => setSelectedType('premium')}
-            activeOpacity={0.9}
           >
             <View style={styles.topBadgeRow}>
               <View style={[styles.recommendedPill, { backgroundColor: colors.primary }]}>
                 <Feather name="star" size={11} color="#FFFFFF" />
-                <Text style={styles.recommendedPillText}>RECOMMENDED</Text>
+                <Text style={styles.recommendedPillText}>REQUIRED</Text>
               </View>
             </View>
 
             <View style={styles.cardHeader}>
-              <View style={[styles.radio, { borderColor: selectedType === 'premium' ? colors.primary : colors.border }]}>
-                {selectedType === 'premium' && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-              </View>
               <View style={styles.titleArea}>
                 <Text style={[styles.cardTitle, { color: colors.foreground }]}>{premiumDbPlan.name}</Text>
                 <Text style={[styles.cardDesc, { color: colors.mutedForeground }]}>{premiumDbPlan.description}</Text>
@@ -164,7 +219,7 @@ export default function PlanGateScreen() {
               <View style={styles.priceArea}>
                 <Text style={[styles.priceText, { color: colors.primary }]}>{priceDisplay}</Text>
                 <Text style={[styles.periodText, { color: colors.mutedForeground }]}>
-                  {chosenPackage?.recurring ? `per ${chosenPackage.periodLabel}` : 'auto-renews'}
+                  {chosenPackage?.recurring ? `per ${chosenPackage.periodLabel}` : `${PLAN_PERIOD_DAYS} days`}
                 </Text>
               </View>
             </View>
@@ -179,47 +234,7 @@ export default function PlanGateScreen() {
                 </View>
               ))}
             </View>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <TouchableOpacity
-            style={[
-              styles.planCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: selectedType === 'free' ? colors.primary : colors.border,
-                borderWidth: selectedType === 'free' ? 2 : 1,
-              },
-            ]}
-            onPress={() => setSelectedType('free')}
-            activeOpacity={0.9}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.radio, { borderColor: selectedType === 'free' ? colors.primary : colors.border }]}>
-                {selectedType === 'free' && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-              </View>
-              <View style={styles.titleArea}>
-                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{freeDbPlan.name}</Text>
-                <Text style={[styles.cardDesc, { color: colors.mutedForeground }]}>{freeDbPlan.description}</Text>
-              </View>
-              <View style={styles.priceArea}>
-                <Text style={[styles.priceText, { color: colors.foreground }]}>$0</Text>
-                <Text style={[styles.periodText, { color: colors.mutedForeground }]}>Forever free</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureList}>
-              {freeDbPlan.features.map((feature) => (
-                <View key={feature} style={styles.featureItem}>
-                  <View style={[styles.checkCircle, { backgroundColor: colors.muted }]}>
-                    <Feather name="check" size={13} color={colors.mutedForeground} />
-                  </View>
-                  <Text style={[styles.featureText, { color: colors.foreground }]}>{feature}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
+          </View>
         </Animated.View>
 
         <TouchableOpacity onPress={() => void handleRestore()} disabled={submitting} style={styles.restoreRow}>
@@ -228,33 +243,24 @@ export default function PlanGateScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: botPad + 12, backgroundColor: colors.background }]}>
-        {selectedType === 'premium' ? (
-          <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: submitting ? 0.75 : 1 }]}
-            onPress={() => void handleSubscribe()}
-            disabled={submitting}
-            activeOpacity={0.88}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.primaryBtnText}>Subscribe & Start Premium</Text>
-                <Feather name="credit-card" size={18} color="#FFFFFF" />
-              </>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.secondaryBtn, { borderColor: colors.border, opacity: submitting ? 0.75 : 1 }]}
-            onPress={handleContinueWithFree}
-            disabled={submitting}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.secondaryBtnText, { color: colors.foreground }]}>Continue with Free Plan</Text>
-            <Feather name="chevron-right" size={18} color={colors.foreground} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: submitting ? 0.75 : 1 }]}
+          onPress={() => void handleSubscribe()}
+          disabled={submitting || Boolean(unavailableReason) || !chosenPackage}
+          activeOpacity={0.88}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Text style={styles.primaryBtnText}>{isResume ? 'Pay & Resume' : 'Subscribe & Start'}</Text>
+              <Feather name="credit-card" size={18} color="#FFFFFF" />
+            </>
+          )}
+        </TouchableOpacity>
+        {unavailableReason ? (
+          <Text style={[styles.footerHint, { color: colors.mutedForeground }]}>{unavailableReason}</Text>
+        ) : null}
       </View>
     </View>
   );
@@ -263,7 +269,15 @@ export default function PlanGateScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 20 },
-  closeBtn: { width: 40, height: 40, justifyContent: 'center', marginBottom: 4 },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  closeBtn: { width: 40, height: 40, justifyContent: 'center' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 4 },
+  logoutText: { fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
   header: { alignItems: 'center', marginBottom: 20 },
   badge: {
     flexDirection: 'row',
@@ -278,6 +292,7 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontFamily: 'Manrope_700Bold' },
   title: { fontSize: 26, fontFamily: 'Manrope_800ExtraBold', textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 14, fontFamily: 'Manrope_400Regular', textAlign: 'center', lineHeight: 20 },
+  graceNote: { marginTop: 10, fontSize: 13, fontFamily: 'Manrope_700Bold' },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -307,8 +322,6 @@ const styles = StyleSheet.create({
   },
   recommendedPillText: { color: '#FFFFFF', fontSize: 10, fontFamily: 'Manrope_800ExtraBold', letterSpacing: 0.8 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 16 },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
-  radioInner: { width: 10, height: 10, borderRadius: 5 },
   titleArea: { flex: 1, gap: 2, paddingRight: 8 },
   cardTitle: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold' },
   cardDesc: { fontSize: 12.5, fontFamily: 'Manrope_400Regular', lineHeight: 18 },
@@ -333,21 +346,12 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     height: 56,
-    borderRadius: 28,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
   },
   primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_700Bold' },
-  secondaryBtn: {
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1.5,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  secondaryBtnText: { fontSize: 16, fontFamily: 'Manrope_700Bold' },
+  footerHint: { marginTop: 8, fontSize: 12, fontFamily: 'Manrope_400Regular', textAlign: 'center' },
 });

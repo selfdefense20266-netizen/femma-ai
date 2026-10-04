@@ -12,31 +12,16 @@ export interface PlanDefinition {
 
 export const FALLBACK_PLANS: PlanDefinition[] = [
   {
-    id: 'free',
-    name: 'Free Plan',
-    price_monthly: 0,
-    price_label: '$0',
-    description: 'Start your journey with basic daily plan features.',
-    features: [
-      'Access to Day 1 daily plan',
-      'Basic exercise guides & workouts',
-      'Standard meal logging & recipes',
-      '5 AI coach messages per day',
-      'Progress tracking basics',
-    ],
-    highlighted: false,
-  },
-  {
     id: 'premium',
     name: 'Premium Plan',
     price_monthly: 14.99,
     price_label: '$14.99/mo',
-    description: 'Unlock complete transformation paths and AI coaching tools.',
+    description: 'Full access for 30 days. If renewal fails, a 3-day trial applies — then pay to resume.',
     features: [
       'Full multi-week personalized roadmap',
       'Unlimited video library & exercise guides',
       'Unlimited AI coach chat with custom guidance',
-      'Unlimited AI recipes & instant meal scanner',
+      'AI diet plan, recipes & meal scanner',
       'Cycle & pregnancy tailored tracking',
       'Priority support & premium badges',
     ],

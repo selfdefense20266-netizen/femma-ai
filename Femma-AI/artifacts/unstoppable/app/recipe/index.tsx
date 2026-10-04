@@ -28,7 +28,7 @@ import { CUISINES, MEAL_TYPES, toProtocol, type Cuisine, type MealType } from '@
 import { generateAiRecipes } from '@/lib/recipeAi';
 import { ONBOARDING_GOALS } from '@/lib/nutritionPlan';
 
-const FOOD_STYLES = ['Eat everything', 'Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
+const FOOD_STYLES = ['Eat everything', 'Vegetarian', 'Carnivore', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
 const BG = '#FFFFFF';
 const CARD = '#F5F5F8';
 const MUTED = '#747985';

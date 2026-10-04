@@ -190,6 +190,22 @@ async function fetchPublishedPlanMetas(): Promise<Omit<DailyPlan, 'items'>[]> {
   return (data || []).map(mapPlanMeta);
 }
 
+/** Admin-assigned plans must load even if not in the published auto-match list. */
+async function fetchPlanMetaById(planId: string): Promise<Omit<DailyPlan, 'items'> | null> {
+  const id = String(planId || '').trim();
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('daily_plans')
+    .select('id,title,description,user_type,status,sort_order,duration_days')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) {
+    if (/relation|does not exist|schema cache/i.test(error.message || '')) return null;
+    throw error;
+  }
+  return data ? mapPlanMeta(data) : null;
+}
+
 function scorePlan(plan: Omit<DailyPlan, 'items'>, userType: string): number {
   let score = 0;
   if (plan.userType === userType) score += 100;
@@ -229,7 +245,7 @@ export function resolveDailyPlanMeta(
   return general || null;
 }
 
-/** Load the single best admin plan + level-filtered day items for this member/profile. */
+/** Load the admin-assigned plan (or auto-match) + level-filtered day items. */
 export async function fetchResolvedDailyPlan(
   profile: PlanProfile & { dailyPlanId?: string },
   memberIdOrEmail?: string | null
@@ -239,10 +255,23 @@ export async function fetchResolvedDailyPlan(
     fetchMemberDailyPlanId(memberIdOrEmail),
   ]);
 
+  // members.daily_plan_id from admin always wins over local/profile fallback.
   const preferredId = assignedPlanId || profile.dailyPlanId || null;
-  const meta = resolveDailyPlanMeta(metas, profile, preferredId);
+
+  let meta: Omit<DailyPlan, 'items'> | null = null;
+  if (preferredId) {
+    meta = metas.find((plan) => plan.id === preferredId) || null;
+    if (!meta) {
+      meta = await fetchPlanMetaById(preferredId);
+    }
+  }
+  if (!meta) {
+    meta = resolveDailyPlanMeta(metas, profile, null);
+  }
   if (!meta) return null;
 
+  // Beginner / Intermediate / Active comes from the member's onboarding level.
+  // Admin builds those rows on the daily plan; we pick the matching intensity.
   const intensity = intensityFromProfile(profile.fitnessLevel);
   const allItems = await fetchPlanItems(meta.id);
   const levelItems = allItems.filter((item) => item.intensityLevel === intensity);
@@ -319,10 +348,18 @@ export function recoveryItemsForType(
 }
 
 export function itemMetaLine(item: DailyPlanItem): string {
+  const format = (seconds: number) => {
+    const s = Math.max(0, Math.round(Number(seconds) || 0));
+    if (s <= 0) return null;
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return rem ? `${m}m ${rem}s` : `${m}m`;
+  };
   const parts = [
     item.scheduledTime || null,
-    item.durationMinutes > 0 ? `${item.durationMinutes} Mins` : null,
-    item.restMinutes > 0 ? `${item.restMinutes} min rest` : null,
+    item.durationMinutes > 0 ? format(item.durationMinutes) : null,
+    item.restMinutes > 0 ? `${format(item.restMinutes)} rest` : null,
     item.subtitle || null,
   ].filter(Boolean);
   return parts.join(' • ');
