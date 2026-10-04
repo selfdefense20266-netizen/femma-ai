@@ -17,6 +17,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import MainCard from 'components/MainCard';
 import Loader from 'components/Loader';
 import { useAdminData } from 'contexts/AdminDataContext';
+import { isVideoMediaUrl } from 'utils/mediaUrl';
 import {
   USER_TYPE_OPTIONS,
   INTENSITY_OPTIONS,
@@ -49,8 +50,8 @@ const emptyLibrary = () => ({
   itemType: 'exercise',
   tag: '',
   subtitle: '',
-  durationMinutes: 10,
-  restMinutes: 0,
+  durationMinutes: 300,
+  restMinutes: 30,
   mediaUrl: '',
   cue: '',
   steps: [],
@@ -66,10 +67,18 @@ function intensityLabel(id) {
   return INTENSITY_OPTIONS.find((o) => o.id === id)?.label || id;
 }
 
-const DEFAULT_LEVEL_MINUTES = {
-  beginner: 5,
-  intermediate: 10,
-  active: 15
+function formatSec(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem ? `${m}m ${rem}s` : `${m}m`;
+}
+
+const DEFAULT_LEVEL_SECONDS = {
+  beginner: 300,
+  intermediate: 480,
+  active: 600
 };
 
 const scrollBoxSx = {
@@ -164,7 +173,7 @@ export default function DailyPlanEditor() {
     return (exerciseLibrary || [])
       .filter((item) => {
         const type = String(item.itemType || 'exercise').toLowerCase();
-        return type === 'exercise' || type === 'rest';
+        return type === 'exercise';
       })
       .slice()
       .sort((a, b) => {
@@ -184,7 +193,7 @@ export default function DailyPlanEditor() {
           return type === 'recovery' && (item.recoveryType || 'full-body') === recoveryType;
         }
         if (Number(item.dayNumber) !== Number(activeDay)) return false;
-        return type === 'exercise' || type === 'rest';
+        return type === 'exercise';
       }),
     [planForm.items, activeDay, activeLevel, contentKind, recoveryType]
   );
@@ -193,7 +202,7 @@ export default function DailyPlanEditor() {
     const q = pickerSearch.trim().toLowerCase();
     return library.filter((item) => {
       const type = String(item.itemType || 'exercise').toLowerCase();
-      if (type !== 'exercise' && type !== 'rest') return false;
+      if (type !== 'exercise') return false;
       if (!q) return true;
       return (
         item.title.toLowerCase().includes(q) ||
@@ -226,10 +235,10 @@ export default function DailyPlanEditor() {
   };
 
   const addFromLibrary = (libItem) => {
-    const minutes =
+    const seconds =
       contentKind === 'recovery'
-        ? Math.max(5, Number(libItem.durationMinutes) || 10)
-        : DEFAULT_LEVEL_MINUTES[activeLevel] || libItem.durationMinutes || 10;
+        ? Math.max(30, Number(libItem.durationMinutes) || 300)
+        : DEFAULT_LEVEL_SECONDS[activeLevel] || libItem.durationMinutes || 300;
     const recoveryLabel = RECOVERY_TYPE_OPTIONS.find((o) => o.id === recoveryType)?.label || 'Recovery';
     setPlanForm((prev) => ({
       ...prev,
@@ -241,13 +250,13 @@ export default function DailyPlanEditor() {
           dayNumber: contentKind === 'recovery' ? 1 : activeDay,
           intensityLevel: activeLevel,
           recoveryType: contentKind === 'recovery' ? recoveryType : '',
-          itemType: contentKind === 'recovery' ? 'recovery' : libItem.itemType || 'exercise',
+          itemType: contentKind === 'recovery' ? 'recovery' : 'exercise',
           title: libItem.title,
           tag: contentKind === 'recovery' ? `${intensityLabel(activeLevel)} · ${recoveryLabel}` : libItem.tag,
           subtitle: libItem.subtitle,
           scheduledTime: '',
-          durationMinutes: minutes,
-          restMinutes: libItem.restMinutes,
+          durationMinutes: seconds,
+          restMinutes: Number(libItem.restMinutes) || 0,
           mediaUrl: libItem.mediaUrl,
           cue: libItem.cue,
           steps: libItem.steps || [],
@@ -261,11 +270,20 @@ export default function DailyPlanEditor() {
     setPlanForm((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
   };
 
-  const updateItemDuration = (index, minutes) => {
+  const updateItemDuration = (index, seconds) => {
     setPlanForm((prev) => ({
       ...prev,
       items: prev.items.map((item, i) =>
-        i === index ? { ...item, durationMinutes: Math.max(1, Number(minutes) || 1) } : item
+        i === index ? { ...item, durationMinutes: Math.max(1, Number(seconds) || 1) } : item
+      )
+    }));
+  };
+
+  const updateItemRest = (index, seconds) => {
+    setPlanForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, restMinutes: Math.max(0, Number(seconds) || 0) } : item
       )
     }));
   };
@@ -305,7 +323,7 @@ export default function DailyPlanEditor() {
       setError('');
       const saved = await saveExerciseLibraryItem({
         ...libForm,
-        itemType: libForm.itemType || 'exercise',
+        itemType: 'exercise',
         sortOrder: libForm.id ? libForm.sortOrder : Date.now()
       });
       await refreshExerciseLibrary();
@@ -541,7 +559,7 @@ export default function DailyPlanEditor() {
                 if (contentKind === 'recovery') {
                   return type === 'recovery' && (item.recoveryType || 'full-body') === recoveryType;
                 }
-                return Number(item.dayNumber) === Number(activeDay) && (type === 'exercise' || type === 'rest');
+                return Number(item.dayNumber) === Number(activeDay) && type === 'exercise';
               }).length;
               const selected = activeLevel === o.id;
               return (
@@ -629,7 +647,8 @@ export default function DailyPlanEditor() {
                           {item.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Library default {item.durationMinutes} min
+                          Library default {formatSec(item.durationMinutes)}
+                          {item.restMinutes ? ` · rest ${formatSec(item.restMinutes)}` : ''}
                         </Typography>
                       </Box>
                       <Button size="small" variant="contained" onClick={() => addFromLibrary(item)}>
@@ -689,7 +708,7 @@ export default function DailyPlanEditor() {
                       if (type !== 'recovery' || (item.recoveryType || 'full-body') !== recoveryType) return null;
                     } else {
                       if (Number(item.dayNumber) !== Number(activeDay)) return null;
-                      if (type !== 'exercise' && type !== 'rest') return null;
+                      if (type !== 'exercise') return null;
                     }
                     let order = 0;
                     for (let i = 0; i <= index; i += 1) {
@@ -700,7 +719,7 @@ export default function DailyPlanEditor() {
                         if (t !== 'recovery' || (it?.recoveryType || 'full-body') !== recoveryType) continue;
                       } else {
                         if (Number(it?.dayNumber) !== Number(activeDay)) continue;
-                        if (t !== 'exercise' && t !== 'rest') continue;
+                        if (t !== 'exercise') continue;
                       }
                       order += 1;
                     }
@@ -742,11 +761,22 @@ export default function DailyPlanEditor() {
                         <TextField
                           size="small"
                           type="number"
+                          label="Work"
                           value={item.durationMinutes || 0}
                           onChange={(e) => updateItemDuration(index, e.target.value)}
-                          inputProps={{ min: 1, max: 180 }}
-                          sx={{ width: 88 }}
-                          InputProps={{ endAdornment: <Typography variant="caption">min</Typography> }}
+                          inputProps={{ min: 1, max: 3600 }}
+                          sx={{ width: 96 }}
+                          InputProps={{ endAdornment: <Typography variant="caption">sec</Typography> }}
+                        />
+                        <TextField
+                          size="small"
+                          type="number"
+                          label="Rest after"
+                          value={item.restMinutes ?? 0}
+                          onChange={(e) => updateItemRest(index, e.target.value)}
+                          inputProps={{ min: 0, max: 900 }}
+                          sx={{ width: 110 }}
+                          InputProps={{ endAdornment: <Typography variant="caption">sec</Typography> }}
                         />
                         <IconButton size="small" color="error" onClick={() => removeItem(index)}>
                           <DeleteOutlined />
@@ -770,14 +800,14 @@ export default function DailyPlanEditor() {
         </MainCard>
       )}
 
-      <input ref={libFileRef} type="file" accept="image/*,.gif" hidden onChange={onLibUpload} />
+      <input ref={libFileRef} type="file" accept="image/*,.gif,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" hidden onChange={onLibUpload} />
       <Drawer anchor="right" open={libOpen} onClose={() => setLibOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, height: '100%', overflow: 'hidden' } }}>
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
           <Typography variant="h4" sx={{ mb: 0.5, fontWeight: 800, flexShrink: 0 }}>
             New exercise
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flexShrink: 0 }}>
-            Add a name and GIF — then place it on any plan day / level.
+            Add a name and video or GIF — then place it on any plan day / level.
           </Typography>
           <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Stack spacing={1.75}>
@@ -785,24 +815,39 @@ export default function DailyPlanEditor() {
               <Stack direction="row" spacing={1}>
                 <TextField
                   type="number"
-                  label="Minutes"
+                  label="Work (sec)"
                   fullWidth
                   value={libForm.durationMinutes}
                   onChange={(e) => setLibForm((p) => ({ ...p, durationMinutes: Number(e.target.value) || 0 }))}
+                  helperText="e.g. 300 = 5m, 45 = 45s"
                 />
                 <TextField
                   type="number"
-                  label="Rest (min)"
+                  label="Rest after (sec)"
                   fullWidth
                   value={libForm.restMinutes}
                   onChange={(e) => setLibForm((p) => ({ ...p, restMinutes: Number(e.target.value) || 0 }))}
+                  helperText="e.g. 30 or 10"
                 />
               </Stack>
               <Button variant="outlined" startIcon={<CloudUploadOutlined />} onClick={() => libFileRef.current?.click()} disabled={libUploading}>
-                {libUploading ? 'Uploading…' : 'Upload photo / GIF'}
+                {libUploading ? 'Uploading…' : 'Upload video / GIF / photo'}
               </Button>
               {libForm.mediaUrl ? (
-                <Box component="img" src={libForm.mediaUrl} alt="" sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 2, bgcolor: 'grey.50' }} />
+                isVideoMediaUrl(libForm.mediaUrl) ? (
+                  <Box
+                    component="video"
+                    src={libForm.mediaUrl}
+                    controls
+                    muted
+                    loop
+                    autoPlay
+                    playsInline
+                    sx={{ width: '100%', maxHeight: 220, objectFit: 'contain', borderRadius: 2, bgcolor: 'grey.50' }}
+                  />
+                ) : (
+                  <Box component="img" src={libForm.mediaUrl} alt="" sx={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 2, bgcolor: 'grey.50' }} />
+                )
               ) : null}
             </Stack>
           </Box>

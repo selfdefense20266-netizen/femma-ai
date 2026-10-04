@@ -784,7 +784,7 @@ export function assertPlanForUser(
 
 export function runRoadmapTests() {
   const failures: RoadmapTestFailure[] = [];
-  const foods = ['Eat everything', 'Vegetarian', 'Vegan', 'High protein'];
+  const foods = ['Eat everything', 'Vegetarian', 'Carnivore', 'High protein'];
   let checked = 0;
   for (const category of ROADMAP_CATEGORIES) {
     for (const dailyTime of ROADMAP_TIMES) {

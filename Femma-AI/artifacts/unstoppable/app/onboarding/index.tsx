@@ -28,11 +28,11 @@ export default function GoalStep() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad }]}>
         <View style={styles.progressBar}>
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <View key={i} style={[styles.progressDot, { backgroundColor: i === 1 ? colors.primary : colors.border }]} />
           ))}
         </View>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 1 of 4</Text>
+        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>Step 1 of 6</Text>
         <Text style={[styles.question, { color: colors.foreground }]}>What do you want to train?</Text>
         <Text style={[styles.subtext, { color: colors.mutedForeground }]}>
           Pick one activity. We match you to that plan and tailor workouts to your level.
@@ -73,7 +73,7 @@ export default function GoalStep() {
                   <Text
                     style={[
                       styles.optionLabel,
-                      { color: isOn || g.id === 'yoga' ? colors.primary : colors.foreground },
+                      { color: colors.foreground },
                     ]}
                   >
                     {g.label}
@@ -116,12 +116,12 @@ const styles = StyleSheet.create({
   question: { fontSize: 26, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold', marginBottom: 6, lineHeight: 34 },
   subtext: { fontSize: 14, fontFamily: 'Manrope_400Regular', lineHeight: 20 },
   list: { paddingHorizontal: 24, gap: 10 },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1.5, gap: 14 },
+  option: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1.5, gap: 14 },
   optionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   optionText: { flex: 1 },
   optionLabel: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   optionDesc: { fontSize: 13, fontFamily: 'Manrope_400Regular', marginTop: 2 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, backgroundColor: 'transparent' },
-  nextBtn: { height: 56, borderRadius: 28, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  nextBtn: { height: 56, borderRadius: 100, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   nextBtnText: { fontSize: 17, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
 });

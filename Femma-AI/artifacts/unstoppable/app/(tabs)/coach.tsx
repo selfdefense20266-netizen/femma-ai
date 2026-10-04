@@ -264,7 +264,7 @@ export default function CoachScreen() {
         <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>AI Coach</Text>
           <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-            {isPremium ? 'Unlimited Premium Coach' : `Free Plan · ${Math.max(0, 5 - userMessagesTodayCount)} msgs left today`}
+            {isPremium ? 'Unlimited Premium Coach' : `Subscribe for unlimited coach · ${Math.max(0, 5 - userMessagesTodayCount)} msgs left`}
           </Text>
         </View>
         {!isPremium && (

@@ -35,11 +35,7 @@ export const INTENSITY_OPTIONS = [
 
 export const DURATION_DAY_PRESETS = [7, 14, 21, 30];
 
-export const ITEM_TYPE_OPTIONS = [
-  { id: 'exercise', label: 'Exercise' },
-  { id: 'rest', label: 'Rest' },
-  { id: 'recovery', label: 'Recovery' }
-];
+export const ITEM_TYPE_OPTIONS = [{ id: 'exercise', label: 'Exercise' }];
 
 export const RECOVERY_TYPE_OPTIONS = [
   { id: 'full-body', label: 'Full body stretch' },

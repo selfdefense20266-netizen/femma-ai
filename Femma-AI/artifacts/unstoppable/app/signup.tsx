@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   ruleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   ruleText: { fontSize: 12, fontFamily: 'Manrope_500Medium' },
   formError: { fontSize: 13, fontFamily: 'Manrope_500Medium', textAlign: 'center' },
-  primaryBtn: { height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  primaryBtn: { height: 56, borderRadius: 100, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   primaryBtnText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope_700Bold' },
   switchBtn: { marginTop: 20, alignItems: 'center' },
   switchText: { fontSize: 15, color: 'rgba(255,255,255,0.65)', fontFamily: 'Manrope_400Regular' },

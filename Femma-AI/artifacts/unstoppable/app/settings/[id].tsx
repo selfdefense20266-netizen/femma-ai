@@ -30,7 +30,7 @@ const ENVS = [
   { id: 'gym', label: 'Gym' },
   { id: 'both', label: 'Both' },
 ];
-const FOODS = ['Eat everything', 'Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
+const FOODS = ['Eat everything', 'Vegetarian', 'Carnivore', 'Gluten-free', 'Dairy-free', 'High protein', 'Low carb'];
 const FAQ = [
   { q: 'How do points work?', a: 'You earn 10 points for each fully completed day. Points never reset when you start a new plan.' },
   { q: 'When do new tasks arrive?', a: 'A new day of missions unlocks at midnight. We also send a notification if you allow alerts.' },
