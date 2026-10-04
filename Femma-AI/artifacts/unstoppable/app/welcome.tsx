@@ -60,8 +60,8 @@ export default function WelcomeScreen() {
               <Text style={[styles.logoLetter, { fontSize: isCompact ? 32 : 38 }]}>U</Text>
             </View>
             <Text style={[styles.appName, { color: '#FFFFFF', fontSize: isCompact ? 22 : 26, letterSpacing: isCompact ? 3 : 5 }]}>UNSTOPPABLE</Text>
-            <View style={[styles.taglinePill, { backgroundColor: colors.pink + '22', borderColor: colors.pink + '44' }]}>
-              <Text style={[styles.tagline, { color: colors.pink }]}>Women's Transformation Platform</Text>
+            <View style={[styles.taglinePill, { backgroundColor: colors.pink, borderColor: colors.pink }]}>
+              <Text style={[styles.tagline, { color: '#FFFFFF' }]}>Women's Transformation Platform</Text>
             </View>
           </View>
 
@@ -69,8 +69,8 @@ export default function WelcomeScreen() {
           <View style={[styles.pillsRow, { marginBottom: isCompact ? 24 : 36 }]}>
             {pillLabels.map((label, i) => (
               <Animated.View key={label} entering={FadeInDown.delay(300 + i * 100).duration(400)}>
-                <View style={[styles.pill, { backgroundColor: pillColors[i] + '22', borderColor: pillColors[i] + '44' }]}>
-                  <Text style={[styles.pillText, { color: pillColors[i] }]}>{label}</Text>
+                <View style={[styles.pill, { backgroundColor: pillColors[i], borderColor: pillColors[i] }]}>
+                  <Text style={[styles.pillText, { color: '#FFFFFF' }]}>{label}</Text>
                 </View>
               </Animated.View>
             ))}
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   body: { lineHeight: 24, textAlign: 'center', fontFamily: 'Manrope_400Regular' },
   spacer: { flex: 1 },
   ctaSection: { gap: 14 },
-  primaryBtn: { height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
+  primaryBtn: { height: 56, borderRadius: 100, justifyContent: 'center', alignItems: 'center' },
   primaryBtnText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope_700Bold' },
   secondaryBtn: { height: 48, justifyContent: 'center', alignItems: 'center' },
   secondaryBtnText: { fontSize: 15, fontFamily: 'Manrope_400Regular' },

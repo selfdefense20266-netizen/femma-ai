@@ -234,6 +234,8 @@ function mergeProfile(local: UserProfile, remote: Partial<UserProfile> | null | 
     planName: remote.planName || local.planName,
     dailyTime: remote.dailyTime || local.dailyTime,
     foodPreference: remote.foodPreference || local.foodPreference,
+    heightCm: Number(remote.heightCm) > 0 ? Number(remote.heightCm) : local.heightCm,
+    weightKg: Number(remote.weightKg) > 0 ? Number(remote.weightKg) : local.weightKg,
     points: Math.max(localPoints || 0, Number.isFinite(remotePoints) ? remotePoints : 0),
     streak: Math.max(Number(local.streak || 0), Number(remote.streak || 0)),
     journeyDay: Math.max(Number(local.journeyDay || 0), Number(remote.journeyDay || 0)),

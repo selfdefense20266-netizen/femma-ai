@@ -28,6 +28,15 @@ export const FOOD_MEALS: Record<string, string[]> = {
     'Scan a vegan snack',
     'Scan a weekend vegan meal',
   ],
+  Carnivore: [
+    'Scan your carnivore lunch',
+    'Scan a meat-forward plate',
+    'Scan today’s animal-based meal',
+    'Scan eggs, meat, or fish',
+    'Scan a carnivore dinner',
+    'Scan a meat or egg snack',
+    'Scan a weekend carnivore meal',
+  ],
   'Gluten-free': [
     'Scan your gluten-free lunch',
     'Scan a gluten-free plate',
@@ -93,6 +102,15 @@ export const FOOD_RECIPES: Record<string, string[]> = {
     'Make a vegan lentil dinner',
     'Prep a vegan lunchbox',
     'Cook a weekend vegan meal',
+  ],
+  Carnivore: [
+    'Cook a carnivore dinner',
+    'Make a steak or eggs plate',
+    'Prep a simple meat sheet-pan meal',
+    'Cook eggs and meat breakfast',
+    'Make a fish or beef dinner',
+    'Prep a meat-forward lunch',
+    'Cook a weekend carnivore meal',
   ],
   'Gluten-free': [
     'Cook a gluten-free dinner',

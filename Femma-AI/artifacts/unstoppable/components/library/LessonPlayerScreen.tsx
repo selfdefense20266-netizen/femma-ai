@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
   missingTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
-  missingButton: { borderRadius: 22, paddingHorizontal: 22, paddingVertical: 12 },
+  missingButton: { borderRadius: 100, paddingHorizontal: 22, paddingVertical: 12 },
   darkHeader: { backgroundColor: '#111219', paddingHorizontal: 16, paddingBottom: 13 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   darkButton: {
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   lessonDescription: { fontSize: 14, lineHeight: 21, fontFamily: 'Manrope_500Medium' },
   markDoneBtn: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: 100,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -341,16 +341,16 @@ const styles = StyleSheet.create({
   },
   doneBanner: {
     minHeight: 56,
-    borderRadius: 16,
+    borderRadius: 100,
     borderWidth: 1,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  doneDot: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  doneDot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   completeTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
   completeText: { fontSize: 12, fontFamily: 'Manrope_500Medium', marginTop: 2 },
-  nextButton: { height: 52, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
+  nextButton: { height: 52, borderRadius: 100, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
   actionText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Manrope_700Bold' },
 });

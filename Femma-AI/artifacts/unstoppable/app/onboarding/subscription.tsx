@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -25,18 +25,38 @@ export default function SubscriptionSelectionScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { completeOnboarding, profile, stagedPlan } = useApp();
-  const { user } = useAuth();
-  const { packages, buy, selectFreePlan, restore, error: purchaseError } = usePurchases();
+  const { user, logout } = useAuth();
+  const {
+    packages,
+    buy,
+    restore,
+    refresh,
+    ready: purchasesReady,
+    hasAccess,
+    error: purchaseError,
+  } = usePurchases();
 
   const [plans, setPlans] = useState<PlanDefinition[]>(FALLBACK_PLANS);
   const [dbLoading, setDbLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<'premium' | 'free'>('premium');
   const [submitting, setSubmitting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [formError, setFormError] = useState('');
+  const enteredRef = useRef(false);
   const unavailableReason = purchasesUnavailableReason();
 
   const topPad = insets.top + 12;
   const botPad = Math.max(insets.bottom, 16);
+
+  const finishWithAccess = () => {
+    if (enteredRef.current) return;
+    enteredRef.current = true;
+    completeOnboarding({
+      planName: stagedPlan?.planName || 'Premium Plan',
+      journeyDay: 1,
+      name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
+    });
+    router.replace('/(tabs)');
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -55,30 +75,22 @@ export default function SubscriptionSelectionScreen() {
     };
   }, []);
 
-  const freeDbPlan = plans.find((p) => p.id === 'free') || FALLBACK_PLANS[0];
-  const premiumDbPlan = plans.find((p) => p.id === 'premium') || FALLBACK_PLANS[1];
+  // Re-check store + admin-granted DB premium when landing on paywall.
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  // Admin premium / active entitlement — finish onboarding and enter app.
+  useEffect(() => {
+    if (!purchasesReady || !hasAccess || submitting) return;
+    finishWithAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot when access becomes true
+  }, [purchasesReady, hasAccess]);
+
+  const premiumDbPlan = plans.find((p) => p.id === 'premium') || FALLBACK_PLANS.find((p) => p.id === 'premium')!;
 
   const chosenPackage: StorePackage | undefined = packages[0];
-  const priceDisplay = chosenPackage?.priceString || '';
-
-  const handleContinueWithFree = async () => {
-    setFormError('');
-    setSubmitting(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      await selectFreePlan();
-      completeOnboarding({
-        planName: stagedPlan?.planName || 'Free Journey Plan',
-        journeyDay: 1,
-        name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
-      });
-      router.replace('/(tabs)');
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Could not continue with free plan. Please try again.');
-      setSubmitting(false);
-    }
-  };
+  const priceDisplay = chosenPackage?.priceString || premiumDbPlan.price_label;
 
   const handleSubscribe = async () => {
     if (unavailableReason) {
@@ -96,13 +108,8 @@ export default function SubscriptionSelectionScreen() {
     try {
       const success = await buy(chosenPackage);
       if (success) {
-        completeOnboarding({
-          planName: stagedPlan?.planName || 'Premium Plan',
-          journeyDay: 1,
-          name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
-        });
+        finishWithAccess();
         Alert.alert('Payment Successful! 🎉', 'Your subscription is now active. Welcome to Premium!');
-        router.replace('/(tabs)');
       }
       // On failure, `purchaseError` from usePurchases() already holds the real reason
       // (cancelled vs. an actual RevenueCat/store error) — shown in the banner above.
@@ -119,13 +126,8 @@ export default function SubscriptionSelectionScreen() {
     try {
       const restored = await restore();
       if (restored) {
-        completeOnboarding({
-          planName: stagedPlan?.planName || 'Premium Plan',
-          journeyDay: 1,
-          name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
-        });
+        finishWithAccess();
         Alert.alert('Restored Successfully', 'Your previous subscription has been restored.');
-        router.replace('/(tabs)');
       } else {
         Alert.alert('No Subscription Found', 'No active subscription was found for your account.');
       }
@@ -136,7 +138,26 @@ export default function SubscriptionSelectionScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.replace('/welcome');
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   const isLoading = submitting || dbLoading;
+
+  if (purchasesReady && hasAccess) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ActivityIndicator style={{ marginTop: 80 }} color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -149,14 +170,34 @@ export default function SubscriptionSelectionScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.topRow}>
+          <View style={{ width: 40 }} />
+          <TouchableOpacity
+            onPress={() => void handleLogout()}
+            disabled={loggingOut}
+            style={styles.logoutBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            {loggingOut ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <>
+                <Feather name="log-out" size={16} color={colors.mutedForeground} />
+                <Text style={[styles.logoutText, { color: colors.mutedForeground }]}>Log out</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
         <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-          <View style={[styles.badge, { backgroundColor: colors.primary + '18', borderColor: colors.primary + '35' }]}>
-            <Feather name="shield" size={14} color={colors.primary} />
-            <Text style={[styles.badgeText, { color: colors.primary }]}>Step 2 of 2: Choose Your Plan</Text>
+          <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+            <Feather name="shield" size={14} color="#FFFFFF" />
+            <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>Step 2 of 2: Choose Your Plan</Text>
           </View>
-          <Text style={[styles.title, { color: colors.foreground }]}>Select Your Access Level</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>Subscribe to continue</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Start with full Premium transformation tools, or continue with our generous Free tier.
+            Premium is required. Your plan lasts 30 days. If card renewal fails, you get a 3-day trial, then must pay
+            again to resume.
           </Text>
         </Animated.View>
 
@@ -174,24 +215,20 @@ export default function SubscriptionSelectionScreen() {
               styles.planCard,
               {
                 backgroundColor: colors.card,
-                borderColor: selectedType === 'premium' ? colors.primary : colors.border,
-                borderWidth: selectedType === 'premium' ? 2 : 1,
+                borderColor: colors.primary,
+                borderWidth: 2,
               },
             ]}
-            onPress={() => setSelectedType('premium')}
             activeOpacity={0.9}
           >
             <View style={styles.topBadgeRow}>
               <View style={[styles.recommendedPill, { backgroundColor: colors.primary }]}>
                 <Feather name="star" size={11} color="#FFFFFF" />
-                <Text style={styles.recommendedPillText}>RECOMMENDED</Text>
+                <Text style={styles.recommendedPillText}>REQUIRED</Text>
               </View>
             </View>
 
             <View style={styles.cardHeader}>
-              <View style={[styles.radio, { borderColor: selectedType === 'premium' ? colors.primary : colors.border }]}>
-                {selectedType === 'premium' && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-              </View>
               <View style={styles.titleArea}>
                 <Text style={[styles.cardTitle, { color: colors.foreground }]}>{premiumDbPlan.name}</Text>
                 <Text style={[styles.cardDesc, { color: colors.mutedForeground }]}>{premiumDbPlan.description}</Text>
@@ -199,7 +236,7 @@ export default function SubscriptionSelectionScreen() {
               <View style={styles.priceArea}>
                 <Text style={[styles.priceText, { color: colors.primary }]}>{priceDisplay}</Text>
                 <Text style={[styles.periodText, { color: colors.mutedForeground }]}>
-                  {chosenPackage?.recurring ? `per ${chosenPackage.periodLabel}` : 'auto-renews'}
+                  {chosenPackage?.recurring ? `per ${chosenPackage.periodLabel}` : '30 days'}
                 </Text>
               </View>
             </View>
@@ -217,87 +254,27 @@ export default function SubscriptionSelectionScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Plan Option 2: Free Plan */}
-        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <TouchableOpacity
-            style={[
-              styles.planCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: selectedType === 'free' ? colors.primary : colors.border,
-                borderWidth: selectedType === 'free' ? 2 : 1,
-              },
-            ]}
-            onPress={() => setSelectedType('free')}
-            activeOpacity={0.9}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.radio, { borderColor: selectedType === 'free' ? colors.primary : colors.border }]}>
-                {selectedType === 'free' && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-              </View>
-              <View style={styles.titleArea}>
-                <Text style={[styles.cardTitle, { color: colors.foreground }]}>{freeDbPlan.name}</Text>
-                <Text style={[styles.cardDesc, { color: colors.mutedForeground }]}>{freeDbPlan.description}</Text>
-              </View>
-              <View style={styles.priceArea}>
-                <Text style={[styles.priceText, { color: colors.foreground }]}>$0</Text>
-                <Text style={[styles.periodText, { color: colors.mutedForeground }]}>Forever free</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureList}>
-              {freeDbPlan.features.map((feature) => (
-                <View key={feature} style={styles.featureItem}>
-                  <View style={[styles.checkCircle, { backgroundColor: colors.muted }]}>
-                    <Feather name="check" size={13} color={colors.mutedForeground} />
-                  </View>
-                  <Text style={[styles.featureText, { color: colors.foreground }]}>{feature}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-
         <TouchableOpacity onPress={handleRestore} disabled={isLoading} style={styles.restoreRow}>
           <Text style={[styles.restoreText, { color: colors.mutedForeground }]}>Already subscribed? Restore purchases</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Floating Action Button Bar */}
       <View style={[styles.footer, { paddingBottom: botPad + 12, backgroundColor: colors.background }]}>
-        {selectedType === 'premium' ? (
-          <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: isLoading ? 0.75 : 1 }]}
-            onPress={() => void handleSubscribe()}
-            disabled={isLoading}
-            activeOpacity={0.88}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.primaryBtnText}>Subscribe & Start Premium</Text>
-                <Feather name="credit-card" size={18} color="#FFFFFF" />
-              </>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.secondaryBtn, { borderColor: colors.border, opacity: isLoading ? 0.75 : 1 }]}
-            onPress={handleContinueWithFree}
-            disabled={isLoading}
-            activeOpacity={0.85}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={colors.foreground} />
-            ) : (
-              <>
-                <Text style={[styles.secondaryBtnText, { color: colors.foreground }]}>Continue with Free Plan</Text>
-                <Feather name="chevron-right" size={18} color={colors.foreground} />
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: colors.primary, opacity: isLoading ? 0.75 : 1 }]}
+          onPress={() => void handleSubscribe()}
+          disabled={isLoading}
+          activeOpacity={0.88}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Text style={styles.primaryBtnText}>Subscribe & Start</Text>
+              <Feather name="credit-card" size={18} color="#FFFFFF" />
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -306,6 +283,14 @@ export default function SubscriptionSelectionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 20 },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 4 },
+  logoutText: { fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
   header: { alignItems: 'center', marginBottom: 20 },
   badge: {
     flexDirection: 'row',
@@ -375,7 +360,7 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     height: 56,
-    borderRadius: 28,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -384,7 +369,7 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_700Bold' },
   secondaryBtn: {
     height: 56,
-    borderRadius: 28,
+    borderRadius: 100,
     borderWidth: 1.5,
     flexDirection: 'row',
     justifyContent: 'center',
@@ -444,7 +429,7 @@ const styles = StyleSheet.create({
   securityNoteText: { fontSize: 11.5, fontFamily: 'Manrope_500Medium' },
   paySubmitBtn: {
     height: 54,
-    borderRadius: 27,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

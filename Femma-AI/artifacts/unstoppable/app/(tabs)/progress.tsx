@@ -39,6 +39,10 @@ import { LEVEL_THRESHOLDS } from '@/lib/levels';
 import { isTrainingPlanComplete, snapshotPerformance, planTotalDays } from '@/lib/trainingPlan';
 import { missionsFromPlanDay, sortTodayMissions } from '@/lib/buildCoursePlan';
 import type { Mission } from '@/context/AppContext';
+import { useDailyPlan } from '@/hooks/useDailyPlan';
+import { itemsForDay, itemMetaLine, type DailyPlanItem } from '@/lib/dailyPlans';
+import { defaultMediaForDailyItem, isVideoMediaUrl } from '@/lib/dailyPlanMedia';
+import colorsTheme from '@/constants/colors';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=85';
@@ -52,6 +56,40 @@ function calendarWeekday(planDay: number, journeyDay: number) {
   date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + (planDay - Math.max(1, journeyDay)));
   return date.toLocaleDateString(undefined, { weekday: 'short' });
+}
+
+function adminItemToMission(item: DailyPlanItem): Mission {
+  const adminUrl = item.mediaUrl?.trim() || '';
+  const media =
+    adminUrl && !isVideoMediaUrl(adminUrl)
+      ? adminUrl
+      : defaultMediaForDailyItem({ ...item, mediaUrl: null });
+  const accent =
+    item.itemType === 'rest'
+      ? colorsTheme.light.mint
+      : item.itemType === 'recovery'
+        ? colorsTheme.light.lavender
+        : item.itemType === 'food'
+          ? colorsTheme.light.warmYellow
+          : colorsTheme.light.pink;
+  return {
+    id: item.id,
+    title: item.title,
+    category: item.itemType === 'rest' || item.itemType === 'recovery' ? 'yoga' : item.itemType === 'food' ? 'recipe' : 'fitness',
+    duration: item.durationMinutes || 0,
+    calories: 0,
+    difficulty: item.intensityLevel || '',
+    completed: false,
+    skipped: false,
+    accentColor: accent,
+    icon: item.itemType === 'rest' ? 'moon' : item.itemType === 'food' ? 'book-open' : 'activity',
+    label: item.tag || item.itemType,
+    slot: item.itemType === 'food' ? 'recipe' : 'exercise',
+    cue: item.cue || '',
+    steps: item.steps || [],
+    mediaUrl: media,
+    metaLine: itemMetaLine(item),
+  };
 }
 
 function HeroDecor({ topPad, colors }: { topPad: number; colors: Palette }) {
@@ -123,6 +161,7 @@ export default function ProgressScreen() {
   const { user } = useAuth();
   const { profile, missions, completedLessonIds, lessonWatchProgress, coachChatHistory, activityLog, startNewPlan } = useApp();
   const { data: catalog } = useCatalog();
+  const { data: adminDailyPlan } = useDailyPlan();
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   const topPad = insets.top + 4;
@@ -157,31 +196,49 @@ export default function ProgressScreen() {
   );
 
   const level = levelProgress(profile);
-  const totalWeeks = profile.planDurationWeeks || profile.trainingPlan?.durationWeeks || 8;
-  const totalDays = planTotalDays(totalWeeks);
+  const adminDurationDays = Math.max(1, adminDailyPlan?.durationDays || 0);
+  const totalWeeks = adminDurationDays
+    ? Math.max(1, Math.ceil(adminDurationDays / 7))
+    : profile.planDurationWeeks || profile.trainingPlan?.durationWeeks || 8;
+  const totalDays = adminDurationDays || planTotalDays(totalWeeks);
   const planWeek = planWeekNumber(profile.journeyDay, totalWeeks);
   const currentDay = profile.journeyDay || 1;
   const planDays = profile.trainingPlan?.days || [];
-  const upcomingDays = (planDays.length
-    ? planDays.filter((row) => row.day >= currentDay)
-    : Array.from({ length: Math.max(1, totalDays - currentDay + 1) }, (_, index) => {
-        const day = currentDay + index;
-        const date = new Date();
-        date.setDate(date.getDate() + index);
-        return {
-          day,
-          week: Math.ceil(day / 7),
-          weekday: date.toLocaleDateString(undefined, { weekday: 'short' }),
-          items: [],
-        };
-      })
+  const upcomingDays = (
+    adminDurationDays
+      ? Array.from({ length: Math.max(1, totalDays - currentDay + 1) }, (_, index) => {
+          const day = currentDay + index;
+          return {
+            day,
+            week: Math.ceil(day / 7),
+            weekday: calendarWeekday(day, currentDay),
+            items: [],
+          };
+        })
+      : planDays.length
+        ? planDays.filter((row) => row.day >= currentDay)
+        : Array.from({ length: Math.max(1, totalDays - currentDay + 1) }, (_, index) => {
+            const day = currentDay + index;
+            const date = new Date();
+            date.setDate(date.getDate() + index);
+            return {
+              day,
+              week: Math.ceil(day / 7),
+              weekday: date.toLocaleDateString(undefined, { weekday: 'short' }),
+              items: [],
+            };
+          })
   ).slice(0, totalDays);
   const selectedMissions = useMemo(() => {
+    const adminItems = itemsForDay(adminDailyPlan, selectedDay, ['exercise', 'rest']);
+    if (adminItems.length) {
+      return sortTodayMissions(adminItems.map(adminItemToMission));
+    }
     if (profile.trainingPlan?.days?.length) {
       return sortTodayMissions(missionsFromPlanDay(profile.trainingPlan, selectedDay));
     }
     return selectedDay === (profile.journeyDay || 1) ? sortTodayMissions(missions) : [];
-  }, [profile.trainingPlan, profile.journeyDay, missions, selectedDay]);
+  }, [adminDailyPlan, profile.trainingPlan, profile.journeyDay, missions, selectedDay]);
   const planPercent = planProgressPercent({
     journeyDay: profile.journeyDay,
     missions,
@@ -389,6 +446,8 @@ export default function ProgressScreen() {
                         accentColor={item.accentColor || colors.primary}
                         size={36}
                         iconSize={16}
+                        imageUrl={item.mediaUrl}
+                        contentFit="contain"
                       />
                       <View style={styles.scheduleCopy}>
                         <Text style={[styles.scheduleLabel, { color: item.accentColor || colors.primary }]}>
