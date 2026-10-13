@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { getAccessToken, refreshAccessToken } from '@/lib/memberAuth';
 import type { UserProfile } from '@/context/AppContext';
 import { detectFocus } from '@/lib/dailyMissions';
 import { calorieTarget, goalLabels, ONBOARDING_GOALS, recipeCoachNotes, recipeFitsDiet } from '@/lib/nutritionPlan';
@@ -96,6 +97,10 @@ function recipesFromPlan(plan: { days?: Array<{ meals?: Array<AiRecipe & { name?
 export type AiRecipeRequest = {
   goalId?: string;
   foodPreference?: string;
+  /** Breakfast / Lunch / Dinner / Snack — only ask the member for this */
+  mealType?: string;
+  /** Abort the in-flight request (timeout / cancel). */
+  signal?: AbortSignal;
 };
 
 export async function generateAiRecipes(profile: UserProfile, request?: AiRecipeRequest): Promise<Recipe[]> {
@@ -106,6 +111,7 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
   await hydrateGeneratedRecipes();
   const goalId = request?.goalId || '';
   const foodPreference = request?.foodPreference || profile.foodPreference;
+  const mealType = String(request?.mealType || '').trim();
   const askedGoal = goalId
     ? ONBOARDING_GOALS.find((item) => item.id === goalId)?.label || goalId
     : '';
@@ -119,6 +125,8 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
     goal: goalId || profile.goal,
     foodPreference,
   };
+  const heightCm = Number(profile.heightCm) || 0;
+  const weightKg = Number(profile.weightKg) || 0;
   const payload = {
     mode: 'recipes',
     goal: goalLabel,
@@ -127,11 +135,21 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
       foodPreference,
       `can eat: ${foodPreference || 'Eat everything'}`,
       askedGoal ? `User picked this training: ${askedGoal}. Build recipes specifically for that.` : '',
+      `Training focus: ${goalLabel || profile.goal || 'general fitness'}`,
+      profile.fitnessLevel ? `Experience level: ${profile.fitnessLevel}` : '',
+      heightCm > 0 ? `Height: ${Math.round(heightCm)} cm` : '',
+      weightKg > 0 ? `Weight: ${Math.round(weightKg)} kg` : '',
+      profile.environment ? `Training place: ${profile.environment}` : '',
+      profile.dailyTime ? `Daily time available: ${profile.dailyTime}` : '',
+      mealType
+        ? `ONLY create ${mealType} recipes (not other meal times). Every recipe must fit ${mealType}.`
+        : '',
       ...recipeCoachNotes(workingProfile),
-      profile.fitnessLevel,
       profile.isPregnant || goalId === 'pregnancy' ? 'pregnancy-safe food only' : '',
       profile.planDurationWeeks ? `${profile.planDurationWeeks} week plan` : '',
-      'Return 4 complete recipes with ingredients and numbered steps.',
+      mealType
+        ? `Return 4 complete ${mealType} recipes with ingredients and numbered steps.`
+        : 'Return 4 complete recipes with ingredients and numbered steps.',
     ].filter(Boolean),
     exclusions: [],
     calories: calorieTarget(workingProfile),
@@ -147,6 +165,7 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
         apikey: supabaseAnonKey,
       },
       body: JSON.stringify(payload),
+      signal: request?.signal,
     });
 
     const text = await response.text();
@@ -163,22 +182,18 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
     return { response, json };
   };
 
-  let token = supabaseAnonKey;
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (sessionData.session?.access_token) {
-    token = sessionData.session.access_token;
-  }
-
+  const token = await getAccessToken();
   let result = await post(token);
-  if (result.response.status === 401 && token !== supabaseAnonKey) {
-    result = await post(supabaseAnonKey);
+  if (result.response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) result = await post(refreshed);
   }
 
   const { response, json } = result;
   if (!response.ok || json.error) {
     const message =
       response.status === 401
-        ? 'Recipe AI is not authorized. Reload the app and try again.'
+        ? 'Please sign in again to use Recipe AI.'
         : json.error || `Recipe generate failed (${response.status})`;
     throw new Error(message);
   }

@@ -1,27 +1,41 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useResponsive } from '@/hooks/useResponsive';
-import { AuthBackground } from '@/components/AuthBackground';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
+import { BrandLogo } from '@/components/BrandLogo';
 import * as Haptics from 'expo-haptics';
+
+const FEATURES = [
+  {
+    icon: 'play' as const,
+    title: 'Train with confidence',
+    body: 'Workout and self-defense videos.',
+  },
+  {
+    icon: 'message-circle' as const,
+    title: 'Support for your everyday',
+    body: 'AI recipes, food scanning and coach chat.',
+  },
+];
 
 export default function WelcomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { contentMaxWidth, padX, isCompact, isShort, headlineSize, headlineLineHeight, logoSize, height } = useResponsive();
+  const { contentMaxWidth, padX, isCompact, isShort, height } = useResponsive();
   const topPad = insets.top + 8;
-  const botPad = Math.max(insets.bottom, 12);
+  const botPad = Math.max(insets.bottom, 16);
 
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(40);
+  const translateY = useSharedValue(24);
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 700 });
-    translateY.value = withTiming(0, { duration: 700 });
+    opacity.value = withTiming(1, { duration: 600 });
+    translateY.value = withTiming(0, { duration: 600 });
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -29,13 +43,8 @@ export default function WelcomeScreen() {
     transform: [{ translateY: translateY.value }],
   }));
 
-  const pillColors = [colors.pink, colors.lavender, colors.skyBlue, colors.mint];
-  const pillLabels = ['Fitness', 'Wellness', 'Confidence', 'Safety'];
-
   return (
-    <View style={styles.container}>
-      <AuthBackground />
-
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={{ flexGrow: 1, minHeight: height }}
         scrollEnabled={isShort || isCompact}
@@ -45,8 +54,8 @@ export default function WelcomeScreen() {
             styles.content,
             animStyle,
             {
-              paddingTop: topPad + (isCompact ? 28 : 48),
-              paddingBottom: botPad + 32,
+              paddingTop: topPad + (isCompact ? 36 : 56),
+              paddingBottom: botPad + 24,
               paddingHorizontal: padX,
               maxWidth: contentMaxWidth,
               width: '100%',
@@ -54,55 +63,68 @@ export default function WelcomeScreen() {
             },
           ]}
         >
-          {/* Logo */}
-          <View style={[styles.logoSection, { marginBottom: isCompact ? 20 : 28 }]}>
-            <View style={[styles.logoMark, { backgroundColor: colors.pink, width: logoSize, height: logoSize, borderRadius: logoSize * 0.29 }]}>
-              <Text style={[styles.logoLetter, { fontSize: isCompact ? 32 : 38 }]}>U</Text>
-            </View>
-            <Text style={[styles.appName, { color: '#FFFFFF', fontSize: isCompact ? 22 : 26, letterSpacing: isCompact ? 3 : 5 }]}>UNSTOPPABLE</Text>
-            <View style={[styles.taglinePill, { backgroundColor: colors.pink, borderColor: colors.pink }]}>
-              <Text style={[styles.tagline, { color: '#FFFFFF' }]}>Women's Transformation Platform</Text>
-            </View>
+          <View style={styles.brand}>
+            <BrandLogo size={72} layout="stack" nameStyle={{ fontSize: 24, letterSpacing: 0.5 }} />
           </View>
 
-          {/* Pillars */}
-          <View style={[styles.pillsRow, { marginBottom: isCompact ? 24 : 36 }]}>
-            {pillLabels.map((label, i) => (
-              <Animated.View key={label} entering={FadeInDown.delay(300 + i * 100).duration(400)}>
-                <View style={[styles.pill, { backgroundColor: pillColors[i], borderColor: pillColors[i] }]}>
-                  <Text style={[styles.pillText, { color: '#FFFFFF' }]}>{label}</Text>
+          <Animated.View entering={FadeInDown.delay(120).duration(450)} style={styles.hero}>
+            <Text style={[styles.headline, { color: colors.foreground, fontSize: isCompact ? 30 : 34 }]}>
+              A stronger you.{'\n'}Every day.
+            </Text>
+            <Text style={[styles.subhead, { color: colors.mutedForeground }]}>Built around your life.</Text>
+          </Animated.View>
+
+          <View style={styles.features}>
+            {FEATURES.map((feature, index) => (
+              <Animated.View
+                key={feature.title}
+                entering={FadeInDown.delay(220 + index * 90).duration(450)}
+                style={styles.featureRow}
+              >
+                <View
+                  style={[
+                    styles.featureIcon,
+                    index === 0
+                      ? { backgroundColor: colors.pink, borderColor: colors.pink }
+                      : { backgroundColor: 'transparent', borderColor: colors.pink },
+                  ]}
+                >
+                  <Feather name={feature.icon} size={18} color={index === 0 ? '#FFFFFF' : colors.pink} />
+                </View>
+                <View style={styles.featureCopy}>
+                  <Text style={[styles.featureTitle, { color: colors.foreground }]}>{feature.title}</Text>
+                  <Text style={[styles.featureBody, { color: colors.mutedForeground }]}>{feature.body}</Text>
                 </View>
               </Animated.View>
             ))}
           </View>
 
-          {/* Headline */}
-          <Animated.View entering={FadeInDown.delay(700).duration(600)} style={styles.headlineSection}>
-            <Text style={[styles.headline, { color: '#FFFFFF', fontSize: headlineSize, lineHeight: headlineLineHeight }]}>
-              One journey.{'\n'}<Text style={{ color: colors.pink }}>Unstoppable</Text> you.
-            </Text>
-            <Text style={[styles.body, { color: 'rgba(255,255,255,0.65)', fontSize: isCompact ? 14 : 15 }]}>
-              Beginner → fit → confident → safe → unstoppable.{'\n'}Personalized to your body, your cycle, your goals.
-            </Text>
-          </Animated.View>
+          <View style={styles.spacer} />
 
-          <View style={[styles.spacer, { minHeight: isShort ? 16 : 32 }]} />
-
-          {/* CTAs */}
-          <Animated.View entering={FadeInDown.delay(1000).duration(600)} style={styles.ctaSection}>
+          <Animated.View entering={FadeInDown.delay(420).duration(450)} style={styles.ctaSection}>
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: colors.pink }]}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/signup'); }}
-              activeOpacity={0.85}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/signup');
+              }}
+              activeOpacity={0.88}
             >
-              <Text style={styles.primaryBtnText}>Start My Journey</Text>
+              <Text style={styles.primaryBtnText}>Get started</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/login'); }}
+              style={styles.switchBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/login');
+              }}
               activeOpacity={0.7}
             >
-              <Text style={[styles.secondaryBtnText, { color: 'rgba(255,255,255,0.6)' }]}>I already have an account</Text>
+              <Text style={[styles.switchText, { color: colors.mutedForeground }]}>
+                Already have an account?{' '}
+                <Text style={{ color: colors.pink, fontFamily: 'Manrope_700Bold' }}>Sign in</Text>
+              </Text>
             </TouchableOpacity>
           </Animated.View>
         </Animated.View>
@@ -114,22 +136,41 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1 },
-  logoSection: { alignItems: 'center' },
-  logoMark: { justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  logoLetter: { fontWeight: '800', color: '#FFFFFF', fontFamily: 'Manrope_800ExtraBold' },
-  appName: { fontWeight: '800', marginBottom: 10, fontFamily: 'Manrope_800ExtraBold' },
-  taglinePill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
-  tagline: { fontSize: 12, fontWeight: '600', letterSpacing: 0.3, fontFamily: 'Manrope_600SemiBold' },
-  pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100, borderWidth: 1 },
-  pillText: { fontSize: 13, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
-  headlineSection: { alignItems: 'center' },
-  headline: { fontWeight: '800', textAlign: 'center', marginBottom: 16, fontFamily: 'Manrope_800ExtraBold' },
-  body: { lineHeight: 24, textAlign: 'center', fontFamily: 'Manrope_400Regular' },
-  spacer: { flex: 1 },
-  ctaSection: { gap: 14 },
-  primaryBtn: { height: 56, borderRadius: 100, justifyContent: 'center', alignItems: 'center' },
-  primaryBtnText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope_700Bold' },
-  secondaryBtn: { height: 48, justifyContent: 'center', alignItems: 'center' },
-  secondaryBtnText: { fontSize: 15, fontFamily: 'Manrope_400Regular' },
+  brand: { alignItems: 'center', marginBottom: 36 },
+  hero: { alignItems: 'center', marginBottom: 36 },
+  headline: {
+    fontFamily: 'Manrope_800ExtraBold',
+    textAlign: 'center',
+    lineHeight: 40,
+    marginBottom: 10,
+  },
+  subhead: {
+    fontSize: 16,
+    fontFamily: 'Manrope_400Regular',
+    textAlign: 'center',
+  },
+  features: { gap: 22, paddingHorizontal: 4 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  featureIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureCopy: { flex: 1, gap: 2 },
+  featureTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold' },
+  featureBody: { fontSize: 14, lineHeight: 20, fontFamily: 'Manrope_400Regular' },
+  spacer: { flex: 1, minHeight: 28 },
+  ctaSection: { gap: 16 },
+  primaryBtn: {
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  primaryBtnText: { fontSize: 17, color: '#FFFFFF', fontFamily: 'Manrope_700Bold' },
+  switchBtn: { alignItems: 'center', paddingVertical: 4 },
+  switchText: { fontSize: 15, fontFamily: 'Manrope_400Regular' },
 });

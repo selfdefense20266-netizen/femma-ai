@@ -17,6 +17,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import MainCard from 'components/MainCard';
 import StatusChip from 'components/admin/StatusChip';
 import Loader from 'components/Loader';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 import { useAdminData } from 'contexts/AdminDataContext';
 import { INTENSITY_OPTIONS } from 'api/dailyPlans';
 import {
@@ -32,6 +33,15 @@ import PlusOutlined from '@ant-design/icons/PlusOutlined';
 import EditOutlined from '@ant-design/icons/EditOutlined';
 import DeleteOutlined from '@ant-design/icons/DeleteOutlined';
 import CloudUploadOutlined from '@ant-design/icons/CloudUploadOutlined';
+
+/** Durations are stored in seconds. */
+function formatSec(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem ? `${m}m ${rem}s` : `${m}m`;
+}
 
 const emptySection = () => ({
   id: '',
@@ -51,6 +61,7 @@ export default function RecoverySections() {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [confirm, setConfirm] = useState(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptySection());
   const [saving, setSaving] = useState(false);
@@ -126,7 +137,8 @@ export default function RecoverySections() {
           id: '',
           intensityLevel: activeLevel,
           title: libItem.title,
-          durationMinutes: libItem.durationMinutes || 8,
+          // Library durations are stored in seconds.
+          durationMinutes: libItem.durationMinutes || 480,
           restMinutes: libItem.restMinutes || 0,
           mediaUrl: libItem.mediaUrl || '',
           cue: libItem.cue || '',
@@ -240,14 +252,16 @@ export default function RecoverySections() {
                 </Button>
                 <IconButton
                   color="error"
-                  onClick={async () => {
-                    try {
-                      await removeRecoverySection(section.id);
-                      await refresh();
-                    } catch (err) {
-                      setError(err.message || 'Delete failed');
-                    }
-                  }}
+                  onClick={() =>
+                    setConfirm({
+                      title: 'Delete recovery section?',
+                      message: `“${section.title}” and its ${section.items?.length || 0} exercise(s) will be permanently deleted.`,
+                      onConfirm: async () => {
+                        await removeRecoverySection(section.id);
+                        await refresh();
+                      }
+                    })
+                  }
                 >
                   <DeleteOutlined />
                 </IconButton>
@@ -431,7 +445,7 @@ export default function RecoverySections() {
                                 {item.title}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {item.durationMinutes} min
+                                {formatSec(item.durationMinutes)}
                               </Typography>
                             </Box>
                             <IconButton size="small" color="error" onClick={() => removeItem(index)}>
@@ -459,6 +473,14 @@ export default function RecoverySections() {
           </Stack>
         </Box>
       </Drawer>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

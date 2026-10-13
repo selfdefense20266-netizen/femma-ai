@@ -1,13 +1,8 @@
 import { supabase } from 'lib/supabase';
 import { uploadThumbnail } from 'api/uploadThumbnail';
+import { deleteChildrenNotIn } from 'api/childRows';
+import { newRecordId } from 'utils/ids';
 
-function slugify(text, fallbackPrefix = 'journey') {
-  const base = String(text || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  return base || `${fallbackPrefix}-${Date.now().toString(36)}`;
-}
 
 export function mapJourney(row, courseLinkRows = []) {
   const courseIds = courseLinkRows
@@ -43,7 +38,8 @@ export async function fetchJourneys() {
 }
 
 export async function upsertJourney(payload) {
-  const id = payload.id || slugify(payload.title);
+  const isNew = !payload.id;
+  const id = payload.id || newRecordId(payload.title, 'journey');
   const row = {
     id,
     title: payload.title.trim(),
@@ -56,18 +52,19 @@ export async function upsertJourney(payload) {
     sort_order: payload.sortOrder ?? 0
   };
 
-  const { data, error } = await supabase.from('journeys').upsert(row).select('*').single();
+  const query = isNew ? supabase.from('journeys').insert(row) : supabase.from('journeys').update(row).eq('id', id);
+  const { data, error } = await query.select('*').single();
   if (error) throw error;
 
-  const courseIds = payload.courseIds || [];
-  const { error: deleteError } = await supabase.from('journey_courses').delete().eq('journey_id', id);
-  if (deleteError) throw deleteError;
+  const courseIds = [...new Set(payload.courseIds || [])];
 
+  // Upsert the new link set first (PK is journey_id + course_id), then drop links no longer selected.
   if (courseIds.length) {
     const linkRows = courseIds.map((courseId, index) => ({ journey_id: id, course_id: courseId, sort_order: index }));
-    const { error: insertError } = await supabase.from('journey_courses').insert(linkRows);
-    if (insertError) throw insertError;
+    const { error: upsertError } = await supabase.from('journey_courses').upsert(linkRows, { onConflict: 'journey_id,course_id' });
+    if (upsertError) throw upsertError;
   }
+  await deleteChildrenNotIn('journey_courses', 'journey_id', id, 'course_id', courseIds);
 
   return mapJourney(data, courseIds.map((courseId, index) => ({ journey_id: id, course_id: courseId, sort_order: index })));
 }

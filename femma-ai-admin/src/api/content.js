@@ -1,12 +1,25 @@
 import { supabase } from 'lib/supabase';
 import { uploadThumbnail } from 'api/uploadThumbnail';
+import { newRecordId } from 'utils/ids';
 
-function slugify(text, fallbackPrefix = 'item') {
-  const base = String(text || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  return base || `${fallbackPrefix}-${Date.now().toString(36)}`;
+/**
+ * Existing record (has id) -> UPDATE that row only.
+ * New record -> INSERT with a unique id (slug + random suffix), so a new item with
+ * the same title as an existing one can never overwrite it.
+ */
+async function saveRow(table, existingId, row, idSeed, fallbackPrefix) {
+  if (existingId) {
+    const { data, error } = await supabase.from(table).update(row).eq('id', existingId).select('*').single();
+    if (error) throw error;
+    return data;
+  }
+  const { data, error } = await supabase
+    .from(table)
+    .insert({ id: newRecordId(idSeed, fallbackPrefix), ...row })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 export function mapCategory(row) {
@@ -113,9 +126,7 @@ export async function fetchCatalog() {
 }
 
 export async function upsertCategory(payload) {
-  const id = payload.id || slugify(payload.title, 'cat');
   const row = {
-    id,
     title: payload.title.trim(),
     subtitle: payload.subtitle || null,
     description: payload.description || null,
@@ -124,8 +135,7 @@ export async function upsertCategory(payload) {
     status: payload.status || 'draft'
   };
 
-  const { data, error } = await supabase.from('categories').upsert(row).select('*').single();
-  if (error) throw error;
+  const data = await saveRow('categories', payload.id, row, payload.title, 'cat');
   return mapCategory(data);
 }
 
@@ -135,9 +145,7 @@ export async function removeCategory(id) {
 }
 
 export async function upsertCourse(payload) {
-  const id = payload.id || slugify(payload.title, 'course');
   const row = {
-    id,
     category_id: payload.categoryId,
     title: payload.title.trim(),
     short_title: payload.shortTitle || payload.title.trim(),
@@ -152,8 +160,7 @@ export async function upsertCourse(payload) {
     sort_order: payload.sortOrder ?? 0
   };
 
-  const { data, error } = await supabase.from('courses').upsert(row).select('*').single();
-  if (error) throw error;
+  const data = await saveRow('courses', payload.id, row, payload.title, 'course');
   return mapCourse(data, [], []);
 }
 
@@ -167,17 +174,14 @@ export async function uploadCourseImage(courseId, file) {
 }
 
 export async function upsertModule(courseId, payload) {
-  const id = payload.id || slugify(`${courseId}-${payload.title}`, 'mod');
   const row = {
-    id,
     course_id: courseId,
     title: payload.title.trim(),
     description: payload.description || null,
     sort_order: payload.sortOrder ?? 0
   };
 
-  const { data, error } = await supabase.from('modules').upsert(row).select('*').single();
-  if (error) throw error;
+  const data = await saveRow('modules', payload.id, row, `${courseId}-${payload.title}`, 'mod');
   return mapModule(data, []);
 }
 
@@ -214,7 +218,7 @@ export function durationMinutesFromVideoFile(file) {
 }
 
 export async function upsertLesson(courseId, moduleId, payload) {
-  const id = payload.id || slugify(`${moduleId}-${payload.title}`, 'lesson');
+  const id = payload.id || newRecordId(`${moduleId}-${payload.title}`, 'lesson');
   const duration = clampDurationMinutes(payload.durationMinutes);
 
   if (payload.id) {
@@ -305,12 +309,18 @@ export async function uploadLessonVideo(lessonId, file, onProgress) {
   const { uploadUrl, uploadId } = await createMuxDirectUpload(lessonId);
   await putFileToMuxUpload(uploadUrl, file, onProgress);
   const durationMinutes = await durationMinutesFromVideoFile(file);
-  await setLessonVideoStatus(lessonId, 'processing', {
+  const processing = await setLessonVideoStatus(lessonId, 'processing', {
     mux_upload_id: uploadId,
     upload_key: `mux://${uploadId}`,
     ...(durationMinutes != null ? { duration_minutes: durationMinutes } : {})
   });
-  return syncLessonVideoStatus(lessonId);
+  try {
+    return await syncLessonVideoStatus(lessonId);
+  } catch (err) {
+    // The upload itself succeeded; Mux status sync is best-effort and retried on the next catalog refresh.
+    console.warn('[uploadLessonVideo] status sync failed:', err?.message || err);
+    return processing;
+  }
 }
 
 export async function syncLessonVideoStatus(lessonId) {

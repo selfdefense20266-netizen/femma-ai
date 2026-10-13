@@ -5,7 +5,9 @@ import {
   RocketOutlined,
   ScheduleOutlined,
   AppstoreOutlined,
+  CoffeeOutlined,
   ReadOutlined,
+  PlaySquareOutlined,
   ClusterOutlined,
   CloudUploadOutlined,
   TeamOutlined,
@@ -23,7 +25,9 @@ const icons = {
   RocketOutlined,
   ScheduleOutlined,
   AppstoreOutlined,
+  CoffeeOutlined,
   ReadOutlined,
+  PlaySquareOutlined,
   ClusterOutlined,
   CloudUploadOutlined,
   TeamOutlined,
@@ -70,6 +74,13 @@ const dashboard = {
           icon: icons.ScheduleOutlined
         },
         {
+          id: 'meals',
+          title: 'Meals',
+          type: 'item',
+          url: '/content/meals',
+          icon: icons.CoffeeOutlined
+        },
+        {
           id: 'recovery',
           title: 'Recovery',
           type: 'item',
@@ -95,7 +106,7 @@ const dashboard = {
           title: 'Courses',
           type: 'item',
           url: '/content/courses',
-          icon: icons.ReadOutlined
+          icon: icons.PlaySquareOutlined
         },
         {
           id: 'modules-lessons',

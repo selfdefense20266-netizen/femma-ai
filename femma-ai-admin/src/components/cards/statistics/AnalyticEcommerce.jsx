@@ -38,15 +38,13 @@ export default function AnalyticEcommerce({ color = 'primary', title, count, per
           )}
         </Stack>
       </Stack>
-      <Box sx={{ pt: 2.25 }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          You made an extra{' '}
+      {extra && (
+        <Box sx={{ pt: 2.25 }}>
           <Typography variant="caption" sx={{ color: `${color || 'primary'}.main` }}>
             {extra}
-          </Typography>{' '}
-          this year
-        </Typography>
-      </Box>
+          </Typography>
+        </Box>
+      )}
     </MainCard>
   );
 }

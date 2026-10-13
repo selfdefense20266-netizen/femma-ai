@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { getAccessToken, refreshAccessToken } from '@/lib/memberAuth';
 import type { UserProfile } from '@/context/AppContext';
 import { LEVEL_NAMES } from '@/context/AppContext';
 import { checkCoachQuestionScope } from '@/lib/coachScope';
@@ -15,10 +16,8 @@ type CoachResponse = {
   model?: string;
 };
 
-async function authToken() {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token || supabaseAnonKey;
-}
+/** Edge functions require the signed-in user's access token (anon key only as a last resort). */
+const authToken = getAccessToken;
 
 function profilePayload(profile: UserProfile) {
   return {
@@ -88,9 +87,11 @@ export async function sendCoachMessage(
     throw new Error('Could not reach AI Coach. Check your connection and try again.');
   }
 
-  if (result.response.status === 401 && token !== supabaseAnonKey) {
+  if (result.response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) token = refreshed;
     try {
-      result = await post(supabaseAnonKey);
+      if (refreshed) result = await post(refreshed);
     } catch {
       throw new Error('Could not reach AI Coach. Check your connection and try again.');
     }

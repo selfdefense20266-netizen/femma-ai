@@ -1,13 +1,7 @@
 import { supabase } from 'lib/supabase';
 import { uploadThumbnail } from 'api/uploadThumbnail';
-
-function slugify(text, fallbackPrefix = 'daily-plan') {
-  const base = String(text || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  return base || `${fallbackPrefix}-${Date.now().toString(36)}`;
-}
+import { deleteChildrenNotIn } from 'api/childRows';
+import { newRecordId } from 'utils/ids';
 
 export const USER_TYPE_OPTIONS = [
   { id: 'yoga', label: 'Yoga' },
@@ -35,7 +29,148 @@ export const INTENSITY_OPTIONS = [
 
 export const DURATION_DAY_PRESETS = [7, 14, 21, 30];
 
-export const ITEM_TYPE_OPTIONS = [{ id: 'exercise', label: 'Exercise' }];
+export const ITEM_TYPE_OPTIONS = [
+  { id: 'exercise', label: 'Exercise' },
+  { id: 'food', label: 'Food / Meal' },
+  { id: 'recovery', label: 'Recovery' },
+  { id: 'rest', label: 'Rest' }
+];
+
+/** Meal slot tags used by the app Today’s meals card (Breakfast / Lunch / Dinner). */
+export const MEAL_SLOT_OPTIONS = [
+  { id: 'Breakfast', label: 'Breakfast (morning)' },
+  { id: 'Lunch', label: 'Lunch' },
+  { id: 'Dinner', label: 'Dinner' }
+];
+
+/** Food styles from app onboarding (lifestyle). */
+export const FOOD_PREFERENCE_OPTIONS = [
+  'Eat everything',
+  'Vegetarian',
+  'Carnivore',
+  'Gluten-free',
+  'Dairy-free',
+  'High protein',
+  'Low carb'
+];
+
+const AUDIENCE_PREFIX = 'AUDIENCE:';
+
+function numOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeFoods(audience = {}) {
+  const list = Array.isArray(audience.foods)
+    ? audience.foods
+    : audience.food
+      ? [audience.food]
+      : ['Eat everything'];
+  const cleaned = [...new Set(list.map((f) => String(f || '').trim()).filter(Boolean))];
+  return cleaned.length ? cleaned : ['Eat everything'];
+}
+
+/** Encode who should see this meal (height cm / weight kg / food styles). Stored on plan item subtitle. */
+export function encodeMealAudience(audience = {}) {
+  const foods = normalizeFoods(audience);
+  const payload = {
+    food: foods[0],
+    foods,
+    heightMin: numOrNull(audience.heightMin),
+    heightMax: numOrNull(audience.heightMax),
+    weightMin: numOrNull(audience.weightMin),
+    weightMax: numOrNull(audience.weightMax)
+  };
+  return `${AUDIENCE_PREFIX}${JSON.stringify(payload)}`;
+}
+
+export function parseMealAudience(text) {
+  const raw = String(text || '');
+  const idx = raw.indexOf(AUDIENCE_PREFIX);
+  if (idx < 0) return null;
+  try {
+    const json = raw.slice(idx + AUDIENCE_PREFIX.length).trim();
+    // Full object parse (supports foods array)
+    const data = JSON.parse(json.match(/^\{[\s\S]*\}/)?.[0] || json);
+    const foods = normalizeFoods(data);
+    return {
+      food: foods[0],
+      foods,
+      heightMin: numOrNull(data.heightMin),
+      heightMax: numOrNull(data.heightMax),
+      weightMin: numOrNull(data.weightMin),
+      weightMax: numOrNull(data.weightMax)
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function cmFromFtIn(ft, inch = 0) {
+  const f = Number(ft);
+  const i = Number(inch) || 0;
+  if (!Number.isFinite(f)) return null;
+  return Math.round((f * 12 + i) * 2.54);
+}
+
+export function ftInFromCm(cm) {
+  const n = Number(cm);
+  if (!Number.isFinite(n) || n <= 0) return { ft: '', inch: '' };
+  const totalIn = Math.round(n / 2.54);
+  const ft = Math.floor(totalIn / 12);
+  const inch = totalIn % 12;
+  return { ft, inch };
+}
+
+/** @deprecated use cmFromFtIn */
+export function cmFromFt(ft) {
+  return cmFromFtIn(ft, 0);
+}
+
+/** @deprecated use ftInFromCm */
+export function ftFromCm(cm) {
+  const { ft, inch } = ftInFromCm(cm);
+  if (ft === '') return '';
+  return Math.round((ft + inch / 12) * 100) / 100;
+}
+
+function formatHeightFtRange(minCm, maxCm) {
+  const lo = ftInFromCm(minCm);
+  const hi = ftInFromCm(maxCm);
+  const fmt = (p) => (p.ft === '' ? '?' : `${p.ft}'${p.inch || 0}"`);
+  if (minCm == null && maxCm == null) return null;
+  return `${fmt(lo)}–${fmt(hi)}`;
+}
+
+export function formatMealAudienceLabel(audience) {
+  if (!audience) return 'Anyone';
+  const parts = [];
+  const foods = normalizeFoods(audience);
+  if (foods.length) parts.push(foods.join(' + '));
+  if (audience.heightMin != null || audience.heightMax != null) {
+    parts.push(formatHeightFtRange(audience.heightMin, audience.heightMax) || 'Height');
+  }
+  if (audience.weightMin != null || audience.weightMax != null) {
+    parts.push(`${audience.weightMin ?? '?'}–${audience.weightMax ?? '?'} kg`);
+  }
+  return parts.join(' · ') || 'Anyone';
+}
+
+export function mealSlotKey(item) {
+  const blob = `${item?.tag || ''} ${item?.scheduledTime || ''} ${item?.title || ''}`.toLowerCase();
+  if (/breakfast|morning/.test(blob)) return 'Breakfast';
+  if (/lunch|midday|noon/.test(blob)) return 'Lunch';
+  if (/dinner|evening|supper|night/.test(blob)) return 'Dinner';
+  return item?.tag || '';
+}
+
+export function audienceSignature(audience) {
+  const a = audience || {};
+  const foods = normalizeFoods(a).slice().sort().join(',');
+  return [foods, a.heightMin ?? '', a.heightMax ?? '', a.weightMin ?? '', a.weightMax ?? ''].join('|');
+}
 
 export const RECOVERY_TYPE_OPTIONS = [
   { id: 'full-body', label: 'Full body stretch' },
@@ -127,7 +262,8 @@ export async function fetchExerciseLibrary() {
 }
 
 export async function upsertExerciseLibraryItem(payload) {
-  const id = payload.id || `${slugify(payload.title, 'lib')}-${Date.now().toString(36)}`;
+  const isNew = !payload.id;
+  const id = payload.id || newRecordId(payload.title, 'lib');
   const row = {
     id,
     title: String(payload.title || '').trim(),
@@ -146,7 +282,10 @@ export async function upsertExerciseLibraryItem(payload) {
       return Math.floor(Date.now() / 1000);
     })()
   };
-  const { data, error } = await supabase.from('exercise_library').upsert(row).select('*').single();
+  const query = isNew
+    ? supabase.from('exercise_library').insert(row)
+    : supabase.from('exercise_library').update(row).eq('id', id);
+  const { data, error } = await query.select('*').single();
   if (error) throw error;
   return mapLibraryItem(data);
 }
@@ -169,10 +308,38 @@ export async function fetchDailyPlans() {
   return (plansRes.data || []).map((row) => mapDailyPlan(row, itemRows));
 }
 
+const ALLOWED_INTENSITY = new Set(['beginner', 'intermediate', 'active']);
+const ALLOWED_RECOVERY = new Set(['full-body', 'upper-body', 'lower-body', 'breath']);
+
+function toItemRow(planId, item, index, stamp = Date.now().toString(36)) {
+  const itemType = item.itemType || 'exercise';
+  const recoveryType = itemType === 'recovery' && ALLOWED_RECOVERY.has(item.recoveryType) ? item.recoveryType : null;
+  return {
+    // Keep stable ids for existing items so saves are in-place upserts.
+    id: item.id || `${planId}-d${item.dayNumber || 1}-${item.intensityLevel || 'beginner'}-${index}-${stamp}`,
+    plan_id: planId,
+    day_number: Math.max(1, Number(item.dayNumber ?? 1)),
+    intensity_level: ALLOWED_INTENSITY.has(item.intensityLevel) ? item.intensityLevel : 'beginner',
+    recovery_type: recoveryType,
+    item_type: itemType,
+    title: String(item.title || '').trim() || `Item ${index + 1}`,
+    tag: item.tag || '',
+    subtitle: item.subtitle || '',
+    scheduled_time: item.scheduledTime || '',
+    // Stored in SECONDS (column name kept for compatibility).
+    duration_minutes: Math.max(1, Math.round(Number(item.durationMinutes ?? 10))),
+    rest_minutes: Math.max(0, Math.round(Number(item.restMinutes ?? 0))),
+    media_url: item.mediaUrl || null,
+    cue: item.cue || '',
+    steps: Array.isArray(item.steps) ? item.steps : [],
+    sort_order: item.sortOrder ?? index
+  };
+}
+
 export async function upsertDailyPlan(payload) {
-  const id = payload.id || slugify(payload.title);
+  const isNew = !payload.id;
+  const id = payload.id || newRecordId(payload.title, 'daily-plan');
   const durationDays = clampDurationDays(payload.durationDays ?? 30);
-  const allowedIntensity = new Set(['beginner', 'intermediate', 'active']);
 
   const planRow = {
     id,
@@ -187,51 +354,68 @@ export async function upsertDailyPlan(payload) {
     duration_days: durationDays
   };
 
-  const { data, error } = await supabase.from('daily_plans').upsert(planRow).select('*').single();
+  const planQuery = isNew
+    ? supabase.from('daily_plans').insert(planRow)
+    : supabase.from('daily_plans').update(planRow).eq('id', id);
+  const { data, error } = await planQuery.select('*').single();
   if (error) throw error;
 
-  const { error: deleteError } = await supabase.from('daily_plan_items').delete().eq('plan_id', id);
-  if (deleteError) throw deleteError;
-
   const items = Array.isArray(payload.items) ? payload.items : [];
+  const stamp = Date.now().toString(36);
+  const itemRows = items
+    .filter((item) => Number(item.dayNumber || 1) <= durationDays)
+    .map((item, index) => toItemRow(id, item, index, stamp));
+
+  // 1) Upsert the new item set first. If this fails, the existing plan items are untouched.
   let savedItemRows = [];
-  const allowedRecovery = new Set(['full-body', 'upper-body', 'lower-body', 'breath']);
-
-  if (items.length) {
-    const itemRows = items
-      .filter((item) => Number(item.dayNumber || 1) <= durationDays)
-      .map((item, index) => {
-        const itemType = item.itemType || 'exercise';
-        const recoveryType =
-          itemType === 'recovery' && allowedRecovery.has(item.recoveryType) ? item.recoveryType : null;
-        return {
-          id: item.id || `${id}-d${item.dayNumber || 1}-${item.intensityLevel || 'beginner'}-${index}-${Date.now().toString(36)}`,
-          plan_id: id,
-          day_number: Math.max(1, Number(item.dayNumber ?? 1)),
-          intensity_level: allowedIntensity.has(item.intensityLevel) ? item.intensityLevel : 'beginner',
-          recovery_type: recoveryType,
-          item_type: itemType,
-          title: String(item.title || '').trim() || `Item ${index + 1}`,
-          tag: item.tag || '',
-          subtitle: item.subtitle || '',
-          scheduled_time: item.scheduledTime || '',
-          duration_minutes: Math.max(1, Number(item.durationMinutes ?? 10)),
-          rest_minutes: Number(item.restMinutes ?? 0),
-          media_url: item.mediaUrl || null,
-          cue: item.cue || '',
-          steps: Array.isArray(item.steps) ? item.steps : [],
-          sort_order: item.sortOrder ?? index
-        };
-      });
-
-    if (itemRows.length) {
-      const { data: inserted, error: insertError } = await supabase.from('daily_plan_items').insert(itemRows).select('*');
-      if (insertError) throw insertError;
-      savedItemRows = inserted || itemRows;
-    }
+  if (itemRows.length) {
+    const { data: upserted, error: upsertError } = await supabase
+      .from('daily_plan_items')
+      .upsert(itemRows, { onConflict: 'id' })
+      .select('*');
+    if (upsertError) throw upsertError;
+    savedItemRows = upserted || itemRows;
   }
 
+  // 2) Only then remove items that are no longer part of the plan.
+  await deleteChildrenNotIn(
+    'daily_plan_items',
+    'plan_id',
+    id,
+    'id',
+    itemRows.map((r) => r.id)
+  );
+
   return mapDailyPlan(data, savedItemRows);
+}
+
+/** Add items to an existing plan without touching its other items. Returns mapped items. */
+export async function insertDailyPlanItems(planId, items) {
+  if (!items?.length) return [];
+  const stamp = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const rows = items.map((item, index) => toItemRow(planId, { ...item, id: item.id || '' }, index, stamp));
+  const { data, error } = await supabase.from('daily_plan_items').insert(rows).select('*');
+  if (error) throw error;
+  return (data || rows).map(mapItem);
+}
+
+/** Remove specific items from a plan (only those ids). */
+export async function deleteDailyPlanItems(planId, itemIds) {
+  const ids = (itemIds || []).filter(Boolean);
+  if (!ids.length) return;
+  const { error } = await supabase.from('daily_plan_items').delete().eq('plan_id', planId).in('id', ids);
+  if (error) throw error;
+}
+
+export async function updateDailyPlanDuration(planId, durationDays) {
+  const { data, error } = await supabase
+    .from('daily_plans')
+    .update({ duration_days: clampDurationDays(durationDays) })
+    .eq('id', planId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 export async function removeDailyPlan(id) {

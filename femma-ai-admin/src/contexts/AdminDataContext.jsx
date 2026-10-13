@@ -22,17 +22,29 @@ import {
   fetchDailyPlans,
   upsertDailyPlan,
   removeDailyPlan,
+  insertDailyPlanItems,
+  deleteDailyPlanItems,
+  updateDailyPlanDuration,
   uploadDailyPlanMedia,
   assignMemberDailyPlan,
   fetchExerciseLibrary,
   upsertExerciseLibraryItem,
   removeExerciseLibraryItem
 } from 'api/dailyPlans';
-import { fetchMembersBundle, upsertMember, updateMemberStatus, assignMemberPlan, updatePlanPrice } from 'api/members';
+import {
+  fetchMembersBundle,
+  upsertMember,
+  updateMemberFields,
+  diffMemberFields,
+  updateMemberStatus,
+  assignMemberPlan,
+  updatePlanPrice
+} from 'api/members';
 import { fetchNotifications, upsertNotification, markNotificationSent, createAndSendNotification } from 'api/notifications';
 import { DEFAULT_SETTINGS, fetchSettings, saveAppSettings } from 'api/settings';
 import { flattenLessons } from 'data/content';
 import { LEVEL_NAMES } from 'data/users';
+import { useAuth } from 'contexts/AuthContext';
 
 const AdminDataContext = createContext(null);
 
@@ -43,7 +55,8 @@ function buildAnalytics({ users, categories, courses }) {
   const premiumConversion = active.length ? Math.round((premiumActive / active.length) * 100) : 0;
 
   const weekLabels = [];
-  const weeklyCompletions = [];
+  // New member signups per day (by joined date) for the last 7 days.
+  const weeklySignups = [];
   for (let i = 6; i >= 0; i -= 1) {
     const day = new Date(now);
     day.setHours(0, 0, 0, 0);
@@ -53,7 +66,7 @@ function buildAnalytics({ users, categories, courses }) {
     const m = String(day.getMonth() + 1).padStart(2, '0');
     const d = String(day.getDate()).padStart(2, '0');
     const key = `${y}-${m}-${d}`;
-    weeklyCompletions.push(users.filter((u) => u.joinedAt === key).length);
+    weeklySignups.push(users.filter((u) => u.joinedAt === key).length);
   }
 
   const lessonsByCategory = Object.fromEntries(categories.map((c) => [c.id, 0]));
@@ -88,8 +101,7 @@ function buildAnalytics({ users, categories, courses }) {
 
   return {
     weekLabels,
-    weeklyCompletions,
-    weeklySignups: weeklyCompletions,
+    weeklySignups,
     completionsByCategory,
     streakBuckets,
     premiumConversion,
@@ -172,8 +184,39 @@ export function AdminDataProvider({ children }) {
     return next;
   }, []);
 
+  const { user: authUser, loading: authLoading } = useAuth();
+  const authUserId = authUser?.id || null;
+
+  // Data is protected by RLS (admin-only), so only load once an admin session exists,
+  // reload when the signed-in admin changes, and clear everything on logout.
   useEffect(() => {
+    if (authLoading) return undefined;
+
+    if (!authUserId) {
+      setCategories([]);
+      setCourses([]);
+      setJourneys([]);
+      setDailyPlans([]);
+      setExerciseLibrary([]);
+      setUsers([]);
+      setPlans([]);
+      setSubscriptions([]);
+      setNotifications([]);
+      setSettings(DEFAULT_SETTINGS);
+      setContentError(null);
+      setJourneysError(null);
+      setDailyPlansError(null);
+      setMembersError(null);
+      setContentLoading(false);
+      setJourneysLoading(false);
+      setDailyPlansLoading(false);
+      setExerciseLibraryLoading(false);
+      setMembersLoading(false);
+      return undefined;
+    }
+
     let mounted = true;
+
     (async () => {
       try {
         setContentLoading(true);
@@ -187,13 +230,7 @@ export function AdminDataProvider({ children }) {
         if (mounted) setContentLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [refreshCatalog]);
 
-  useEffect(() => {
-    let mounted = true;
     (async () => {
       try {
         setJourneysLoading(true);
@@ -206,13 +243,7 @@ export function AdminDataProvider({ children }) {
         if (mounted) setJourneysLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [refreshJourneys]);
 
-  useEffect(() => {
-    let mounted = true;
     (async () => {
       try {
         setDailyPlansLoading(true);
@@ -230,13 +261,7 @@ export function AdminDataProvider({ children }) {
         }
       }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [refreshDailyPlans, refreshExerciseLibrary]);
 
-  useEffect(() => {
-    let mounted = true;
     (async () => {
       try {
         setMembersLoading(true);
@@ -248,10 +273,21 @@ export function AdminDataProvider({ children }) {
         if (mounted) setMembersLoading(false);
       }
     })();
+
     return () => {
       mounted = false;
     };
-  }, [refreshMembers, refreshNotifications, refreshSettings]);
+  }, [
+    authLoading,
+    authUserId,
+    refreshCatalog,
+    refreshJourneys,
+    refreshDailyPlans,
+    refreshExerciseLibrary,
+    refreshMembers,
+    refreshNotifications,
+    refreshSettings
+  ]);
 
   // Categories
   const saveCategory = useCallback(async (payload) => {
@@ -424,6 +460,28 @@ export function AdminDataProvider({ children }) {
     return saved;
   }, []);
 
+  /** Add items to one plan without rewriting the others (optionally extending duration_days). */
+  const addDailyPlanItems = useCallback(async (planId, items, { durationDays } = {}) => {
+    let planRow = null;
+    if (durationDays) planRow = await updateDailyPlanDuration(planId, durationDays);
+    const added = await insertDailyPlanItems(planId, items);
+    setDailyPlans((prev) =>
+      prev.map((p) =>
+        p.id === planId
+          ? { ...p, durationDays: planRow?.duration_days ?? p.durationDays, items: [...(p.items || []), ...added] }
+          : p
+      )
+    );
+    return added;
+  }, []);
+
+  /** Remove only the given item ids from a plan. */
+  const removeDailyPlanItems = useCallback(async (planId, itemIds) => {
+    await deleteDailyPlanItems(planId, itemIds);
+    const drop = new Set(itemIds);
+    setDailyPlans((prev) => prev.map((p) => (p.id === planId ? { ...p, items: (p.items || []).filter((i) => !drop.has(i.id)) } : p)));
+  }, []);
+
   const deleteDailyPlan = useCallback(async (id) => {
     await removeDailyPlan(id);
     setDailyPlans((prev) => prev.filter((p) => p.id !== id));
@@ -463,23 +521,41 @@ export function AdminDataProvider({ children }) {
     return row;
   }, [dailyPlans]);
 
+  /**
+   * Save a member. For an existing member pass the `original` copy it was edited from:
+   * only fields the admin actually changed are written, and the subscription is only
+   * re-assigned when the plan changed (so progress / renew dates are never reset).
+   */
   const saveUser = useCallback(
-    async (payload) => {
-      const saved = await upsertMember(payload, plans);
-      setUsers((prev) => {
-        const exists = prev.some((u) => u.id === saved.id);
-        return exists ? prev.map((u) => (u.id === saved.id ? { ...u, ...saved } : u)) : [...prev, saved];
-      });
+    async (payload, original = null) => {
+      if (!payload?.id) {
+        const created = await upsertMember(payload, plans);
+        setUsers((prev) => [...prev, created]);
+        return created;
+      }
 
-      if (payload.planId) {
-        const { subscription } = await assignMemberPlan(saved.id, payload.planId, 'active');
+      const base = original || users.find((u) => u.id === payload.id) || {};
+      const changes = diffMemberFields(payload, base);
+      const planChanged = Boolean(payload.planId) && payload.planId !== (base.planId || 'free');
+
+      let saved = { ...base };
+      if (Object.keys(changes).length) {
+        const updated = await updateMemberFields(payload.id, changes, plans);
+        if (updated) {
+          saved = updated;
+          setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, ...updated, planName: u.planName } : u)));
+        }
+      }
+
+      if (planChanged) {
+        const { subscription } = await assignMemberPlan(payload.id, payload.planId, 'active');
         setSubscriptions((prev) => {
-          const exists = prev.some((s) => s.userId === saved.id);
-          return exists ? prev.map((s) => (s.userId === saved.id ? subscription : s)) : [...prev, subscription];
+          const exists = prev.some((s) => s.userId === payload.id);
+          return exists ? prev.map((s) => (s.userId === payload.id ? subscription : s)) : [...prev, subscription];
         });
         setUsers((prev) =>
           prev.map((u) =>
-            u.id === saved.id
+            u.id === payload.id
               ? { ...u, planId: payload.planId, planName: plans.find((p) => p.id === payload.planId)?.name || u.planName }
               : u
           )
@@ -488,7 +564,7 @@ export function AdminDataProvider({ children }) {
 
       return saved;
     },
-    [plans]
+    [plans, users]
   );
 
   const setUserStatus = useCallback(async (userId, status) => {
@@ -608,6 +684,8 @@ export function AdminDataProvider({ children }) {
       deleteJourney,
       uploadJourneyPicture,
       saveDailyPlan,
+      addDailyPlanItems,
+      removeDailyPlanItems,
       deleteDailyPlan,
       uploadDailyPlanPicture,
       saveExerciseLibraryItem,
@@ -666,6 +744,8 @@ export function AdminDataProvider({ children }) {
       deleteJourney,
       uploadJourneyPicture,
       saveDailyPlan,
+      addDailyPlanItems,
+      removeDailyPlanItems,
       deleteDailyPlan,
       uploadDailyPlanPicture,
       saveExerciseLibraryItem,

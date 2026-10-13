@@ -382,7 +382,7 @@ export default function ScanScreen() {
               <View style={styles.viewfinderWrap}>
                 <View style={styles.viewfinder}>
                   {previewUri ? (
-                    <Image source={{ uri: previewUri }} style={StyleSheet.absoluteFillObject} resizeMode="contain" />
+                    <Image source={{ uri: previewUri }} style={StyleSheet.absoluteFill} resizeMode="contain" />
                   ) : (
                     <LinearGradient
                       colors={[colors.softLavender, colors.lavender + '66', colors.primary + '22']}
@@ -732,7 +732,7 @@ const styles = StyleSheet.create({
   scannerCard: { borderRadius: 24, borderWidth: 1, padding: 14, gap: 14 },
   viewfinderWrap: { borderRadius: 20, overflow: 'hidden' },
   viewfinder: { height: 260, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-  viewfinderShade: { ...StyleSheet.absoluteFillObject },
+  viewfinderShade: { ...StyleSheet.absoluteFill },
   corner: { position: 'absolute', width: 28, height: 28, borderRadius: 4 },
   scanLine: {
     position: 'absolute',
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   viewfinderProcessDim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.42)',
     zIndex: 2,
   },
@@ -862,8 +862,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scanOverlayPhoto: { ...StyleSheet.absoluteFillObject },
-  scanOverlayDim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 },
+  scanOverlayPhoto: { ...StyleSheet.absoluteFill },
+  scanOverlayDim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 },
   scanOverlayLine: {
     position: 'absolute',
     left: 16,

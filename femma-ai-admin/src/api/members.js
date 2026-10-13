@@ -112,6 +112,58 @@ export async function upsertMember(payload, plans = []) {
   return mapMember(data, plansById);
 }
 
+/** App field -> members column (with value normalizer) for admin-editable member fields. */
+const MEMBER_FIELD_COLUMNS = {
+  name: ['name', (v) => String(v || '').trim()],
+  email: ['email', (v) => String(v || '').trim().toLowerCase()],
+  goal: ['goal', (v) => v || null],
+  fitnessLevel: ['fitness_level', (v) => v || null],
+  environment: ['environment', (v) => v || null],
+  journeyDay: ['journey_day', (v) => Number(v ?? 1)],
+  streak: ['streak', (v) => Number(v ?? 0)],
+  level: ['level', (v) => Number(v ?? 1)],
+  points: ['points', (v) => Number(v ?? 0)],
+  cyclePhase: ['cycle_phase', (v) => v || 'none'],
+  cycleDay: ['cycle_day', (v) => Number(v ?? 0)],
+  isPregnant: ['is_pregnant', (v) => Boolean(v)],
+  pregnancyWeek: ['pregnancy_week', (v) => Number(v ?? 0)],
+  status: ['status', (v) => v || 'active'],
+  dailyPlanId: ['daily_plan_id', (v) => v || null]
+};
+
+/** Fields that differ between `next` and `original` (only admin-editable member fields). */
+export function diffMemberFields(next, original = {}) {
+  const changes = {};
+  Object.keys(MEMBER_FIELD_COLUMNS).forEach((key) => {
+    if (!(key in (next || {}))) return;
+    const a = next[key] ?? null;
+    const b = original?.[key] ?? null;
+    if (a !== b) changes[key] = next[key];
+  });
+  return changes;
+}
+
+/**
+ * Update ONLY the given member fields. Never touches progress columns
+ * (streak, points, completed lessons, journey day) unless they are explicitly passed.
+ */
+export async function updateMemberFields(userId, changes = {}, plans = []) {
+  const plansById = Object.fromEntries(plans.map((p) => [p.id, p]));
+  const patch = {};
+  Object.entries(changes).forEach(([key, value]) => {
+    const def = MEMBER_FIELD_COLUMNS[key];
+    if (def) patch[def[0]] = def[1](value);
+  });
+  if ('name' in patch && !patch.name) throw new Error('Name is required');
+  if ('email' in patch && !patch.email) throw new Error('Email is required');
+  if (!Object.keys(patch).length) return null;
+  patch.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase.from('members').update(patch).eq('id', userId).select('*').single();
+  if (error) throw error;
+  return mapMember(data, plansById);
+}
+
 export async function updateMemberStatus(userId, status) {
   const { data, error } = await supabase
     .from('members')

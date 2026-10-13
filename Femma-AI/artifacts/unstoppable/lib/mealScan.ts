@@ -1,4 +1,5 @@
-import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { getAccessToken, refreshAccessToken } from '@/lib/memberAuth';
 import { Platform } from 'react-native';
 import { applyScanVerdict } from '@/lib/nutritionPlan';
 
@@ -229,10 +230,8 @@ async function shrinkImage(imageBase64: string, mimeType: string): Promise<{ bas
   return { base64: stripDataUrl(jpeg), mimeType: 'image/jpeg' };
 }
 
-async function authToken() {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token || supabaseAnonKey;
-}
+/** Edge functions require the signed-in user's access token (anon key only as a last resort). */
+const authToken = getAccessToken;
 
 export async function scanMealFromBase64(input: {
   imageBase64: string;
@@ -284,9 +283,11 @@ export async function scanMealFromBase64(input: {
   } catch {
     throw new Error('Could not reach the meal scanner. Check your connection and try a smaller photo.');
   }
-  if (posted.response.status === 401 && token !== supabaseAnonKey) {
+  if (posted.response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) token = refreshed;
     try {
-      posted = await post(supabaseAnonKey);
+      if (refreshed) posted = await post(refreshed);
     } catch {
       throw new Error('Could not reach the meal scanner. Check your connection and try a smaller photo.');
     }

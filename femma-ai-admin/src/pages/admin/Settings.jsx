@@ -110,6 +110,9 @@ export default function Settings() {
 
         <TabPanel value={tab} index={1}>
           <Stack spacing={2} sx={{ maxWidth: 480 }}>
+            <Alert severity="info" icon={false}>
+              Not used by the mobile app yet. These values are saved, but the app still uses its built-in name, tagline and colors.
+            </Alert>
             <TextField label="App name" fullWidth value={form.appName} onChange={(e) => setForm({ ...form, appName: e.target.value })} />
             <TextField label="Tagline" fullWidth value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
             <TextField
@@ -127,6 +130,9 @@ export default function Settings() {
 
         <TabPanel value={tab} index={2}>
           <Stack spacing={1} sx={{ maxWidth: 420 }}>
+            <Alert severity="info" icon={false} sx={{ mb: 1 }}>
+              Not used by the mobile app yet. Flags are saved, but toggling them does not change app behaviour.
+            </Alert>
             {Object.entries(form.featureFlags || {}).map(([key, enabled]) => (
               <FormControlLabel
                 key={key}

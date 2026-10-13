@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Modal, Pressable, ActivityIndicator, Switch, Linking } from 'react-native';
+import { showAlert } from '@/lib/showAlert';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -22,8 +23,14 @@ const APP_VERSION = Constants.expoConfig?.version || '1.0.0';
 export default function ProfileScreen() {
   const colors = useColors();
   const { profile } = useApp();
-  const { logout, user } = useAuth();
-  const { isPremium } = usePurchases();
+  const { logout, deleteAccount, user } = useAuth();
+  const { isPremium, currentPlanId, inGracePeriod, graceDaysLeft } = usePurchases();
+  const subscriptionDetail =
+    currentPlanId === 'premium'
+      ? 'Premium is active'
+      : inGracePeriod
+        ? `Trial / grace period · ${graceDaysLeft} day${graceDaysLeft === 1 ? '' : 's'} left — renew to keep access`
+        : 'Unlock Premium';
   const { enabled: notifyOn, setEnabled: setNotifyEnabled } = useNotifications();
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : profile.name;
   const insets = useSafeAreaInsets();
@@ -33,6 +40,7 @@ export default function ProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const levelName = LEVEL_NAMES[profile.level];
   const levelColor = LEVEL_COLORS[profile.level];
@@ -103,6 +111,56 @@ export default function ProfileScreen() {
       setLoggingOut(false);
     }
   };
+
+  const runDeleteAccount = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      const result = await deleteAccount();
+      if (!result.ok) {
+        showAlert('Could not delete account', result.error);
+        return;
+      }
+      router.replace('/welcome');
+      showAlert('Account deleted', 'Your account and data have been removed.');
+    } catch (err) {
+      showAlert('Could not delete account', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const confirmDeleteAccount = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const message =
+      'This permanently deletes your account, plan and progress. This cannot be undone.' +
+      (currentPlanId === 'premium'
+        ? `
+
+Deleting your account does not cancel your store subscription — cancel it in ${
+            Platform.OS === 'ios' ? 'the App Store' : 'Google Play'
+          } first.`
+        : '');
+    if (Platform.OS === 'web') {
+      // Alert buttons are not supported on react-native-web.
+      const ok = typeof window !== 'undefined' && typeof window.confirm === 'function' ? window.confirm(message) : false;
+      if (ok) void runDeleteAccount();
+      return;
+    }
+    Alert.alert('Delete account?', message, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => void runDeleteAccount() },
+    ]);
+  };
+
+  const settingsLinks: Array<{ id: string; label: string; detail: string; icon: keyof typeof Feather.glyphMap; color: string }> = [
+    { id: 'goals', label: 'Personal Goals', detail: 'Goals from onboarding', icon: 'target', color: '#D94A9A' },
+    { id: 'preferences', label: 'Plan Preferences', detail: 'Level and training place', icon: 'sliders', color: '#8A6FD1' },
+    { id: 'emergency', label: 'Emergency Contacts', detail: 'People to alert in an emergency', icon: 'phone-call', color: '#E05A4F' },
+    { id: 'safety', label: 'Safety Settings', detail: 'SOS shortcut', icon: 'shield', color: '#2FA88F' },
+    { id: 'privacy', label: 'Privacy Settings', detail: 'Private mode', icon: 'lock', color: '#3D9FD4' },
+    { id: 'help', label: 'Help Center', detail: 'FAQ and support', icon: 'help-circle', color: '#E5A020' },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -186,13 +244,13 @@ export default function ProfileScreen() {
               <View style={styles.settingsCopy}>
                 <Text style={[styles.settingsLabel, { color: colors.foreground }]}>Subscription</Text>
                 <Text style={[styles.settingsDetail, { color: colors.mutedForeground }]}>
-                  {isPremium ? 'Premium is active' : 'Unlock Premium'}
+                  {subscriptionDetail}
                 </Text>
               </View>
               <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
             </TouchableOpacity>
 
-            {isPremium ? (
+            {isPremium || currentPlanId === 'premium' ? (
               <TouchableOpacity
                 style={[styles.settingsItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
                 onPress={() => {
@@ -220,6 +278,27 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             ) : null}
 
+            {settingsLinks.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.settingsItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push({ pathname: '/settings/[id]', params: { id: item.id } } as never);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.settingsIcon, { backgroundColor: item.color + '18' }]}>
+                  <Feather name={item.icon} size={17} color={item.color} />
+                </View>
+                <View style={styles.settingsCopy}>
+                  <Text style={[styles.settingsLabel, { color: colors.foreground }]}>{item.label}</Text>
+                  <Text style={[styles.settingsDetail, { color: colors.mutedForeground }]}>{item.detail}</Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            ))}
+
             <TouchableOpacity
               style={[styles.settingsItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
               onPress={() => {
@@ -232,6 +311,28 @@ export default function ProfileScreen() {
                 <Feather name="log-out" size={17} color={colors.destructive} />
               </View>
               <Text style={[styles.settingsLabel, { color: colors.destructive, flex: 1 }]}>Log Out</Text>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.settingsItem, { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+              onPress={confirmDeleteAccount}
+              disabled={deleting}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.settingsIcon, { backgroundColor: colors.destructive + '18' }]}>
+                {deleting ? (
+                  <ActivityIndicator size="small" color={colors.destructive} />
+                ) : (
+                  <Feather name="trash-2" size={17} color={colors.destructive} />
+                )}
+              </View>
+              <View style={styles.settingsCopy}>
+                <Text style={[styles.settingsLabel, { color: colors.destructive }]}>Delete Account</Text>
+                <Text style={[styles.settingsDetail, { color: colors.mutedForeground }]}>
+                  Permanently remove your account and data
+                </Text>
+              </View>
               <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
             </TouchableOpacity>
 

@@ -5,7 +5,6 @@ import Loadable from 'components/Loadable';
 
 // jwt auth
 const LoginPage = Loadable(lazy(() => import('pages/auth/Login')));
-const RegisterPage = Loadable(lazy(() => import('pages/auth/Register')));
 
 // ==============================|| AUTH ROUTING ||============================== //
 
@@ -18,11 +17,8 @@ const LoginRoutes = {
         {
           path: '/login',
           element: <LoginPage />
-        },
-        {
-          path: '/register',
-          element: <RegisterPage />
         }
+        // No /register route: admins are provisioned in Supabase (admin_users), not self-registered.
       ]
     }
   ]

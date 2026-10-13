@@ -1,13 +1,8 @@
 import { supabase } from 'lib/supabase';
 import { uploadThumbnail } from 'api/uploadThumbnail';
+import { deleteChildrenNotIn } from 'api/childRows';
+import { newRecordId } from 'utils/ids';
 
-function slugify(text, fallbackPrefix = 'recovery') {
-  const base = String(text || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  return base || `${fallbackPrefix}-${Date.now().toString(36)}`;
-}
 
 export const RECOVERY_KEY_OPTIONS = [
   { id: 'rest', label: 'Rest (skip day)' },
@@ -62,7 +57,8 @@ export async function fetchRecoverySections() {
 }
 
 export async function upsertRecoverySection(payload) {
-  const id = payload.id || slugify(payload.title);
+  const isNew = !payload.id;
+  const id = payload.id || newRecordId(payload.title, 'recovery');
   const isRest = Boolean(payload.isRest) || payload.sectionKey === 'rest';
   const sectionRow = {
     id,
@@ -78,32 +74,40 @@ export async function upsertRecoverySection(payload) {
     })()
   };
 
-  const { data, error } = await supabase.from('recovery_sections').upsert(sectionRow).select('*').single();
+  const sectionQuery = isNew
+    ? supabase.from('recovery_sections').insert(sectionRow)
+    : supabase.from('recovery_sections').update(sectionRow).eq('id', id);
+  const { data, error } = await sectionQuery.select('*').single();
   if (error) throw error;
-
-  const { error: delErr } = await supabase.from('recovery_section_items').delete().eq('section_id', id);
-  if (delErr) throw delErr;
 
   const items = Array.isArray(payload.items) ? payload.items : [];
   let savedItems = [];
+  let keepIds = [];
   if (items.length && !isRest) {
     const allowed = new Set(['beginner', 'intermediate', 'active']);
+    const stamp = Date.now().toString(36);
     const rows = items.map((item, index) => ({
-      id: item.id || `${id}-${item.intensityLevel || 'beginner'}-${index}-${Date.now().toString(36)}`,
+      id: item.id || `${id}-${item.intensityLevel || 'beginner'}-${index}-${stamp}`,
       section_id: id,
       intensity_level: allowed.has(item.intensityLevel) ? item.intensityLevel : 'beginner',
       title: String(item.title || '').trim() || `Move ${index + 1}`,
-      duration_minutes: Math.max(1, Number(item.durationMinutes ?? 10)),
-      rest_minutes: Number(item.restMinutes ?? 0),
+      // Stored in SECONDS (column name kept for compatibility).
+      duration_minutes: Math.max(1, Math.round(Number(item.durationMinutes ?? 10))),
+      rest_minutes: Math.max(0, Math.round(Number(item.restMinutes ?? 0))),
       media_url: item.mediaUrl || null,
       cue: item.cue || '',
       steps: Array.isArray(item.steps) ? item.steps : [],
       sort_order: item.sortOrder ?? index
     }));
-    const { data: inserted, error: insErr } = await supabase.from('recovery_section_items').insert(rows).select('*');
-    if (insErr) throw insErr;
-    savedItems = inserted || rows;
+    // Upsert first so a failure never leaves the section empty…
+    const { data: upserted, error: upErr } = await supabase.from('recovery_section_items').upsert(rows, { onConflict: 'id' }).select('*');
+    if (upErr) throw upErr;
+    savedItems = upserted || rows;
+    keepIds = rows.map((r) => r.id);
   }
+
+  // …then remove only items that are no longer in the section.
+  await deleteChildrenNotIn('recovery_section_items', 'section_id', id, 'id', keepIds);
 
   return mapRecoverySection(data, savedItems);
 }

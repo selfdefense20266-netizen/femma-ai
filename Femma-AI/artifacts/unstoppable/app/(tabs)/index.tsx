@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+  Alert,
+  Modal,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -32,6 +41,69 @@ import { sectionExercisesForLevel } from '@/lib/recoverySections';
 import { Image } from 'expo-image';
 
 type Palette = ReturnType<typeof useColors>;
+
+/** Scan-frame + bowl icon so “Scan meal” reads as food scan. */
+function FoodScanIcon({ color, size = 34 }: { color: string; size?: number }) {
+  const corner = Math.max(10, Math.round(size * 0.28));
+  const thickness = 2.5;
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: corner,
+          height: corner,
+          borderTopWidth: thickness,
+          borderLeftWidth: thickness,
+          borderColor: color,
+          borderTopLeftRadius: 4,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: corner,
+          height: corner,
+          borderTopWidth: thickness,
+          borderRightWidth: thickness,
+          borderColor: color,
+          borderTopRightRadius: 4,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: corner,
+          height: corner,
+          borderBottomWidth: thickness,
+          borderLeftWidth: thickness,
+          borderColor: color,
+          borderBottomLeftRadius: 4,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: corner,
+          height: corner,
+          borderBottomWidth: thickness,
+          borderRightWidth: thickness,
+          borderColor: color,
+          borderBottomRightRadius: 4,
+        }}
+      />
+      <Ionicons name="restaurant" size={Math.round(size * 0.48)} color={color} />
+    </View>
+  );
+}
 
 function polishMission<T extends { slot?: string; category: string; label?: string; cue?: string; title: string }>(
   mission: T,
@@ -103,7 +175,6 @@ function DashboardStat({
   );
 }
 
-let planGateShownThisSession = false;
 
 export default function TodayScreen() {
   const colors = useColors();
@@ -121,7 +192,7 @@ export default function TodayScreen() {
     updateProfile,
   } = useApp();
   const { user } = useAuth();
-  const { isPremium, hasAccess, needsResumePaywall, inGracePeriod, graceDaysLeft, ready: purchasesReady } = usePurchases();
+  const { isPremium, hasAccess, inGracePeriod, graceDaysLeft } = usePurchases();
   const { data: catalog } = useCatalog();
   const { data: adminDailyPlan } = useDailyPlan();
   const { data: recoverySections = [] } = useRecoverySections();
@@ -151,19 +222,7 @@ export default function TodayScreen() {
   }));
 
 
-  useEffect(() => {
-    if (!onboardingCompleted || !purchasesReady || hasAccess) return;
-    // Resume paywall always; soft gate once per session otherwise.
-    if (!needsResumePaywall && planGateShownThisSession) return;
-    const timer = setTimeout(() => {
-      planGateShownThisSession = true;
-      router.push({
-        pathname: '/plan-gate',
-        params: { mode: needsResumePaywall ? 'resume' : 'subscribe' },
-      } as never);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [onboardingCompleted, purchasesReady, hasAccess, needsResumePaywall]);
+  // Plan gate is enforced for every tab in (tabs)/_layout.tsx (useRequireAccessGate).
 
   // Keep local profile in sync when admin changes Assigned daily plan (Yoga, Boxing, …).
   useEffect(() => {
@@ -378,8 +437,17 @@ export default function TodayScreen() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const greetingIcon = hour < 12 ? 'sun' : hour < 17 ? 'sun' : 'moon';
   const greetingColor = hour < 17 ? colors.warmYellow : colors.lavender;
-  const rawHeadlineName = user?.firstName?.trim() || profile.name.split(' ')[0] || profile.name || 'there';
-  const headlineName = rawHeadlineName.charAt(0).toUpperCase() + rawHeadlineName.slice(1);
+  const rawHeadlineName =
+    user?.firstName?.trim() ||
+    String(profile.name || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)[0] ||
+    user?.lastName?.trim() ||
+    'there';
+  const headlineName = rawHeadlineName
+    ? rawHeadlineName.charAt(0).toUpperCase() + rawHeadlineName.slice(1)
+    : 'there';
   const planActivityRaw =
     adminDailyPlan?.userType ||
     userTypeFromProfile({
@@ -554,16 +622,16 @@ export default function TodayScreen() {
               <Text style={[styles.heroPlan, { color: colors.foreground }]} numberOfLines={1}>
                 {planDisplayName}
               </Text>
-              <View style={[styles.dayPill, { backgroundColor: colors.primary + '55', borderColor: colors.deepPink }]}>
-                <Text style={[styles.dayPillText, { color: colors.foreground }]}>Day {profile.journeyDay}</Text>
+              <View style={[styles.dayPill, { backgroundColor: colors.primary, borderColor: colors.deepPink }]}>
+                <Text style={[styles.dayPillText, { color: '#FFFFFF' }]}>Day {profile.journeyDay}</Text>
               </View>
             </View>
             <View style={styles.planTypeRow}>
-              <View style={[styles.planTypePill, { backgroundColor: colors.lavender + '55', borderColor: '#7B68C9' }]}>
-                <Text style={[styles.planTypeText, { color: colors.foreground }]}>{planActivityLabel}</Text>
+              <View style={[styles.planTypePill, { backgroundColor: colors.lavender, borderColor: '#7B68C9' }]}>
+                <Text style={[styles.planTypeText, { color: '#FFFFFF' }]}>{planActivityLabel}</Text>
               </View>
-              <View style={[styles.planTypePill, { backgroundColor: colors.mint + '55', borderColor: '#1F8A6C' }]}>
-                <Text style={[styles.planTypeText, { color: colors.foreground }]}>{planLevelLabel}</Text>
+              <View style={[styles.planTypePill, { backgroundColor: '#2FA88F', borderColor: '#1F8A6C' }]}>
+                <Text style={[styles.planTypeText, { color: '#FFFFFF' }]}>{planLevelLabel}</Text>
               </View>
             </View>
             <View style={styles.contextRow}>
@@ -735,7 +803,7 @@ export default function TodayScreen() {
                   ? 'Today’s tasks were skipped — no points today. Come back tomorrow stronger.'
                   : profile.journeyDay <= 1 && profile.streak <= 1
                     ? `All ${displayTotalMissions} missions complete. Great first day — come back tomorrow to keep building your streak.`
-                    : `All ${displayTotalMissions} missions complete. That consistency is how unstoppable confidence is built. Rest well — tomorrow's plan is waiting.`}
+                    : `All ${displayTotalMissions} missions complete. Keep that momentum going. Rest well — tomorrow's plan is waiting.`}
               </Text>
             </View>
           ) : null}
@@ -752,31 +820,35 @@ export default function TodayScreen() {
             <View style={styles.foodHeader}>
               <Text style={[styles.foodTitle, { color: colors.foreground }]}>{homeTitles.foodTitle}</Text>
             </View>
+            <TouchableOpacity
+              style={[styles.mealsEntryCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              activeOpacity={0.9}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (!hasAccess) {
+                  router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
+                  return;
+                }
+                router.push('/diet' as never);
+              }}
+            >
+              <View style={[styles.mealsEntryIcon, { backgroundColor: colors.pink + '22' }]}>
+                <Ionicons name="restaurant" size={22} color={colors.pink} />
+              </View>
+              <View style={styles.mealsEntryCopy}>
+                <Text style={[styles.mealsEntryTitle, { color: colors.foreground }]}>Today’s meals</Text>
+                <Text style={[styles.mealsEntrySub, { color: colors.mutedForeground }]}>Your suggested plan</Text>
+              </View>
+              <Text style={[styles.mealsEntryLink, { color: colors.pink }]}>View plan</Text>
+              <Feather name="chevron-right" size={18} color={colors.pink} />
+            </TouchableOpacity>
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.foodOptionsRow}
               decelerationRate="fast"
             >
-              <TouchableOpacity
-                style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                activeOpacity={0.9}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  if (!hasAccess) {
-                    router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
-                    return;
-                  }
-                  router.push('/diet' as never);
-                }}
-              >
-                <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.mint + '28' }]}>
-                  <Ionicons name="restaurant-outline" size={36} color="#2FA88F" />
-                </View>
-                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Diet plan</Text>
-                <Text style={[styles.foodOptionMeta, { color: '#2FA88F' }]}>Meals for today</Text>
-              </TouchableOpacity>
-
               {isPremium ? (
                 <TouchableOpacity
                   style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -787,10 +859,10 @@ export default function TodayScreen() {
                   }}
                 >
                   <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.warmYellow + '33' }]}>
-                    <Ionicons name="scan-outline" size={36} color="#C9952A" />
+                    <FoodScanIcon color="#C9952A" size={36} />
                   </View>
                   <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Scan meal</Text>
-                  <Text style={[styles.foodOptionMeta, { color: '#C9952A' }]}>Plate analysis</Text>
+                  <Text style={[styles.foodOptionMeta, { color: '#C9952A' }]}>Food scan</Text>
                 </TouchableOpacity>
               ) : null}
 
@@ -803,13 +875,13 @@ export default function TodayScreen() {
                     router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
                     return;
                   }
-                  router.push('/recipe' as never);
+                  router.push('/ai-recipes' as never);
                 }}
               >
                 <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.primary + '18' }]}>
-                  <Ionicons name="book-outline" size={36} color={colors.primary} />
+                  <Ionicons name="sparkles" size={32} color={colors.primary} />
                 </View>
-                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Recipes</Text>
+                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>AI Recipes</Text>
                 <Text style={[styles.foodOptionMeta, { color: colors.primary }]}>Cook with AI</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -1312,6 +1384,28 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     letterSpacing: -0.3,
   },
+  mealsEntryCard: {
+    marginHorizontal: 22,
+    marginBottom: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  mealsEntryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealsEntryCopy: { flex: 1, gap: 2 },
+  mealsEntryTitle: { fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
+  mealsEntrySub: { fontSize: 13, fontFamily: 'Manrope_400Regular' },
+  mealsEntryLink: { fontSize: 14, fontFamily: 'Manrope_700Bold' },
   foodOptionsRow: {
     paddingHorizontal: 22,
     gap: 12,

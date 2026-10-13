@@ -84,7 +84,7 @@ function packProfileBlob(profile: UserProfile, activityLog: ActivityEvent[]) {
 function asCoachHistory(value: unknown): CoachChatHistoryMessage[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => {
+    .map((item): CoachChatHistoryMessage | null => {
       if (!item || typeof item !== 'object') return null;
       const row = item as Record<string, unknown>;
       const id = String(row.id || '').trim();
@@ -96,7 +96,7 @@ function asCoachHistory(value: unknown): CoachChatHistoryMessage[] {
         role,
         text,
         createdAt: typeof row.createdAt === 'string' ? row.createdAt : undefined,
-      } satisfies CoachChatHistoryMessage;
+      };
     })
     .filter((item): item is CoachChatHistoryMessage => Boolean(item))
     .slice(-100);
@@ -130,24 +130,29 @@ function mergeCoachHistory(
 // stacking up latency and making premium/plan state settle noticeably late.
 const memberIdCache = new Map<string, Promise<string | null>>();
 
+/** Call on logout / account switch so a previous user's member id is never reused. */
+export function clearMemberIdCache() {
+  memberIdCache.clear();
+}
+
 export async function resolveMemberId(emailHint?: string): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
-  const cacheKey = (emailHint || '').toLowerCase().trim() || '__session__';
+  const { data: current } = await supabase.auth.getSession();
+  const sessionUserId = current.session?.user?.id || '';
+  if (!sessionUserId) return null;
+  const cacheKey = `${sessionUserId}:${(emailHint || '').toLowerCase().trim()}`;
   const cached = memberIdCache.get(cacheKey);
   if (cached) return cached;
 
   const lookup = (async () => {
-    // The `members` table has open RLS (read/write by email lookup), so an active
-    // Supabase Auth session isn't required to resolve a member id — only used
-    // here as an enhancement when available (e.g. to also match by auth uid).
+    // RLS: members are only readable by their owner (id = auth.uid() or email = JWT email),
+    // so this needs an active session. The session email always wins over the hint.
     let email = (emailHint || '').toLowerCase();
     let authId: string | undefined;
     const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData.session) {
-      const { data } = await supabase.auth.getUser();
-      email = (data.user?.email || email).toLowerCase();
-      authId = data.user?.id;
-    }
+    if (!sessionData.session) return null;
+    email = (sessionData.session.user?.email || email).toLowerCase();
+    authId = sessionData.session.user?.id;
 
     if (email) {
       const byEmail = await supabase.from('members').select('id').eq('email', email).maybeSingle();
@@ -247,7 +252,7 @@ function mergeProfile(local: UserProfile, remote: Partial<UserProfile> | null | 
     planStartedAt: earlierIso(local.planStartedAt, remote.planStartedAt),
     planDurationWeeks: Number(remote.planDurationWeeks || local.planDurationWeeks || 8),
     trainingPlan: (() => {
-      const score = (plan: UserProfile['trainingPlan']) => {
+      const score = (plan: UserProfile['trainingPlan'] | undefined) => {
         if (!plan) return 0;
         const first = plan.days?.[0] as { items?: unknown; tasks?: unknown } | undefined;
         if (plan.generatedBy === 'ai' || (first && !first.items && first.tasks)) return 1;

@@ -8,6 +8,16 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function timingSafeEqual(a: string, b: string) {
+  const enc = new TextEncoder();
+  const x = enc.encode(a);
+  const y = enc.encode(b);
+  let diff = x.length ^ y.length;
+  const len = Math.max(x.length, y.length);
+  for (let i = 0; i < len; i += 1) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
 // Events that mean the member currently HAS premium access.
 const PREMIUM_EVENTS = new Set([
   "INITIAL_PURCHASE",
@@ -31,12 +41,14 @@ Deno.serve(async (req) => {
   }
 
   const webhookSecret = Deno.env.get("REVENUECAT_WEBHOOK_SECRET");
-  if (webhookSecret) {
-    const authHeader = req.headers.get("Authorization") || "";
-    const expected = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
-    if (expected !== webhookSecret) {
-      return json({ error: "Unauthorized" }, 401);
-    }
+  if (!webhookSecret) {
+    console.error("REVENUECAT_WEBHOOK_SECRET is not set; refusing webhook");
+    return json({ error: "Webhook secret is not configured" }, 500);
+  }
+  const authHeader = req.headers.get("Authorization") || "";
+  const provided = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+  if (!timingSafeEqual(provided, webhookSecret)) {
+    return json({ error: "Unauthorized" }, 401);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");

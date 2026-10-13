@@ -27,6 +27,7 @@ import DataTableToolbar from 'components/admin/DataTableToolbar';
 import StatusChip from 'components/admin/StatusChip';
 import TablePaginationBar from 'components/admin/TablePaginationBar';
 import Loader from 'components/Loader';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 import { useAdminData } from 'contexts/AdminDataContext';
 import usePagination from 'hooks/usePagination';
 
@@ -53,6 +54,7 @@ export default function Categories() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [confirm, setConfirm] = useState(null);
 
   const rows = useMemo(() => {
     return categories
@@ -89,9 +91,15 @@ export default function Categories() {
     try {
       setSaving(true);
       setActionError('');
+      // Keep the id on edit; new categories get a unique id in the API layer.
       await saveCategory({
-        ...form,
-        id: form.id || form.title.toLowerCase().replace(/\s+/g, '-')
+        id: form.id || '',
+        title: form.title,
+        subtitle: form.subtitle,
+        description: form.description,
+        icon: form.icon,
+        color: form.color,
+        status: form.status
       });
       setOpen(false);
     } catch (err) {
@@ -101,13 +109,16 @@ export default function Categories() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      setActionError('');
-      await deleteCategory(id);
-    } catch (err) {
-      setActionError(err.message || 'Failed to delete category');
-    }
+  const handleDelete = (row) => {
+    const n = row.courseCount ?? courses.filter((c) => c.categoryId === row.id).length;
+    setActionError('');
+    setConfirm({
+      title: 'Delete category?',
+      message: `“${row.title}” will be permanently deleted.${
+        n ? ` This also deletes its ${n} course(s) with all their modules, lessons and member progress, and removes them from journeys and program cards.` : ''
+      } This cannot be undone.`,
+      onConfirm: () => deleteCategory(row.id)
+    });
   };
 
   if (contentLoading) return <Loader />;
@@ -178,7 +189,7 @@ export default function Categories() {
                     <IconButton color="primary" onClick={() => openEdit(row)}>
                       <EditOutlined />
                     </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(row.id)}>
+                    <IconButton color="error" onClick={() => handleDelete(row)}>
                       <DeleteOutlined />
                     </IconButton>
                   </TableCell>
@@ -238,6 +249,14 @@ export default function Categories() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

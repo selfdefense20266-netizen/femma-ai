@@ -17,7 +17,6 @@ import Box from '@mui/material/Box';
 
 // project imports
 import ProfileTab from './ProfileTab';
-// import SettingTab from './SettingTab';
 import Avatar from 'components/@extended/Avatar';
 import MainCard from 'components/MainCard';
 import Transitions from 'components/@extended/Transitions';
@@ -179,9 +178,6 @@ export default function Profile() {
                   <TabPanel value={value} index={0} dir={theme.direction}>
                     <ProfileTab />
                   </TabPanel>
-                  {/* <TabPanel value={value} index={1} dir={theme.direction}>
-                    <SettingTab />
-                  </TabPanel> */}
                 </MainCard>
               </ClickAwayListener>
             </Paper>

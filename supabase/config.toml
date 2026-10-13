@@ -1,16 +1,30 @@
 project_id = "toxynqgahykpzsbsmpqz"
 
+# Public endpoints (no Supabase JWT available to the caller)
 [functions.app-signup]
 verify_jwt = false
 
-[functions.openai-meal-plan]
-verify_jwt = false
+[functions.revenuecat-webhook]
+verify_jwt = false   # authenticated via REVENUECAT_WEBHOOK_SECRET bearer
 
-[functions.openai-meal-scan]
-verify_jwt = false
+[functions.mux-webhook]
+verify_jwt = false   # authenticated via mux-signature HMAC (MUX_WEBHOOK_SECRET)
+
+# Logged-in user endpoints (also re-checked in code via auth.getUser())
+[functions.openai-coach]
+verify_jwt = true
 
 [functions.openai-course-plan]
-verify_jwt = false
+verify_jwt = true
 
-[functions.revenuecat-webhook]
-verify_jwt = false
+[functions.openai-diet-plan]
+verify_jwt = true
+
+[functions.openai-meal-plan]
+verify_jwt = true
+
+[functions.openai-meal-scan]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true

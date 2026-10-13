@@ -1,14 +1,50 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
-import { Icon, Label, Tabs } from 'expo-router';
+import { Icon, Label, Redirect, Tabs, router, usePathname, useSegments } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { SymbolView } from 'expo-symbols';
 import CoachIcon from '@/components/CoachIcon';
+import { useAuth } from '@/context/AuthContext';
+import { useApp } from '@/context/AppContext';
+import { usePurchases } from '@/context/PurchaseContext';
+
+/**
+ * No free plan: whenever a tab is focused while access is missing, (re)present the plan gate.
+ * Runs on every pathname change, so dismissing the gate any way just brings it back.
+ */
+function useRequireAccessGate() {
+  const pathname = usePathname();
+  const segments = useSegments() as string[];
+  const { user } = useAuth();
+  const { onboardingCompleted, accountReady } = useApp();
+  const { ready, hasAccess } = usePurchases();
+  const presentingRef = useRef(false);
+
+  // Only while a tab is focused (not over the paywall, settings, or the gate itself).
+  const tabFocused = segments[0] === '(tabs)';
+
+  useEffect(() => {
+    if (!tabFocused) {
+      presentingRef.current = false;
+      return;
+    }
+    if (!user || !accountReady || !onboardingCompleted || !ready || hasAccess) return;
+    if (presentingRef.current) return;
+    presentingRef.current = true;
+    const timer = setTimeout(() => {
+      router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      presentingRef.current = false;
+    };
+  }, [tabFocused, pathname, user, accountReady, onboardingCompleted, ready, hasAccess]);
+}
 
 const TAB_ICONS: Record<string, { ios: string; feather: keyof typeof Feather.glyphMap }> = {
   index: { ios: 'sun.max', feather: 'sun' },
@@ -104,7 +140,7 @@ function NativeTabLayout() {
 function ClassicTabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...(props as never)} />}
+      tabBar={(props) => <CustomTabBar {...(props as unknown as React.ComponentProps<typeof CustomTabBar>)} />}
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="index" options={{ title: 'Today' }} />
@@ -117,6 +153,10 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
+  useRequireAccessGate();
+  const { user, loading } = useAuth();
+  // Tabs are members-only: a logged-out deep link / URL goes to the welcome screen.
+  if (!loading && !user) return <Redirect href="/welcome" />;
   let glass = false;
   try {
     glass = Platform.OS === 'ios' && isLiquidGlassAvailable();

@@ -25,6 +25,7 @@ import DataTableToolbar from 'components/admin/DataTableToolbar';
 import StatusChip from 'components/admin/StatusChip';
 import TablePaginationBar from 'components/admin/TablePaginationBar';
 import Loader from 'components/Loader';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 import { useAdminData } from 'contexts/AdminDataContext';
 import usePagination from 'hooks/usePagination';
 import { countCourseStats } from 'data/content';
@@ -71,6 +72,7 @@ export default function Courses() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [confirm, setConfirm] = useState(null);
   const fileInputRef = useRef(null);
 
   const rows = useMemo(() => {
@@ -107,16 +109,27 @@ export default function Courses() {
 
   const handleSave = async () => {
     if (!form.title.trim() || saving) return;
-    const { modules, lessons, awaiting, categoryTitle, ...rest } = form;
+    // Table rows carry derived stats (modules/lessons counts, categoryTitle) — only send real course fields.
+    const payload = {
+      id: form.id || '',
+      categoryId: form.categoryId,
+      title: form.title,
+      shortTitle: form.shortTitle || form.title,
+      description: form.description,
+      icon: form.icon,
+      color: form.color,
+      imageUrl: form.imageUrl,
+      level: form.level,
+      equipment: form.equipment,
+      status: form.status,
+      disclaimer: form.disclaimer,
+      sortOrder: form.sortOrder
+    };
     try {
       setSaving(true);
       setActionError('');
-      await saveCourse({
-        ...rest,
-        shortTitle: rest.shortTitle || rest.title,
-        id: rest.id || rest.title.toLowerCase().replace(/\s+/g, '-'),
-        modules: modules || []
-      });
+      // New courses get a unique id generated in the API layer; existing ids are kept.
+      await saveCourse(payload);
       setOpen(false);
     } catch (err) {
       setActionError(err.message || 'Failed to save course');
@@ -143,13 +156,15 @@ export default function Courses() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      setActionError('');
-      await deleteCourse(id);
-    } catch (err) {
-      setActionError(err.message || 'Failed to delete course');
-    }
+  const handleDelete = (row) => {
+    setActionError('');
+    setConfirm({
+      title: 'Delete course?',
+      message: `“${row.title}” will be permanently deleted together with its ${row.modules || 0} module(s) and ${
+        row.lessons || 0
+      } lesson(s), member progress on them, and any journey links / program cards pointing to it. This cannot be undone.`,
+      onConfirm: () => deleteCourse(row.id)
+    });
   };
 
   if (contentLoading) return <Loader />;
@@ -260,7 +275,7 @@ export default function Courses() {
                     <IconButton color="primary" onClick={() => openEdit(row)}>
                       <EditOutlined />
                     </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(row.id)}>
+                    <IconButton color="error" onClick={() => handleDelete(row)}>
                       <DeleteOutlined />
                     </IconButton>
                   </TableCell>
@@ -407,6 +422,14 @@ export default function Courses() {
           </Stack>
         </Box>
       </Drawer>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

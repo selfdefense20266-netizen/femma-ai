@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -173,6 +174,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
+  const auth = await requireUser(req);
+  if (!auth.user) return json({ error: auth.error || "Unauthorized" }, 401);
+  const authUser = auth.user;
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
@@ -208,7 +213,22 @@ Deno.serve(async (req) => {
   const foodPreference = String(body.foodPreference || "Eat everything").trim();
   const cyclePhase = String(body.cyclePhase || "none").trim();
   const isPregnant = Boolean(body.isPregnant);
-  const memberId = String(body.memberId || "").trim();
+  const requestedMemberId = String(body.memberId || "").trim();
+  let memberId = "";
+  if (requestedMemberId) {
+    // Only read/write a diet plan for a members row owned by the caller.
+    const { data: ownedMember } = await adminClient
+      .from("members")
+      .select("id, email")
+      .eq("id", requestedMemberId)
+      .maybeSingle();
+    const ownsMember =
+      !!ownedMember &&
+      (String(ownedMember.id) === authUser.id ||
+        (!!authUser.email && String(ownedMember.email || "").toLowerCase() === authUser.email));
+    if (!ownsMember) return json({ error: "memberId does not belong to the signed-in user" }, 403);
+    memberId = requestedMemberId;
+  }
   const save = body.save !== false;
   const force = Boolean(body.force);
   const fingerprint = fingerprintOf({ heightCm, weightKg, goal, fitnessLevel, foodPreference, isPregnant });
@@ -220,7 +240,10 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("member_id", memberId)
       .maybeSingle();
-    if (!existing.error && existing.data && existing.data.fingerprint === fingerprint) {
+    const cachedSource = String(existing.data?.source || "ai").toLowerCase();
+    // Never serve a locally generated / fallback plan as the cached AI plan; regenerate instead.
+    const isFallbackRow = cachedSource === "fallback" || cachedSource === "local";
+    if (!existing.error && existing.data && !isFallbackRow && existing.data.fingerprint === fingerprint) {
       const days = normalizeDays({ days: existing.data.days });
       if (days.length === 30) {
         return json({

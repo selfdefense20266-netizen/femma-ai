@@ -14,43 +14,38 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
-  const normalized = email.toLowerCase();
-  for (let page = 1; page <= 10; page += 1) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) throw error;
-    const found = data.users.find((user: { email?: string }) => user.email?.toLowerCase() === normalized);
-    if (found) return found;
-    if (data.users.length < 200) break;
-  }
-  return null;
-}
-
 async function saveMember(
   admin: ReturnType<typeof createClient>,
   input: { id: string; email: string; firstName: string; lastName: string }
 ) {
   const name = `${input.firstName} ${input.lastName}`.trim() || input.email.split("@")[0];
-  const full = {
-    id: input.id,
-    email: input.email,
-    name,
-    first_name: input.firstName,
-    last_name: input.lastName,
-    status: "active",
-  };
+  const profile = { name, first_name: input.firstName, last_name: input.lastName };
 
-  const { error } = await admin.from("members").upsert(full, { onConflict: "email" });
-  if (!error) return;
+  // Legacy members rows (id like 'member-<ts>', no auth user) may already exist for this email.
+  // Update their profile fields but never change the id: member_progress etc. reference it.
+  const { data: existingRow, error: lookupError } = await admin
+    .from("members")
+    .select("id")
+    .ilike("email", input.email.replace(/[\\%_]/g, (c) => "\\" + c))
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
 
-  const missingColumn = /first_name|last_name|schema cache|column/i.test(error.message || "");
-  if (!missingColumn) throw error;
+  if (existingRow?.id) {
+    const { error } = await admin
+      .from("members")
+      .update({ ...profile, updated_at: new Date().toISOString() })
+      .eq("id", existingRow.id);
+    if (error) throw error;
+    return String(existingRow.id);
+  }
 
-  const { error: retryError } = await admin.from("members").upsert(
-    { id: input.id, email: input.email, name, status: "active" },
-    { onConflict: "email" }
-  );
-  if (retryError) throw retryError;
+  const { error } = await admin
+    .from("members")
+    .upsert({ id: input.id, email: input.email, ...profile, status: "active" }, { onConflict: "id" });
+  if (error) throw error;
+  return input.id;
 }
 
 Deno.serve(async (req) => {
@@ -80,7 +75,9 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON body" }, 400);
   }
 
-  const action = body.action === "confirm" ? "confirm" : "signup";
+  if (body.action && body.action !== "signup") {
+    return json({ error: "Unsupported action" }, 400);
+  }
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
   const firstName = String(body.firstName || "").trim();
@@ -92,57 +89,36 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  if (!password) return json({ error: "Password is required" }, 400);
+  if (!firstName) return json({ error: "First name is required" }, 400);
+  if (!lastName) return json({ error: "Last name is required" }, 400);
+
   try {
-    if (action === "signup") {
-      if (!password) return json({ error: "Password is required" }, 400);
-      if (!firstName) return json({ error: "First name is required" }, 400);
-      if (!lastName) return json({ error: "Last name is required" }, 400);
-
-      const { data, error } = await admin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`,
-        },
-      });
-
-      if (error) {
-        if (!/already/i.test(error.message || "")) {
-          return json({ error: error.message || "Unable to create account" }, 400);
-        }
-
-        const existing = await findUserByEmail(admin, email);
-        if (!existing) return json({ error: "An account with this email already exists" }, 409);
-        if (!existing.email_confirmed_at) {
-          await admin.auth.admin.updateUserById(existing.id, { email_confirm: true });
-        }
-        await saveMember(admin, { id: existing.id, email, firstName, lastName });
-        return json({ ok: true, existing: true, userId: existing.id });
-      }
-
-      const userId = data.user?.id;
-      if (!userId) return json({ error: "Unable to create account" }, 500);
-      await saveMember(admin, { id: userId, email, firstName, lastName });
-      return json({ ok: true, userId });
-    }
-
-    const existing = await findUserByEmail(admin, email);
-    if (!existing) return json({ error: "No account found for this email" }, 404);
-    if (!existing.email_confirmed_at) {
-      const { error } = await admin.auth.admin.updateUserById(existing.id, { email_confirm: true });
-      if (error) return json({ error: error.message }, 400);
-    }
-    const meta = existing.user_metadata || {};
-    await saveMember(admin, {
-      id: existing.id,
+    const { data, error } = await admin.auth.admin.createUser({
       email,
-      firstName: firstName || String(meta.first_name || ""),
-      lastName: lastName || String(meta.last_name || ""),
+      password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+        full_name: `${firstName} ${lastName}`,
+      },
     });
-    return json({ ok: true, confirmed: true, userId: existing.id });
+
+    if (error) {
+      const message = error.message || "";
+      const code = String((error as { code?: string }).code || "");
+      if (code === "email_exists" || code === "user_already_exists" || /already|registered/i.test(message)) {
+        // Never touch existing data and never confirm/merge without the password.
+        return json({ error: "An account with this email already exists. Try logging in." }, 409);
+      }
+      return json({ error: message || "Unable to create account" }, 400);
+    }
+
+    const userId = data.user?.id;
+    if (!userId) return json({ error: "Unable to create account" }, 500);
+    const memberId = await saveMember(admin, { id: userId, email, firstName, lastName });
+    return json({ ok: true, userId, memberId });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to save account";
     return json({ error: message }, 500);

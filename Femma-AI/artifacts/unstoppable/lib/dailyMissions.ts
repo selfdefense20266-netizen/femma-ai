@@ -511,7 +511,7 @@ export function weekPreviewFromMissions(missions: Mission[]): { day: string; ite
 
   const row = (items: (Mission | string | undefined)[]) =>
     items
-      .filter(Boolean)
+      .filter((item): item is Mission | string => Boolean(item))
       .map((item) => (typeof item === 'string' ? item : shortenMissionTitle(item.title)));
 
   return [

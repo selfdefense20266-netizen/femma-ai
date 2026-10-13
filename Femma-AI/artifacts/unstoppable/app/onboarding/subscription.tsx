@@ -24,7 +24,7 @@ import type { StorePackage } from '@/lib/revenueCat';
 export default function SubscriptionSelectionScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { completeOnboarding, profile, stagedPlan } = useApp();
+  const { completeOnboarding, onboardingCompleted, profile, stagedPlan } = useApp();
   const { user, logout } = useAuth();
   const {
     packages,
@@ -42,19 +42,34 @@ export default function SubscriptionSelectionScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [formError, setFormError] = useState('');
   const enteredRef = useRef(false);
+  const savedRef = useRef(false);
   const unavailableReason = purchasesUnavailableReason();
 
   const topPad = insets.top + 12;
   const botPad = Math.max(insets.bottom, 16);
 
+  // Safety net: if user opened paywall without going through reveal, still save profile.
+  useEffect(() => {
+    if (onboardingCompleted || savedRef.current) return;
+    if (!profile.goal) return;
+    savedRef.current = true;
+    completeOnboarding({
+      planName: stagedPlan?.planName || profile.planName || 'Premium Plan',
+      journeyDay: profile.journeyDay || 1,
+      name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
+    });
+  }, [onboardingCompleted, profile.goal, profile.planName, profile.journeyDay, profile.name, stagedPlan?.planName, user, completeOnboarding]);
+
   const finishWithAccess = () => {
     if (enteredRef.current) return;
     enteredRef.current = true;
-    completeOnboarding({
-      planName: stagedPlan?.planName || 'Premium Plan',
-      journeyDay: 1,
-      name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
-    });
+    if (!onboardingCompleted) {
+      completeOnboarding({
+        planName: stagedPlan?.planName || 'Premium Plan',
+        journeyDay: 1,
+        name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
+      });
+    }
     router.replace('/(tabs)');
   };
 

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/context/AppContext';
 import { getCourseLessons, courseProgressPercent, libraryPath, resolveCategoryId, type LibraryCategoryId } from '@/lib/catalog';
-import { useCatalogCourse } from '@/hooks/useCatalog';
+import { useCatalogCategory, useCatalogCourse } from '@/hooks/useCatalog';
 import { useColors } from '@/hooks/useColors';
 import ProgressBar from '@/components/ProgressBar';
 import AppLoading from '@/components/AppLoading';
@@ -21,6 +21,8 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
   const { completedLessonIds, lessonWatchProgress, savedCourseIds, toggleSavedCourse } = useApp();
   const resolvedCategoryId = resolveCategoryId(categoryId);
   const { course, isLoading, error, refetch } = useCatalogCourse(courseId);
+  const { category } = useCatalogCategory(categoryId);
+  const eyebrow = `${(category?.title || resolvedCategoryId.replace(/-/g, ' ')).toUpperCase()} COURSE`;
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
   const [collapsedModules, setCollapsedModules] = useState<string[]>([]);
@@ -89,7 +91,7 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
                 {isSaved && <View style={styles.savedDot} />}
               </TouchableOpacity>
             </View>
-            <Text style={styles.heroEyebrow}>{resolvedCategoryId.replace(/-/g, ' ').toUpperCase()} COURSE</Text>
+            <Text style={styles.heroEyebrow}>{eyebrow}</Text>
             <Text style={styles.heroTitle}>{course.title}</Text>
             <Text style={styles.heroDescription}>{course.description}</Text>
             <View style={styles.heroMeta}>
@@ -119,7 +121,7 @@ export default function CourseDetailScreen({ categoryId, courseId }: Props) {
             <View style={styles.heroIcon}>
               <Feather name={course.icon} size={28} color="#FFFFFF" />
             </View>
-            <Text style={styles.heroEyebrow}>{resolvedCategoryId.replace(/-/g, ' ').toUpperCase()} COURSE</Text>
+            <Text style={styles.heroEyebrow}>{eyebrow}</Text>
             <Text style={styles.heroTitle}>{course.title}</Text>
             <Text style={styles.heroDescription}>{course.description}</Text>
             <View style={styles.heroMeta}>

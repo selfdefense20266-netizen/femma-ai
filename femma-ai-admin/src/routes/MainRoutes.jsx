@@ -9,6 +9,7 @@ const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/default')))
 const JourneysPage = Loadable(lazy(() => import('pages/admin/Journeys')));
 const DailyPlansPage = Loadable(lazy(() => import('pages/admin/DailyPlans')));
 const DailyPlanEditorPage = Loadable(lazy(() => import('pages/admin/DailyPlanEditor')));
+const MealsPage = Loadable(lazy(() => import('pages/admin/Meals')));
 const RecoverySectionsPage = Loadable(lazy(() => import('pages/admin/RecoverySections')));
 const ProgramCardsPage = Loadable(lazy(() => import('pages/admin/ProgramCards')));
 const CategoriesPage = Loadable(lazy(() => import('pages/admin/Categories')));
@@ -44,6 +45,7 @@ const MainRoutes = {
         { path: 'daily-plans', element: <DailyPlansPage /> },
         { path: 'daily-plans/new', element: <DailyPlanEditorPage /> },
         { path: 'daily-plans/:planId', element: <DailyPlanEditorPage /> },
+        { path: 'meals', element: <MealsPage /> },
         { path: 'recovery', element: <RecoverySectionsPage /> },
         { path: 'program', element: <ProgramCardsPage /> },
         { path: 'categories', element: <CategoriesPage /> },

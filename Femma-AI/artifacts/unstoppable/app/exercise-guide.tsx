@@ -84,7 +84,7 @@ function LoopingExerciseVideo({ url }: { url: string }) {
       style={styles.gif}
       contentFit="contain"
       nativeControls={false}
-      allowsFullscreen={false}
+      fullscreenOptions={{ enable: false }}
       allowsPictureInPicture={false}
     />
   );
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   },
   restWrap: { borderWidth: 1, gap: 10, paddingHorizontal: 24 },
   gif: { width: '100%', height: 248 },
-  gifLoading: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  gifLoading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   gifCredit: { fontSize: 11, fontFamily: 'Manrope_600SemiBold', textTransform: 'capitalize', marginBottom: 8 },
   missingWrap: { gap: 8, paddingHorizontal: 24 },
   missingTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold', textAlign: 'center' },

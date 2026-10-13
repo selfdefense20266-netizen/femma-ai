@@ -541,10 +541,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [coachChatHistory, setCoachChatHistory] = useState<CoachChatHistoryMessage[]>([]);
   const [activityLog, setActivityLog] = useState<ActivityEvent[]>([]);
   const [syncReady, setSyncReady] = useState(false);
-  const [accountReady, setAccountReady] = useState(false);
+  /** Email (normalized, '' when logged out) whose cloud sync last finished. */
+  const [accountReadyFor, setAccountReadyFor] = useState<string | null>(null);
+  // Derived so it is never stale for the first render after a login / account switch.
+  const accountReady = !authLoading && accountReadyFor === normalizeEmail(user?.email);
   const [stagedPlan, setStagedPlan] = useState<PersonalizedPlan | null>(null);
   const cloudTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiPlanPromiseRef = useRef<Promise<PersonalizedPlan> | null>(null);
+  /** Bumped on account change / answer change so an in-flight plan build can't write stale data. */
+  const aiPlanEpochRef = useRef(0);
+  const resetAiPlan = useCallback(() => {
+    aiPlanEpochRef.current += 1;
+    aiPlanPromiseRef.current = null;
+  }, []);
   const snapshotRef = useRef<MemberProgressSnapshot>({
     profile: DEFAULT_PROFILE,
     missions: DEFAULT_MISSIONS,
@@ -637,7 +646,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!syncReady || authLoading) return;
     let mounted = true;
     const email = normalizeEmail(user?.email);
-    setAccountReady(false);
+    setAccountReadyFor(null);
+    // Any in-flight onboarding plan / pending cloud save belongs to the previous account.
+    resetAiPlan();
+    if (cloudTimerRef.current) {
+      clearTimeout(cloudTimerRef.current);
+      cloudTimerRef.current = null;
+    }
+    setStagedPlan(null);
 
     (async () => {
       try {
@@ -659,26 +675,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const remote = await fetchMemberProgress(user?.email);
         if (!mounted) return;
 
-        const base = localBelongsToUser ? snapshotRef.current : emptySnapshot();
+        // snapshotRef was reset above when local data belonged to someone else, so anything in it now
+        // (e.g. name / onboarding answers entered while this fetch was in flight) belongs to this user.
+        const base = snapshotRef.current;
         let next = remote ? mergeProgressSnapshots(base, remote) : base;
         next = scrubCrossAccountPollution(next);
+
+        // Keep display name from auth if progress blob has none (common after logout/login).
+        const authName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+        if (authName && !String(next.profile.name || '').trim()) {
+          next = {
+            ...next,
+            profile: { ...next.profile, name: authName },
+          };
+        }
+
         applySnapshot(next);
         next = snapshotRef.current;
         await writeLocalSnapshot(next, email);
-        if (remote || next.onboardingCompleted) {
+        // Always push progress for signed-in members (keeps mid-onboarding answers in DB).
+        if (remote || next.onboardingCompleted || next.profile.goal || authName) {
           await saveMemberProgress(next, user?.email);
         }
       } catch (error) {
         console.warn('Cloud progress sync failed', error);
       } finally {
-        if (mounted) setAccountReady(true);
+        if (mounted) setAccountReadyFor(email);
       }
     })();
 
     return () => {
       mounted = false;
     };
-  }, [user?.email, syncReady, authLoading, applySnapshot]);
+  }, [user?.email, syncReady, authLoading, applySnapshot, resetAiPlan]);
 
   useEffect(() => {
     return () => {
@@ -728,11 +757,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [syncReady, persistAll, onboardingCompleted, completedLessonIds]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
+    const answerKeys: Array<keyof UserProfile> = [
+      'goal',
+      'fitnessLevel',
+      'environment',
+      'dailyTime',
+      'foodPreference',
+      'heightCm',
+      'weightKg',
+      'cyclePhase',
+      'isPregnant',
+      'planDurationWeeks',
+    ];
+    const current = snapshotRef.current.profile;
+    if (answerKeys.some((key) => key in updates && updates[key] !== current[key])) {
+      // Onboarding answers changed — a cached plan build is now stale.
+      resetAiPlan();
+    }
     const next = {
       ...snapshotRef.current,
       profile: { ...snapshotRef.current.profile, ...updates },
     };
-    void persistAll(next);
+    // Immediate cloud write so logout/login keeps onboarding answers.
+    void persistAll(next, { immediateCloud: true });
   };
 
   // Auto-advance cycle day from the last anchored calendar date.
@@ -1022,6 +1069,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const buildOnboardingPlan = useCallback(async () => {
     if (aiPlanPromiseRef.current) return aiPlanPromiseRef.current;
 
+    const epoch = aiPlanEpochRef.current;
+    const assertCurrent = () => {
+      if (epoch !== aiPlanEpochRef.current) throw new Error('Plan build superseded');
+    };
     const run = (async () => {
       const { fetchCatalog } = await import('@/lib/catalog');
       const { generateRoadmapTrainingPlan } = await import('@/lib/exerciseRoadmap');
@@ -1101,6 +1152,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const weeks = Math.max(1, Math.ceil(durationDays / 7));
       const dailyMinutes = dayOne.reduce((sum, item) => sum + (item.duration || 0), 0);
 
+      assertCurrent();
       await persistAll(
         {
           ...snapshotRef.current,
@@ -1131,6 +1183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         hasCatalogLessons: trainingPlan.watchCourses.some((course) => course.lessons.length > 0),
         trainingPlan,
       };
+      assertCurrent();
       setStagedPlan(plan);
       return plan;
     })();
@@ -1139,12 +1192,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       return await run;
     } catch (error) {
-      aiPlanPromiseRef.current = null;
+      if (aiPlanPromiseRef.current === run) aiPlanPromiseRef.current = null;
       throw error;
     }
   }, [persistAll, user?.email]);
 
   const completeOnboarding = (profileUpdates: Partial<UserProfile>) => {
+    // Already finished once — keep progress; only merge light updates + force cloud save.
+    if (snapshotRef.current.onboardingCompleted) {
+      const next: MemberProgressSnapshot = {
+        ...snapshotRef.current,
+        profile: { ...snapshotRef.current.profile, ...profileUpdates },
+        onboardingCompleted: true,
+      };
+      void persistAll(next, { immediateCloud: true });
+      return;
+    }
+
     const name =
       profileUpdates.name ||
       snapshotRef.current.profile.name ||
@@ -1195,6 +1259,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       onboardingCompleted: true,
     };
     setStagedPlan(null);
+    aiPlanPromiseRef.current = null;
     void persistAll(next, { immediateCloud: true });
     // Generate AI 30-day diet (height/weight/activity) and save to DB in background.
     prefetchAiDietPlan(profile, user?.email);

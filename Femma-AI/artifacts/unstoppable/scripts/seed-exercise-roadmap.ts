@@ -73,7 +73,7 @@ if (boxingError || !boxing?.week_days?.length) {
   process.exit(1);
 }
 
-const monday = boxing.week_days[0];
+const monday = boxing!.week_days[0];
 const slots = monday.items.map((item: { slot: string }) => item.slot).join(',');
 if (slots !== 'exercise,exercise,exercise,recipe,meal') {
   console.error(`Boxing Monday slots were ${slots}`);
@@ -84,7 +84,7 @@ if (!String(monday.items[0].title).toLowerCase().includes('shadow') && !String(m
   process.exit(1);
 }
 
-console.log(`DB check: ${boxing.plan_name} Monday starts with "${monday.items[0].title}"`);
+console.log(`DB check: ${boxing!.plan_name} Monday starts with "${monday.items[0].title}"`);
 
 for (const category of [
   'weight_loss',
@@ -113,12 +113,12 @@ for (const category of [
     console.error(`Missing ${category} 20–30 min home roadmap`);
     process.exit(1);
   }
-  const firstDay = data.week_days[0];
+  const firstDay = data!.week_days[0];
   if (firstDay.items.length !== 5) {
     console.error(`${category} does not have 5 daily tasks`);
     process.exit(1);
   }
-  console.log(`  ${category}: ${data.plan_name} → ${firstDay.items[3].title}`);
+  console.log(`  ${category}: ${data!.plan_name} → ${firstDay.items[3].title}`);
 }
 
 console.log('Seed + category checks passed.');

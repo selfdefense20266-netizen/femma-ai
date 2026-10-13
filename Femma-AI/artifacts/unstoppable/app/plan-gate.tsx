@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,9 +27,9 @@ export default function PlanGateScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ mode?: string }>();
-  const isResume = params.mode === 'resume';
   const { logout } = useAuth();
   const {
+    everPaid,
     hasAccess,
     packages,
     buy,
@@ -38,6 +39,9 @@ export default function PlanGateScreen() {
     inGracePeriod,
     graceDaysLeft,
   } = usePurchases();
+  // "Resume" copy only for members whose paid plan actually lapsed; first-timers see the subscribe copy.
+  const isResume = params.mode === 'resume' && everPaid;
+  const isRequired = params.mode === 'resume';
 
   const [plans, setPlans] = useState<PlanDefinition[]>(FALLBACK_PLANS);
   const [submitting, setSubmitting] = useState(false);
@@ -51,10 +55,10 @@ export default function PlanGateScreen() {
   }, [hasAccess]);
 
   useEffect(() => {
-    if (!isResume) return;
+    if (!isRequired || Platform.OS === 'web') return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
-  }, [isResume]);
+  }, [isRequired]);
 
   const topPad = insets.top + 12;
   const botPad = Math.max(insets.bottom, 16);
@@ -95,7 +99,7 @@ export default function PlanGateScreen() {
   const priceDisplay = chosenPackage?.priceString || premiumDbPlan.price_label;
 
   const dismiss = () => {
-    if (isResume) return;
+    if (isRequired) return;
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
   };
@@ -140,7 +144,7 @@ export default function PlanGateScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topRow}>
-          {!isResume ? (
+          {!isRequired ? (
             <TouchableOpacity onPress={dismiss} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Feather name="x" size={22} color={colors.foreground} />
             </TouchableOpacity>
@@ -166,13 +170,13 @@ export default function PlanGateScreen() {
 
         <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
           <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-            <Feather name={isResume ? 'lock' : 'shield'} size={14} color="#FFFFFF" />
+            <Feather name={isRequired ? 'lock' : 'shield'} size={14} color="#FFFFFF" />
             <Text style={[styles.badgeText, { color: '#FFFFFF' }]}>
-              {isResume ? 'Subscription required' : 'Premium access'}
+              {isRequired ? 'Subscription required' : 'Premium access'}
             </Text>
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            {isResume ? 'Pay to resume your plan' : 'Unlock Premium'}
+            {isResume ? 'Pay to resume your plan' : isRequired ? 'Subscribe to start your plan' : 'Unlock Premium'}
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             {isResume

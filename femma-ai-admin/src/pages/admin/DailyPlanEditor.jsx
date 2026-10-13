@@ -116,7 +116,7 @@ export default function DailyPlanEditor() {
   const [planSaving, setPlanSaving] = useState(false);
   const [activeDay, setActiveDay] = useState(1);
   const [activeLevel, setActiveLevel] = useState('beginner');
-  const [contentKind, setContentKind] = useState('workout'); // workout | recovery
+  const [contentKind, setContentKind] = useState('workout'); // workout | recovery | meals
   const [recoveryType, setRecoveryType] = useState('full-body');
   const [pickerSearch, setPickerSearch] = useState('');
   const [ready, setReady] = useState(false);
@@ -170,10 +170,11 @@ export default function DailyPlanEditor() {
   }, [dailyPlans, dailyPlansLoading, exerciseLibraryLoading, isNew, planId, searchParams]);
 
   const library = useMemo(() => {
+    const wantType = contentKind === 'meals' ? 'food' : contentKind === 'recovery' ? 'recovery' : 'exercise';
     return (exerciseLibrary || [])
       .filter((item) => {
         const type = String(item.itemType || 'exercise').toLowerCase();
-        return type === 'exercise';
+        return type === wantType || (wantType === 'exercise' && type === 'exercise');
       })
       .slice()
       .sort((a, b) => {
@@ -182,7 +183,7 @@ export default function DailyPlanEditor() {
         if (customA !== customB) return customB - customA;
         return (b.sortOrder ?? 0) - (a.sortOrder ?? 0) || String(a.title).localeCompare(String(b.title));
       });
-  }, [exerciseLibrary]);
+  }, [exerciseLibrary, contentKind]);
 
   const dayLevelItems = useMemo(
     () =>
@@ -193,6 +194,7 @@ export default function DailyPlanEditor() {
           return type === 'recovery' && (item.recoveryType || 'full-body') === recoveryType;
         }
         if (Number(item.dayNumber) !== Number(activeDay)) return false;
+        if (contentKind === 'meals') return type === 'food';
         return type === 'exercise';
       }),
     [planForm.items, activeDay, activeLevel, contentKind, recoveryType]
@@ -200,9 +202,10 @@ export default function DailyPlanEditor() {
 
   const pickerItems = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
+    const wantType = contentKind === 'meals' ? 'food' : 'exercise';
     return library.filter((item) => {
       const type = String(item.itemType || 'exercise').toLowerCase();
-      if (type !== 'exercise') return false;
+      if (contentKind === 'meals' ? type !== 'food' : type !== wantType) return false;
       if (!q) return true;
       return (
         item.title.toLowerCase().includes(q) ||
@@ -210,7 +213,7 @@ export default function DailyPlanEditor() {
         (item.subtitle || '').toLowerCase().includes(q)
       );
     });
-  }, [library, pickerSearch]);
+  }, [library, pickerSearch, contentKind]);
 
   const setDurationDays = (days) => {
     const durationDays = clampDurationDays(days);
@@ -235,11 +238,16 @@ export default function DailyPlanEditor() {
   };
 
   const addFromLibrary = (libItem) => {
-    const seconds =
-      contentKind === 'recovery'
+    const isMeal = contentKind === 'meals' || String(libItem.itemType || '').toLowerCase() === 'food';
+    const seconds = isMeal
+      ? Math.max(1, Number(libItem.durationMinutes) || 900) // seconds (15 min default)
+      : contentKind === 'recovery'
         ? Math.max(30, Number(libItem.durationMinutes) || 300)
         : DEFAULT_LEVEL_SECONDS[activeLevel] || libItem.durationMinutes || 300;
     const recoveryLabel = RECOVERY_TYPE_OPTIONS.find((o) => o.id === recoveryType)?.label || 'Recovery';
+    const mealTag = ['Breakfast', 'Lunch', 'Dinner'].includes(libItem.tag)
+      ? libItem.tag
+      : libItem.tag || 'Breakfast';
     setPlanForm((prev) => ({
       ...prev,
       items: [
@@ -250,11 +258,11 @@ export default function DailyPlanEditor() {
           dayNumber: contentKind === 'recovery' ? 1 : activeDay,
           intensityLevel: activeLevel,
           recoveryType: contentKind === 'recovery' ? recoveryType : '',
-          itemType: contentKind === 'recovery' ? 'recovery' : 'exercise',
+          itemType: contentKind === 'recovery' ? 'recovery' : isMeal ? 'food' : 'exercise',
           title: libItem.title,
-          tag: contentKind === 'recovery' ? `${intensityLabel(activeLevel)} · ${recoveryLabel}` : libItem.tag,
+          tag: contentKind === 'recovery' ? `${intensityLabel(activeLevel)} · ${recoveryLabel}` : isMeal ? mealTag : libItem.tag,
           subtitle: libItem.subtitle,
-          scheduledTime: '',
+          scheduledTime: isMeal ? mealTag.toLowerCase() : '',
           durationMinutes: seconds,
           restMinutes: Number(libItem.restMinutes) || 0,
           mediaUrl: libItem.mediaUrl,
@@ -291,7 +299,7 @@ export default function DailyPlanEditor() {
   const savePlan = async () => {
     if (!planForm.title.trim() || planSaving) return;
     if (!planForm.items.some((item) => item.title.trim())) {
-      setError('Add at least one exercise for a level.');
+      setError('Add at least one workout, meal, or recovery item.');
       setStep(1);
       return;
     }
@@ -312,7 +320,12 @@ export default function DailyPlanEditor() {
   };
 
   const openLibCreate = () => {
-    setLibForm({ ...emptyLibrary(), sortOrder: Date.now() });
+    setLibForm({
+      ...emptyLibrary(),
+      sortOrder: Date.now(),
+      itemType: contentKind === 'meals' ? 'food' : contentKind === 'recovery' ? 'recovery' : 'exercise',
+      tag: contentKind === 'meals' ? 'Breakfast' : '',
+    });
     setLibOpen(true);
   };
 
@@ -323,7 +336,7 @@ export default function DailyPlanEditor() {
       setError('');
       const saved = await saveExerciseLibraryItem({
         ...libForm,
-        itemType: 'exercise',
+        itemType: libForm.itemType || 'exercise',
         sortOrder: libForm.id ? libForm.sortOrder : Date.now()
       });
       await refreshExerciseLibrary();
@@ -537,6 +550,7 @@ export default function DailyPlanEditor() {
           <Stack direction="row" spacing={1} sx={{ mb: 1.5 }} flexWrap="wrap" useFlexGap>
             {[
               { id: 'workout', label: 'Workouts (Today Tasks)' },
+              { id: 'meals', label: 'Meals (Food / Today’s meals)' },
               { id: 'recovery', label: 'Recovery stretches' }
             ].map((o) => (
               <Chip
@@ -559,7 +573,9 @@ export default function DailyPlanEditor() {
                 if (contentKind === 'recovery') {
                   return type === 'recovery' && (item.recoveryType || 'full-body') === recoveryType;
                 }
-                return Number(item.dayNumber) === Number(activeDay) && type === 'exercise';
+                if (Number(item.dayNumber) !== Number(activeDay)) return false;
+                if (contentKind === 'meals') return type === 'food';
+                return type === 'exercise';
               }).length;
               const selected = activeLevel === o.id;
               return (
@@ -599,7 +615,9 @@ export default function DailyPlanEditor() {
             >
               <Box sx={{ px: 1.5, py: 1.25, borderBottom: 1, borderColor: 'divider', bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography fontWeight={800}>1. Choose exercise</Typography>
+                  <Typography fontWeight={800}>
+                    {contentKind === 'meals' ? '1. Choose meal' : contentKind === 'recovery' ? '1. Choose stretch' : '1. Choose exercise'}
+                  </Typography>
                   <Button size="small" startIcon={<PlusOutlined />} onClick={openLibCreate}>
                     New
                   </Button>

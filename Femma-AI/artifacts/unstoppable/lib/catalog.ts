@@ -1,4 +1,4 @@
-import type { Feather } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 
 export type LibraryCategoryId = string;

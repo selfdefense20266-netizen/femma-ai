@@ -40,6 +40,7 @@ function RootLayoutNav() {
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="signup" options={{ headerShown: false }} />
+      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="scan-food" options={{ headerShown: false }} />
@@ -54,7 +55,10 @@ function RootLayoutNav() {
       <Stack.Screen name="exercise-guide" options={{ headerShown: false }} />
       <Stack.Screen name="recovery/[type]" options={{ headerShown: false }} />
       <Stack.Screen name="paywall" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="plan-gate" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen
+        name="plan-gate"
+        options={{ headerShown: false, presentation: 'modal', gestureEnabled: false }}
+      />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
     </Stack>

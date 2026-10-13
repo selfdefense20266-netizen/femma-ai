@@ -2,8 +2,6 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import type PurchasesModule from 'react-native-purchases';
 import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { resolveMemberId } from '@/lib/memberProgress';
 
 export const PREMIUM_ENTITLEMENT = 'premium';
 // RevenueCat SDK "public" keys are safe to ship client-side (unlike secret API keys).
@@ -73,6 +71,20 @@ export function isPremiumFromCustomer(info: CustomerLike | null | undefined) {
   if (!info) return false;
   const active = info.entitlements?.active || {};
   return Boolean(active[PREMIUM_ENTITLEMENT]?.isActive ?? active[PREMIUM_ENTITLEMENT]);
+}
+
+/** Store-reported expiry of the premium entitlement (ISO), or null (lifetime / unknown). */
+export function premiumExpirationFromCustomer(info: CustomerLike | null | undefined): string | null {
+  if (!info) return null;
+  const entitlement = info.entitlements?.active?.[PREMIUM_ENTITLEMENT] as
+    | { expirationDate?: string | null }
+    | undefined;
+  return entitlement?.expirationDate || null;
+}
+
+/** RevenueCat can actually run on this platform (native build with a key). */
+export function isRevenueCatAvailable() {
+  return Platform.OS !== 'web' && Boolean(getRevenueCatApiKey());
 }
 
 export async function configurePurchases(appUserId?: string | null) {
@@ -224,26 +236,5 @@ export async function addCustomerInfoListener(listener: (info: CustomerLike) => 
   };
 }
 
-export async function syncPlanToSupabase(planId: 'free' | 'premium', emailHint?: string) {
-  if (!isSupabaseConfigured) return;
-  const memberId = await resolveMemberId(emailHint);
-  if (!memberId) return;
-  const today = new Date().toISOString().slice(0, 10);
-  await supabase.from('members').update({ plan_id: planId, updated_at: new Date().toISOString() }).eq('id', memberId);
-  await supabase.from('subscriptions').upsert(
-    {
-      id: `sub-${memberId}`,
-      user_id: memberId,
-      plan_id: planId,
-      status: 'active',
-      started_at: today,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' }
-  );
-}
-
-export async function syncPremiumToSupabase(isPremium: boolean, emailHint?: string) {
-  if (!isSupabaseConfigured) return;
-  await syncPlanToSupabase(isPremium ? 'premium' : 'free', emailHint);
-}
+// Plan / subscription rows are written only by the RevenueCat webhook (service role).
+// The client never writes members.plan_id or subscriptions (RLS blocks it).

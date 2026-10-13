@@ -77,7 +77,7 @@ export default function DashboardDefault() {
           <BarChart
             hideLegend
             height={300}
-            series={[{ data: analytics.weeklySignups || analytics.weeklyCompletions, label: 'Signups' }]}
+            series={[{ data: analytics.weeklySignups, label: 'Signups' }]}
             xAxis={[{ data: analytics.weekLabels, scaleType: 'band', categoryGapRatio: 0.4 }]}
             margin={{ left: 30, right: 20, top: 20, bottom: 30 }}
             colors={[theme.vars.palette.primary.main]}

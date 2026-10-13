@@ -19,6 +19,7 @@ import MainCard from 'components/MainCard';
 import PageHeader from 'components/admin/PageHeader';
 import StatusChip from 'components/admin/StatusChip';
 import Loader from 'components/Loader';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 import { useAdminData } from 'contexts/AdminDataContext';
 
 // assets
@@ -57,6 +58,7 @@ export default function Journeys() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [confirm, setConfirm] = useState(null);
   const fileInputRef = useRef(null);
 
   const courseOptions = useMemo(
@@ -95,13 +97,14 @@ export default function Journeys() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      setActionError('');
-      await deleteJourney(id);
-    } catch (err) {
-      setActionError(err.message || 'Failed to delete guided journey');
-    }
+  const handleDelete = (id) => {
+    const journey = journeys.find((j) => j.id === id);
+    setActionError('');
+    setConfirm({
+      title: 'Delete guided journey?',
+      message: `“${journey?.title || 'This journey'}” will be permanently deleted. Its courses are kept, only the journey and its course links are removed.`,
+      onConfirm: () => deleteJourney(id)
+    });
   };
 
   const handlePickImage = () => fileInputRef.current?.click();
@@ -316,6 +319,14 @@ export default function Journeys() {
           </Stack>
         </Box>
       </Drawer>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

@@ -14,7 +14,7 @@ function eventKey(event: Pick<ActivityEvent, 'kind' | 'id' | 'ref'>) {
 export function asActivityLog(value: unknown): ActivityEvent[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => {
+    .map((item): ActivityEvent | null => {
       if (!item || typeof item !== 'object') return null;
       const row = item as Record<string, unknown>;
       const kind = row.kind === 'workout' || row.kind === 'nutrition' || row.kind === 'recipe' ? row.kind : null;
@@ -22,9 +22,9 @@ export function asActivityLog(value: unknown): ActivityEvent[] {
       const at = String(row.at || '').trim();
       if (!kind || !id || !at) return null;
       const ref = typeof row.ref === 'string' && row.ref.trim() ? row.ref.trim() : undefined;
-      return { id, kind, at, ref } satisfies ActivityEvent;
+      return ref ? { id, kind, at, ref } : { id, kind, at };
     })
-    .filter((item): item is ActivityEvent => Boolean(item))
+    .filter((item): item is ActivityEvent => item !== null)
     .slice(-400);
 }
 

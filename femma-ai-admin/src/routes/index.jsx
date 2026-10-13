@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 // project imports
 import MainRoutes from './MainRoutes';
@@ -6,6 +6,9 @@ import LoginRoutes from './LoginRoutes';
 
 // ==============================|| ROUTING RENDER ||============================== //
 
-const router = createBrowserRouter([MainRoutes, LoginRoutes], { basename: import.meta.env.VITE_APP_BASE_NAME });
+// Unknown URLs -> dashboard (RequireAuth sends signed-out visitors on to /login).
+const NotFoundRoute = { path: '*', element: <Navigate to="/dashboard" replace /> };
+
+const router = createBrowserRouter([MainRoutes, LoginRoutes, NotFoundRoute], { basename: import.meta.env.VITE_APP_BASE_NAME });
 
 export default router;

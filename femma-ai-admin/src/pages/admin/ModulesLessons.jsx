@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 // material-ui
 import Accordion from '@mui/material/Accordion';
@@ -36,6 +35,7 @@ import Loader from 'components/Loader';
 import { useAdminData } from 'contexts/AdminDataContext';
 
 import ThumbnailPickerModal from 'components/admin/ThumbnailPickerModal';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 
 // assets
 import DownOutlined from '@ant-design/icons/DownOutlined';
@@ -46,6 +46,8 @@ import CloudUploadOutlined from '@ant-design/icons/CloudUploadOutlined';
 import PictureOutlined from '@ant-design/icons/PictureOutlined';
 
 const GUIDED_JOURNEY_CATEGORIES = ['self-defence', 'fitness', 'cycle-pregnancy-health'];
+
+const MAX_VIDEO_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
 
 const emptyLessonForm = {
   id: '',
@@ -61,7 +63,6 @@ function lessonMediaStatus(lesson) {
 }
 
 export default function ModulesLessons() {
-  const navigate = useNavigate();
   const { courses, saveModule, deleteModule, saveLesson, deleteLesson, uploadLessonMedia, uploadThumbnail, updateThumbnailUrl, contentLoading, contentError } = useAdminData();
   const [courseId, setCourseId] = useState('');
   const [actionError, setActionError] = useState('');
@@ -70,6 +71,9 @@ export default function ModulesLessons() {
   const [uploadingLessonId, setUploadingLessonId] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeUploadLesson, setActiveUploadLesson] = useState(null);
+  const [uploadNotice, setUploadNotice] = useState('');
+  const [confirm, setConfirm] = useState(null);
+  const videoInputRef = useRef(null);
   const [moduleDialog, setModuleDialog] = useState({ open: false, form: { id: '', title: '', description: '' } });
   const [lessonDialog, setLessonDialog] = useState({
     open: false,
@@ -147,6 +151,55 @@ export default function ModulesLessons() {
     }
   };
 
+  const handleDirectVideoUpload = (lesson) => {
+    if (!lesson?.id || uploadingLessonId) return;
+    setActionError('');
+    setUploadNotice('');
+    setActiveUploadLesson(lesson);
+    // Reset so picking the same file twice still fires onChange.
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
+      videoInputRef.current.click();
+    }
+  };
+
+  const handleVideoFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    const lesson = activeUploadLesson;
+    if (!file || !lesson) return;
+
+    const looksLikeVideo = String(file.type || '').startsWith('video/') || /\.(mp4|mov|m4v|webm|mkv)$/i.test(file.name || '');
+    if (!looksLikeVideo) {
+      setActionError('Please choose a video file (MP4, MOV, WebM).');
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      setActionError('Video is too large (max 5 GB).');
+      return;
+    }
+
+    try {
+      setUploadingLessonId(lesson.id);
+      setUploadProgress(0);
+      setActionError('');
+      // Uploads to Mux, marks the lesson "processing" and syncs its status (updates the lesson in context).
+      const saved = await uploadLessonMedia(lesson.id, file, setUploadProgress);
+      const status = saved?.videoStatus || 'processing';
+      setUploadNotice(
+        status === 'ready'
+          ? `Video for “${lesson.title}” is ready.`
+          : `Video for “${lesson.title}” uploaded. Mux is processing it; the status updates on the next refresh.`
+      );
+    } catch (err) {
+      setActionError(err?.message || 'Video upload failed');
+    } finally {
+      setUploadingLessonId(null);
+      setUploadProgress(0);
+      setActiveUploadLesson(null);
+    }
+  };
+
   if (contentLoading) return <Loader />;
 
   if (!course) {
@@ -164,7 +217,7 @@ export default function ModulesLessons() {
     <>
       <PageHeader
         title="Modules & Lessons"
-        subtitle="Build curriculum here. Attach video for each lesson in Media Library."
+        subtitle="Build curriculum here. Upload each lesson's video with the upload button on its row."
         actionLabel="Add module"
         actionIcon={<PlusOutlined />}
         onAction={() => openModule()}
@@ -188,10 +241,17 @@ export default function ModulesLessons() {
       />
 
       {(contentError || actionError) && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={actionError ? () => setActionError('') : undefined}>
           {actionError || contentError}
         </Alert>
       )}
+      {uploadNotice && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setUploadNotice('')}>
+          {uploadNotice}
+        </Alert>
+      )}
+
+      <input ref={videoInputRef} type="file" accept="video/*" hidden onChange={handleVideoFileChange} />
 
       <MainCard
         title={
@@ -221,14 +281,13 @@ export default function ModulesLessons() {
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={async () => {
-                        try {
-                          setActionError('');
-                          await deleteModule(course.id, module.id);
-                        } catch (err) {
-                          setActionError(err.message || 'Failed to delete module');
-                        }
-                      }}
+                      onClick={() =>
+                        setConfirm({
+                          title: 'Delete module?',
+                          message: `“${module.title}” and its ${module.lessons?.length || 0} lesson(s) will be permanently deleted, including member progress on those lessons.`,
+                          onConfirm: () => deleteModule(course.id, module.id)
+                        })
+                      }
                     >
                       <DeleteOutlined />
                     </IconButton>
@@ -299,12 +358,12 @@ export default function ModulesLessons() {
                             <IconButton size="small" color="primary" title="Set thumbnail (Frame/File)" onClick={() => setThumbModal({ open: true, lesson })}>
                               <PictureOutlined />
                             </IconButton>
-                            {status === 'awaiting' && (
+                            {status !== 'processing' && (
                               <IconButton
                                 size="small"
                                 color="primary"
-                                title="Upload video file directly"
-                                disabled={isUploadingThis}
+                                title={status === 'ready' ? 'Replace video' : 'Upload video'}
+                                disabled={Boolean(uploadingLessonId)}
                                 onClick={() => handleDirectVideoUpload(lesson)}
                               >
                                 <CloudUploadOutlined />
@@ -316,14 +375,13 @@ export default function ModulesLessons() {
                             <IconButton
                               size="small"
                               color="error"
-                              onClick={async () => {
-                                try {
-                                  setActionError('');
-                                  await deleteLesson(course.id, module.id, lesson.id);
-                                } catch (err) {
-                                  setActionError(err.message || 'Failed to delete lesson');
-                                }
-                              }}
+                              onClick={() =>
+                                setConfirm({
+                                  title: 'Delete lesson?',
+                                  message: `“${lesson.title}” will be permanently deleted, including member progress on it.`,
+                                  onConfirm: () => deleteLesson(course.id, module.id, lesson.id)
+                                })
+                              }
                             >
                               <DeleteOutlined />
                             </IconButton>
@@ -398,7 +456,7 @@ export default function ModulesLessons() {
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 {isEditingLesson && (lessonDialog.form.videoStatus === 'ready' || lessonDialog.form.durationMinutes)
                   ? `Auto-calculated from video · ${lessonDialog.form.durationMinutes || 1} min`
-                  : 'Filled automatically when you upload the lesson video in Media Library.'}
+                  : 'Filled automatically when you upload the lesson video.'}
               </Typography>
             </Box>
             <TextField
@@ -419,26 +477,32 @@ export default function ModulesLessons() {
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   {lessonNeedsVideo
-                    ? 'No video attached yet. Upload the lesson video from Media Library.'
-                    : 'Video is managed through Mux. Upload a replacement from Media Library if needed.'}
+                    ? 'No video attached yet. Upload the lesson video (sent to Mux).'
+                    : 'Video is managed through Mux. Upload a replacement if needed.'}
                 </Typography>
-                <Button
-                  size="small"
-                  sx={{ mt: 1.5 }}
-                  startIcon={<CloudUploadOutlined />}
-                  onClick={() => {
-                    setLessonDialog((s) => ({ ...s, open: false }));
-                    navigate('/content/media');
-                  }}
-                >
-                  {lessonNeedsVideo ? 'Go to Media Library' : 'Manage video'}
-                </Button>
+                {lessonDialog.form.videoStatus !== 'processing' && (
+                  <Button
+                    size="small"
+                    sx={{ mt: 1.5 }}
+                    startIcon={<CloudUploadOutlined />}
+                    disabled={Boolean(uploadingLessonId)}
+                    onClick={() => {
+                      const lesson = (course.modules || [])
+                        .flatMap((m) => m.lessons || [])
+                        .find((l) => l.id === lessonDialog.form.id);
+                      setLessonDialog((s) => ({ ...s, open: false }));
+                      if (lesson) handleDirectVideoUpload(lesson);
+                    }}
+                  >
+                    {lessonNeedsVideo ? 'Upload video' : 'Replace video'}
+                  </Button>
+                )}
               </Box>
             )}
 
             {!isEditingLesson && (
               <Alert severity="info" icon={false}>
-                Save this lesson first, then upload its video in <strong>Media Library</strong>.
+                Save this lesson first, then upload its video with the <strong>upload</strong> button on the lesson row.
               </Alert>
             )}
           </Stack>
@@ -459,6 +523,15 @@ export default function ModulesLessons() {
         onClose={() => setThumbModal({ open: false, lesson: null })}
         onSaveUrl={updateThumbnailUrl}
         onUploadFile={uploadThumbnail}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
       />
     </>
   );

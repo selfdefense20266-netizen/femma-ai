@@ -693,10 +693,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   heroFadeBottom: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   heroDarkLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.22)',
   },
   heroBlob: {

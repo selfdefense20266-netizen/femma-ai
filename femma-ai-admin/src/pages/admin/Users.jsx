@@ -17,6 +17,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 
 // project imports
 import MainCard from 'components/MainCard';
@@ -54,6 +55,9 @@ export default function Users() {
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
+  // Snapshot of the member as last saved, so "Done" only writes fields that actually changed.
+  const [original, setOriginal] = useState(null);
+  const [actionError, setActionError] = useState('');
   const [saving, setSaving] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
   const [noteBody, setNoteBody] = useState('');
@@ -76,30 +80,70 @@ export default function Users() {
     `${search}|${planFilter}|${statusFilter}`
   );
 
-  const handleAssignPlan = async (planId) => {
-    if (!selected) return;
+  const openMember = (user) => {
+    setSelected(user);
+    setOriginal(user);
+    setActionError('');
+  };
+
+  const closeMember = () => {
+    setSelected(null);
+    setOriginal(null);
+    setNoteTitle('');
+    setNoteBody('');
+  };
+
+  /** Apply a change that is saved immediately, keeping `selected` and `original` in sync. */
+  const applySaved = (patch) => {
+    setSelected((prev) => (prev ? { ...prev, ...patch } : prev));
+    setOriginal((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const runAction = async (fn, fallbackMessage) => {
     setSaving(true);
+    setActionError('');
     try {
-      await assignPlan(selected.id, planId, 'active');
-      setSelected((prev) => ({ ...prev, planId, planName: plans.find((p) => p.id === planId)?.name }));
+      await fn();
+      return true;
+    } catch (err) {
+      setActionError(err?.message || fallbackMessage);
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
+  const handleAssignPlan = async (planId) => {
+    if (!selected || planId === selected.planId) return;
+    await runAction(async () => {
+      await assignPlan(selected.id, planId, 'active');
+      applySaved({ planId, planName: plans.find((p) => p.id === planId)?.name });
+    }, 'Could not change the subscription plan');
+  };
+
   const handleAssignDailyPlan = async (planId) => {
     if (!selected) return;
-    setSaving(true);
-    try {
+    await runAction(async () => {
       await assignDailyPlan(selected.id, planId || null);
-      setSelected((prev) => ({
-        ...prev,
+      applySaved({
         dailyPlanId: planId || '',
         dailyPlanTitle: dailyPlans.find((p) => p.id === planId)?.title || ''
-      }));
-    } finally {
-      setSaving(false);
-    }
+      });
+    }, 'Could not assign the daily plan');
+  };
+
+  const handleSetStatus = async (status) => {
+    if (!selected) return;
+    await runAction(async () => {
+      await setUserStatus(selected.id, status);
+      applySaved({ status });
+    }, `Could not ${status === 'active' ? 'activate' : 'suspend'} this member`);
+  };
+
+  const handleDone = async () => {
+    if (!selected) return;
+    const ok = await runAction(() => saveUser(selected, original), 'Could not save member');
+    if (ok) closeMember();
   };
 
   return (
@@ -188,7 +232,7 @@ export default function Users() {
                     <StatusChip status={user.status} />
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton color="primary" onClick={() => setSelected(user)}>
+                    <IconButton color="primary" onClick={() => openMember(user)}>
                       <EyeOutlined />
                     </IconButton>
                   </TableCell>
@@ -209,11 +253,7 @@ export default function Users() {
       <Drawer
         anchor="right"
         open={Boolean(selected)}
-        onClose={() => {
-          setSelected(null);
-          setNoteTitle('');
-          setNoteBody('');
-        }}
+        onClose={closeMember}
         PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, height: '100%', overflow: 'hidden' } }}
       >
         {selected && (
@@ -222,6 +262,11 @@ export default function Users() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {selected.email}
             </Typography>
+            {actionError ? (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>
+                {actionError}
+              </Alert>
+            ) : null}
 
             <Stack spacing={1.25} sx={{ mb: 2 }}>
               <Detail label="Goal" value={selected.goal} />
@@ -341,15 +386,7 @@ export default function Users() {
                   color="error"
                   variant="outlined"
                   disabled={saving}
-                  onClick={async () => {
-                    setSaving(true);
-                    try {
-                      await setUserStatus(selected.id, 'suspended');
-                      setSelected({ ...selected, status: 'suspended' });
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
+                  onClick={() => handleSetStatus('suspended')}
                 >
                   Suspend
                 </Button>
@@ -358,15 +395,7 @@ export default function Users() {
                   color="success"
                   variant="outlined"
                   disabled={saving}
-                  onClick={async () => {
-                    setSaving(true);
-                    try {
-                      await setUserStatus(selected.id, 'active');
-                      setSelected({ ...selected, status: 'active' });
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
+                  onClick={() => handleSetStatus('active')}
                 >
                   Activate
                 </Button>
@@ -374,15 +403,7 @@ export default function Users() {
               <Button
                 variant="contained"
                 disabled={saving}
-                onClick={async () => {
-                  setSaving(true);
-                  try {
-                    await saveUser(selected);
-                    setSelected(null);
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
+                onClick={handleDone}
               >
                 Done
               </Button>
@@ -390,6 +411,17 @@ export default function Users() {
           </Box>
         )}
       </Drawer>
+
+      <Snackbar
+        open={Boolean(actionError) && !selected}
+        autoHideDuration={6000}
+        onClose={() => setActionError('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" variant="filled" onClose={() => setActionError('')} sx={{ width: '100%' }}>
+          {actionError}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

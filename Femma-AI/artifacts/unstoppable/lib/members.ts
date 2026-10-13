@@ -12,8 +12,8 @@ type MemberRow = {
   name: string | null;
   first_name?: string | null;
   last_name?: string | null;
-  password_hash?: string | null;
   plan_id?: string | null;
+  status?: string | null;
 };
 
 function splitName(name?: string | null) {
@@ -40,8 +40,13 @@ export function memberToAuthUser(
   };
 }
 
+/**
+ * Reads the signed-in member's own row. RLS only returns the caller's row
+ * (id = auth.uid() or email = JWT email), so this requires a Supabase session.
+ */
 export async function fetchMemberByEmail(email: string) {
-  const byEmail = await supabase.from('members').select('*').eq('email', email).maybeSingle();
+  if (!email) return null;
+  const byEmail = await supabase.from('members').select('*').eq('email', email.toLowerCase()).maybeSingle();
   if (!byEmail.error && byEmail.data) return byEmail.data as MemberRow;
   return null;
 }
@@ -55,76 +60,35 @@ export async function fetchMemberByUser(userId: string, email: string) {
   return fetchMemberByEmail(email);
 }
 
-function newMemberId() {
-  return `member-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-export async function saveMemberProfile(input: {
-  id?: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  passwordHash?: string;
-}) {
-  const existing = await fetchMemberByEmail(input.email);
-  const fromName = splitName(existing?.name);
-  const firstName = input.firstName?.trim() || existing?.first_name?.trim() || fromName.firstName;
-  const lastName = input.lastName?.trim() || existing?.last_name?.trim() || fromName.lastName;
-  const id = input.id || existing?.id || newMemberId();
-
-  await upsertMemberProfile({
-    id,
-    email: input.email,
-    firstName: firstName || input.email.split('@')[0],
-    lastName,
-    passwordHash: input.passwordHash,
-  });
-
-  const member = await fetchMemberByEmail(input.email);
-  return memberToAuthUser(member, { email: input.email, firstName, lastName });
-}
-
-export async function upsertMemberProfile(input: {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  passwordHash?: string;
-}) {
+/** Write name fields only — plan_id / status are server-owned (RevenueCat webhook / admin). */
+async function writeMemberProfile(
+  existing: MemberRow | null,
+  input: { id: string; email: string; firstName: string; lastName: string }
+) {
   const name = `${input.firstName} ${input.lastName}`.trim();
-  const rows: Record<string, unknown>[] = [
-    {
-      id: input.id,
-      email: input.email,
-      name,
-      first_name: input.firstName,
-      last_name: input.lastName,
-      status: 'active',
-      ...(input.passwordHash ? { password_hash: input.passwordHash } : {}),
-    },
-    {
-      id: input.id,
-      email: input.email,
-      name,
-      first_name: input.firstName,
-      last_name: input.lastName,
-      status: 'active',
-    },
-    { id: input.id, email: input.email, name, status: 'active' },
+  const variants: Record<string, unknown>[] = [
+    { name, first_name: input.firstName, last_name: input.lastName },
+    { name },
   ];
 
   let lastError: { message?: string } | null = null;
-  for (const row of rows) {
-    const { error } = await supabase.from('members').upsert(row, { onConflict: 'email' });
+  for (const fields of variants) {
+    const { error } = existing
+      ? await supabase.from('members').update(fields).eq('id', existing.id)
+      : await supabase.from('members').insert({ id: input.id, email: input.email, ...fields });
     if (!error) return;
     lastError = error;
-    const missingColumn = /password_hash|first_name|last_name|schema cache|column/i.test(error.message || '');
+    const missingColumn = /first_name|last_name|schema cache|column/i.test(error.message || '');
     if (!missingColumn) throw error;
   }
 
   if (lastError) throw lastError;
 }
 
+/**
+ * Load (and create/refresh if needed) the members row for a signed-in Supabase user.
+ * Must only be called with an active session — RLS hides members from anon.
+ */
 export async function persistAndLoadProfile(
   authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> },
   firstName = '',
@@ -132,27 +96,54 @@ export async function persistAndLoadProfile(
   forceWrite = false
 ): Promise<AuthUser> {
   const meta = authUser.user_metadata || {};
+  const metaFull = splitName(
+    String(meta.full_name || meta.name || meta.fullName || '').trim() || null
+  );
   const fallback = {
-    firstName: firstName || String(meta.first_name || '').trim(),
-    lastName: lastName || String(meta.last_name || '').trim(),
+    firstName:
+      firstName ||
+      String(meta.first_name || meta.firstName || meta.given_name || '').trim() ||
+      metaFull.firstName,
+    lastName:
+      lastName ||
+      String(meta.last_name || meta.lastName || meta.family_name || '').trim() ||
+      metaFull.lastName,
     email: (authUser.email || '').toLowerCase(),
   };
-  const existing = await fetchMemberByUser(authUser.id, fallback.email);
+  // Last resort: email local-part so UI never shows a blank name.
+  if (!fallback.firstName && fallback.email) {
+    fallback.firstName = fallback.email.split('@')[0] || '';
+  }
+
+  let existing: MemberRow | null = null;
+  try {
+    existing = await fetchMemberByUser(authUser.id, fallback.email);
+  } catch {
+    existing = null;
+  }
   const profile = memberToAuthUser(existing, fallback);
 
-  if (forceWrite || !existing) {
+  const explicitName = Boolean(firstName || lastName);
+  const needsWrite =
+    !existing ||
+    (forceWrite &&
+      explicitName &&
+      (profile.firstName !== (existing.first_name || '') || profile.lastName !== (existing.last_name || '')));
+
+  if (needsWrite) {
     try {
-      await upsertMemberProfile({
+      await writeMemberProfile(existing, {
         id: authUser.id,
         email: profile.email,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
+        firstName: explicitName ? firstName || profile.firstName : profile.firstName,
+        lastName: explicitName ? lastName || profile.lastName : profile.lastName,
       });
+      const member = await fetchMemberByUser(authUser.id, profile.email);
+      return memberToAuthUser(member, profile);
     } catch (error) {
       console.warn('Could not save member profile', error);
     }
   }
 
-  const member = await fetchMemberByUser(authUser.id, profile.email);
-  return memberToAuthUser(member, profile);
+  return profile;
 }

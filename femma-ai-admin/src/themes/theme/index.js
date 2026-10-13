@@ -15,7 +15,7 @@ const femaPink = {
 };
 
 export default function Default(colors) {
-  const { red, gold, cyan, green, grey } = colors;
+  const { gold, cyan, green, grey } = colors;
   const greyColors = {
     0: grey[0],
     50: grey[1],

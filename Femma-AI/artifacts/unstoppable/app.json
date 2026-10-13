@@ -2,7 +2,7 @@
   "expo": {
     "name": "Femma AI",
     "slug": "femmaai",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "femmaai",
@@ -15,11 +15,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "femmi.app"
+      "bundleIdentifier": "femmi.app",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "femmi.app",
-      "versionCode": 13,
+      "versionCode": 14,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon-adaptive.png",
@@ -39,6 +40,7 @@
       ],
       "expo-font",
       "expo-web-browser",
+      "expo-apple-authentication",
       "expo-video",
       [
         "expo-notifications",

@@ -356,7 +356,7 @@ export function buildProgressStatCards(input: {
 export function progressPlanQuote(missionPercent: number, planPercent: number, journeyDay: number) {
   if (missionPercent >= 100) return "You're showing up for yourself. Keep it going! ✨";
   if (planPercent >= 70) return "Strong momentum — your plan is really taking shape.";
-  if (journeyDay <= 3) return 'Great start. Small steps today build unstoppable habits.';
+  if (journeyDay <= 3) return 'Great start. Small steps today build lasting habits.';
   return "You're showing up for yourself. Keep it going! ✨";
 }
 

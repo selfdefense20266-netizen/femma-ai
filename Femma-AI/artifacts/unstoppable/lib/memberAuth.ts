@@ -1,48 +1,37 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
+import { supabase, supabaseAnonKey } from '@/lib/supabase';
 
-const PASSWORD_STORE_KEY = 'fema-ai-member-passwords';
+/**
+ * Legacy key: older builds stored client-side password hashes here as a login fallback.
+ * Login is now Supabase Auth only — this map is only removed, never read.
+ */
+const LEGACY_PASSWORD_STORE_KEY = 'fema-ai-member-passwords';
 
-async function sha256Hex(value: string) {
-  // React Native has no Web Crypto `crypto.subtle` — use Expo Crypto instead.
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, value);
-}
-
-export async function hashMemberPassword(email: string, password: string) {
-  return sha256Hex(`${email.trim().toLowerCase()}::${password}::fema-member`);
-}
-
-async function readPasswordMap() {
+export async function clearMemberPasswords() {
   try {
-    const raw = await AsyncStorage.getItem(PASSWORD_STORE_KEY);
-    if (!raw) return {} as Record<string, string>;
-    const parsed = JSON.parse(raw) as Record<string, string>;
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    await AsyncStorage.removeItem(LEGACY_PASSWORD_STORE_KEY);
   } catch {
-    return {} as Record<string, string>;
+    // ignore
   }
 }
 
-export async function saveMemberPassword(email: string, password: string) {
-  const normalized = email.trim().toLowerCase();
-  const hash = await hashMemberPassword(normalized, password);
-  const map = await readPasswordMap();
-  map[normalized] = hash;
-  await AsyncStorage.setItem(PASSWORD_STORE_KEY, JSON.stringify(map));
-  return hash;
+/** Current user's access token (edge functions require it); anon key only when signed out. */
+export async function getAccessToken(): Promise<string> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || supabaseAnonKey;
+  } catch {
+    return supabaseAnonKey;
+  }
 }
 
-export async function verifyMemberPassword(
-  email: string,
-  password: string,
-  storedHash?: string | null
-) {
-  const hash = await hashMemberPassword(email, password);
-  if (storedHash && storedHash === hash) return true;
-  const map = await readPasswordMap();
-  return map[email.trim().toLowerCase()] === hash;
-}
-
-export async function clearMemberPasswords() {
-  await AsyncStorage.removeItem(PASSWORD_STORE_KEY);
+/** After a 401 — try refreshing the session once. Returns a new token or null. */
+export async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) return null;
+    return data.session?.access_token || null;
+  } catch {
+    return null;
+  }
 }

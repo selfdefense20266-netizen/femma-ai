@@ -36,7 +36,7 @@ const colors = {
     border: '#E4E7ED',
     input: '#F5F5F8',
 
-    // ── UNSTOPPABLE brand palette ──────────────────────
+    // ── Femma AI brand palette ──────────────────────
     pink: '#F26BB5',
     deepPink: '#D94A9A',
     skyBlue: '#77CDED',

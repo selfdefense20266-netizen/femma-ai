@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import MainCard from 'components/MainCard';
 import StatusChip from 'components/admin/StatusChip';
 import Loader from 'components/Loader';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 import { useAdminData } from 'contexts/AdminDataContext';
 import { fetchProgramCards, upsertProgramCard, removeProgramCard, uploadProgramCardImage } from 'api/programCards';
 
@@ -39,6 +40,7 @@ export default function ProgramCards() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [confirm, setConfirm] = useState(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyCard());
   const [saving, setSaving] = useState(false);
@@ -186,15 +188,16 @@ export default function ProgramCards() {
                 </Button>
                 <IconButton
                   color="error"
-                  onClick={async () => {
-                    if (!window.confirm(`Delete “${card.title}”?`)) return;
-                    try {
-                      await removeProgramCard(card.id);
-                      await refresh();
-                    } catch (err) {
-                      setError(err.message || 'Delete failed');
-                    }
-                  }}
+                  onClick={() =>
+                    setConfirm({
+                      title: 'Delete program card?',
+                      message: `“${card.title}” will be removed from the Program section. The linked course is kept.`,
+                      onConfirm: async () => {
+                        await removeProgramCard(card.id);
+                        await refresh();
+                      }
+                    })
+                  }
                 >
                   <DeleteOutlined />
                 </IconButton>
@@ -290,6 +293,14 @@ export default function ProgramCards() {
           </Stack>
         </Box>
       </Drawer>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

@@ -6,34 +6,47 @@ import { useColors } from '@/hooks/useColors';
 interface AuthFieldProps extends TextInputProps {
   label: string;
   error?: string;
+  hint?: string;
   onToggleSecure?: () => void;
   secureVisible?: boolean;
+  /** Light form on white screens (welcome / login / signup mock). */
+  variant?: 'dark' | 'light';
 }
 
 export function AuthField({
   label,
   error,
+  hint,
   onToggleSecure,
   secureVisible,
+  variant = 'dark',
   style,
   ...props
 }: AuthFieldProps) {
   const colors = useColors();
+  const light = variant === 'light';
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, light && { color: colors.foreground }]}>{label}</Text>
       <View
         style={[
           styles.inputRow,
-          { borderColor: error ? colors.coral : 'rgba(255,255,255,0.16)' },
+          light
+            ? {
+                backgroundColor: colors.input,
+                borderColor: error ? colors.coral : 'transparent',
+                borderWidth: error ? 1 : 0,
+              }
+            : { borderColor: error ? colors.coral : 'rgba(255,255,255,0.16)' },
         ]}
       >
         <TextInput
           {...props}
-          placeholderTextColor="rgba(255,255,255,0.35)"
+          placeholderTextColor={light ? colors.mutedForeground : 'rgba(255,255,255,0.35)'}
           style={[
             styles.input,
+            light && { color: colors.foreground },
             Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null,
             style,
           ]}
@@ -41,11 +54,19 @@ export function AuthField({
         />
         {onToggleSecure ? (
           <TouchableOpacity onPress={onToggleSecure} hitSlop={10} style={styles.eyeBtn}>
-            <Feather name={secureVisible ? 'eye' : 'eye-off'} size={18} color="rgba(255,255,255,0.55)" />
+            <Feather
+              name={secureVisible ? 'eye' : 'eye-off'}
+              size={18}
+              color={light ? colors.mutedForeground : 'rgba(255,255,255,0.55)'}
+            />
           </TouchableOpacity>
         ) : null}
       </View>
-      {error ? <Text style={[styles.error, { color: colors.coral }]}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { color: colors.coral }]}>{error}</Text>
+      ) : hint ? (
+        <Text style={[styles.hint, { color: colors.mutedForeground }]}>{hint}</Text>
+      ) : null}
     </View>
   );
 }
@@ -62,7 +83,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 52,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 16,
@@ -77,4 +98,5 @@ const styles = StyleSheet.create({
   },
   eyeBtn: { paddingLeft: 8, paddingVertical: 8 },
   error: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
+  hint: { fontSize: 12, lineHeight: 16, fontFamily: 'Manrope_400Regular' },
 });

@@ -20,9 +20,11 @@ import { alpha, useTheme } from '@mui/material/styles';
 import MainCard from 'components/MainCard';
 import StatusChip from 'components/admin/StatusChip';
 import Loader from 'components/Loader';
+import ConfirmDialog from 'components/admin/ConfirmDialog';
 import { useAdminData } from 'contexts/AdminDataContext';
-import { ITEM_TYPE_OPTIONS, USER_TYPE_OPTIONS, INTENSITY_OPTIONS } from 'api/dailyPlans';
+import { ITEM_TYPE_OPTIONS, MEAL_SLOT_OPTIONS, USER_TYPE_OPTIONS, INTENSITY_OPTIONS } from 'api/dailyPlans';
 import { isVideoMediaUrl } from 'utils/mediaUrl';
+import { stepsFromText, stepsToText } from 'utils/steps';
 
 // assets
 import PlusOutlined from '@ant-design/icons/PlusOutlined';
@@ -44,6 +46,7 @@ const emptyLibrary = () => ({
   mediaUrl: '',
   cue: '',
   steps: [],
+  stepsText: '', // UI-only: raw textarea value, split into steps on save
   status: 'published',
   sortOrder: 0
 });
@@ -74,8 +77,6 @@ const scrollBoxSx = {
   scrollbarWidth: 'thin',
   WebkitOverflowScrolling: 'touch'
 };
-
-const PLAN_DRAWER_WIDTH = 880;
 
 function ExerciseCard({ item, onEdit, onDelete }) {
   return (
@@ -229,6 +230,8 @@ export default function DailyPlans() {
 
   const [tab, setTab] = useState(0);
   const [error, setError] = useState('');
+  const [libError, setLibError] = useState('');
+  const [confirm, setConfirm] = useState(null);
   const [filterType, setFilterType] = useState('all');
 
   const [libOpen, setLibOpen] = useState(false);
@@ -259,13 +262,13 @@ export default function DailyPlans() {
 
   const openLibCreate = () => {
     setLibForm({ ...emptyLibrary(), sortOrder: Date.now() });
-    setError('');
+    setLibError('');
     setLibOpen(true);
   };
 
   const openLibEdit = (item) => {
-    setLibForm({ ...emptyLibrary(), ...item });
-    setError('');
+    setLibForm({ ...emptyLibrary(), ...item, stepsText: stepsToText(item.steps) });
+    setLibError('');
     setLibOpen(true);
   };
 
@@ -273,16 +276,18 @@ export default function DailyPlans() {
     if (!libForm.title.trim() || libSaving) return;
     try {
       setLibSaving(true);
-      setError('');
+      setLibError('');
+      const { stepsText, ...rest } = libForm;
       await saveExerciseLibraryItem({
-        ...libForm,
-        itemType: 'exercise',
+        ...rest,
+        steps: stepsFromText(stepsText),
+        itemType: libForm.itemType || 'exercise',
         sortOrder: libForm.id ? libForm.sortOrder : Date.now()
       });
       await refreshExerciseLibrary();
       setLibOpen(false);
     } catch (err) {
-      setError(err.message || 'Could not save');
+      setLibError(err.message || 'Could not save');
     } finally {
       setLibSaving(false);
     }
@@ -297,7 +302,7 @@ export default function DailyPlans() {
       const url = await uploadDailyPlanPicture(libForm.id || 'library', file);
       setLibForm((prev) => ({ ...prev, mediaUrl: url }));
     } catch (err) {
-      setError(err.message || 'Upload failed');
+      setLibError(err.message || 'Upload failed');
     } finally {
       setLibUploading(false);
     }
@@ -512,13 +517,13 @@ export default function DailyPlans() {
                     key={item.id}
                     item={item}
                     onEdit={() => openLibEdit(item)}
-                    onDelete={async () => {
-                      try {
-                        await deleteExerciseLibraryItem(item.id);
-                      } catch (err) {
-                        setError(err.message || 'Delete failed');
-                      }
-                    }}
+                    onDelete={() =>
+                      setConfirm({
+                        title: 'Delete exercise?',
+                        message: `“${item.title}” will be removed from the exercise library. Copies already placed on plan days are not affected.`,
+                        onConfirm: () => deleteExerciseLibraryItem(item.id)
+                      })
+                    }
                   />
                 ))}
               </Box>
@@ -717,13 +722,13 @@ export default function DailyPlans() {
                           <IconButton
                             color="error"
                             sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-                            onClick={async () => {
-                              try {
-                                await deleteDailyPlan(plan.id);
-                              } catch (err) {
-                                setError(err.message || 'Delete failed');
-                              }
-                            }}
+                            onClick={() =>
+                              setConfirm({
+                                title: 'Delete plan?',
+                                message: `“${plan.title}” and all of its ${plan.items?.length || 0} day items (workouts, meals, recovery) will be permanently deleted. Members assigned to it will no longer see these tasks.`,
+                                onConfirm: () => deleteDailyPlan(plan.id)
+                              })
+                            }
                           >
                             <DeleteOutlined />
                           </IconButton>
@@ -743,19 +748,76 @@ export default function DailyPlans() {
       <Drawer anchor="right" open={libOpen} onClose={() => setLibOpen(false)} PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, height: '100%', overflow: 'hidden' } }}>
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
           <Typography variant="h4" sx={{ mb: 0.5, fontWeight: 800, flexShrink: 0 }}>
-            {libForm.id ? 'Edit exercise' : 'New exercise'}
+            {libForm.id ? 'Edit library item' : 'New library item'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flexShrink: 0 }}>
-            Add a name and video or GIF — then place it on any plan day.
+            Create exercises or meals, then place them on plan days (Day 1 Breakfast, etc.).
           </Typography>
+          {libError ? (
+            <Alert severity="error" sx={{ mb: 2, flexShrink: 0 }} onClose={() => setLibError('')}>
+              {libError}
+            </Alert>
+          ) : null}
           <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <Stack spacing={1.75}>
-              <TextField label="Name" fullWidth value={libForm.title} onChange={(e) => setLibForm((p) => ({ ...p, title: e.target.value }))} placeholder="e.g. Bodyweight Squats" />
+              <TextField
+                select
+                label="Type"
+                fullWidth
+                value={libForm.itemType || 'exercise'}
+                onChange={(e) => setLibForm((p) => ({ ...p, itemType: e.target.value, tag: e.target.value === 'food' ? p.tag || 'Breakfast' : p.tag }))}
+              >
+                {ITEM_TYPE_OPTIONS.map((o) => (
+                  <MenuItem key={o.id} value={o.id}>
+                    {o.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField label="Name" fullWidth value={libForm.title} onChange={(e) => setLibForm((p) => ({ ...p, title: e.target.value }))} placeholder={libForm.itemType === 'food' ? 'e.g. Oatmeal with berries' : 'e.g. Bodyweight Squats'} />
+              {libForm.itemType === 'food' ? (
+                <TextField
+                  select
+                  label="Meal slot"
+                  fullWidth
+                  value={libForm.tag || 'Breakfast'}
+                  onChange={(e) => setLibForm((p) => ({ ...p, tag: e.target.value }))}
+                  helperText="App maps this to Breakfast / Lunch / Dinner on Today’s meals"
+                >
+                  {MEAL_SLOT_OPTIONS.map((o) => (
+                    <MenuItem key={o.id} value={o.id}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              ) : null}
               <Stack direction="row" spacing={1}>
-                <TextField type="number" label="Work (sec)" fullWidth value={libForm.durationMinutes} onChange={(e) => setLibForm((p) => ({ ...p, durationMinutes: Number(e.target.value) || 0 }))} helperText="e.g. 300 = 5m, 45 = 45s" />
-                <TextField type="number" label="Rest after (sec)" fullWidth value={libForm.restMinutes} onChange={(e) => setLibForm((p) => ({ ...p, restMinutes: Number(e.target.value) || 0 }))} helperText="e.g. 30 or 10" />
+                {/* Duration is stored in SECONDS. Meals are edited in minutes and converted. */}
+                <TextField
+                  type="number"
+                  label={libForm.itemType === 'food' ? 'Prep (min)' : 'Work (sec)'}
+                  fullWidth
+                  value={libForm.itemType === 'food' ? Math.round((Number(libForm.durationMinutes) || 0) / 60) : libForm.durationMinutes}
+                  onChange={(e) => {
+                    const n = Number(e.target.value) || 0;
+                    setLibForm((p) => ({ ...p, durationMinutes: p.itemType === 'food' ? n * 60 : n }));
+                  }}
+                  helperText={libForm.itemType === 'food' ? 'Optional prep time in minutes' : 'e.g. 300 = 5m, 45 = 45s'}
+                />
+                {libForm.itemType === 'food' ? null : (
+                  <TextField type="number" label="Rest after (sec)" fullWidth value={libForm.restMinutes} onChange={(e) => setLibForm((p) => ({ ...p, restMinutes: Number(e.target.value) || 0 }))} helperText="e.g. 30 or 10" />
+                )}
               </Stack>
               <TextField label="Tip (optional)" fullWidth multiline minRows={2} value={libForm.cue} onChange={(e) => setLibForm((p) => ({ ...p, cue: e.target.value }))} />
+              <TextField
+                label="Steps (one per line)"
+                fullWidth
+                multiline
+                minRows={4}
+                value={libForm.stepsText ?? ''}
+                onChange={(e) => setLibForm((p) => ({ ...p, stepsText: e.target.value }))}
+                placeholder={'1. Prep ingredients\n2. Cook\n3. Serve'}
+                helperText="Shown in the app when the member opens this meal"
+              />
               <Button variant="outlined" startIcon={<CloudUploadOutlined />} onClick={() => libFileRef.current?.click()} disabled={libUploading}>
                 {libUploading ? 'Uploading…' : 'Upload video / GIF / photo'}
               </Button>
@@ -793,6 +855,14 @@ export default function DailyPlans() {
         </Box>
       </Drawer>
 
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        onConfirm={confirm?.onConfirm}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

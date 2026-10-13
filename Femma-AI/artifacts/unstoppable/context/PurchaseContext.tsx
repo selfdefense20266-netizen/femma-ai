@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import type { StorePackage } from '@/lib/revenueCat';
 import { useAuth } from '@/context/AuthContext';
@@ -9,25 +9,20 @@ import {
   getCustomerInfo,
   identifyPurchaser,
   isPremiumFromCustomer,
+  isRevenueCatAvailable,
   logoutPurchaser,
+  premiumExpirationFromCustomer,
   purchasePackage,
   restorePurchases,
-  syncPlanToSupabase,
 } from '@/lib/revenueCat';
 import { fetchMemberByEmail } from '@/lib/members';
 import { resolveMemberId } from '@/lib/memberProgress';
 import { addCustomerInfoListener } from '@/lib/revenueCat';
-import {
-  loadAccessRecord,
-  markPaidAccess,
-  resolveAccess,
-  saveAccessRecord,
-  type SubscriptionAccessRecord,
-} from '@/lib/subscriptionAccess';
+import { loadAccessRecord, resolveAccess, saveAccessRecord } from '@/lib/subscriptionAccess';
 
 type PurchaseContextType = {
   ready: boolean;
-  /** Paid store/DB entitlement (not grace). */
+  /** Feature unlock: paid entitlement OR grace trial. Use `currentPlanId` / `inGracePeriod` to tell them apart. */
   isPremium: boolean;
   /** Paid OR 3-day grace after plan/payment lapse. */
   hasAccess: boolean;
@@ -35,6 +30,8 @@ type PurchaseContextType = {
   graceDaysLeft: number;
   /** Show resume paywall — no free plan. */
   needsResumePaywall: boolean;
+  /** True once this member has had paid access before (drives "resume" vs first-time paywall copy). */
+  everPaid: boolean;
   currentPlanId: 'free' | 'premium' | 'grace';
   packages: StorePackage[];
   loading: boolean;
@@ -47,141 +44,158 @@ type PurchaseContextType = {
 
 const PurchaseContext = createContext<PurchaseContextType | null>(null);
 
+type CustomerInfoLike = Parameters<typeof isPremiumFromCustomer>[0];
+
 export function PurchaseProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const email = user?.email || null;
   const [ready, setReady] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [inGracePeriod, setInGracePeriod] = useState(false);
   const [graceDaysLeft, setGraceDaysLeft] = useState(0);
   const [needsResumePaywall, setNeedsResumePaywall] = useState(true);
+  const [everPaid, setEverPaid] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState<'free' | 'premium' | 'grace'>('free');
   const [packages, setPackages] = useState<StorePackage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [configured, setConfigured] = useState(false);
-  const [accessRecord, setAccessRecord] = useState<SubscriptionAccessRecord | null>(null);
+  /** Email the current state belongs to — async results for another account are dropped. */
+  const activeEmailRef = useRef<string | null>(email);
+  activeEmailRef.current = email;
 
   const apiKey = getRevenueCatApiKey();
+  /** Store is the source of truth when RevenueCat can run; DB plan_id only as a fallback (web). */
+  const storeAvailable = isRevenueCatAvailable();
+
+  const resetState = useCallback(() => {
+    setReady(false);
+    setIsPremium(false);
+    setHasAccess(false);
+    setInGracePeriod(false);
+    setGraceDaysLeft(0);
+    setNeedsResumePaywall(true);
+    setEverPaid(false);
+    setCurrentPlanId('free');
+    setError('');
+  }, []);
 
   const applyAccess = useCallback(
-    async (storePremium: boolean, baseRecord?: SubscriptionAccessRecord | null) => {
-      const record = baseRecord || (await loadAccessRecord(user?.email)) || {
-        everPremium: false,
-        periodEndsAt: null,
-        graceStartedAt: null,
-      };
-      const snap = resolveAccess(storePremium, record);
-      setAccessRecord(snap.record);
+    async (paid: boolean, expiresAt: string | null) => {
+      const forEmail = email;
+      const record = await loadAccessRecord(forEmail);
+      const snap = resolveAccess(paid, record, expiresAt);
+      if (activeEmailRef.current !== forEmail) return snap;
       setIsPremium(snap.isPaid);
       setHasAccess(snap.hasAccess);
       setInGracePeriod(snap.inGrace);
       setGraceDaysLeft(snap.graceDaysLeft);
       setNeedsResumePaywall(snap.needsResumePaywall);
+      setEverPaid(snap.record.everPremium);
       setCurrentPlanId(snap.isPaid ? 'premium' : snap.inGrace ? 'grace' : 'free');
-      if (user?.email) await saveAccessRecord(user.email, snap.record);
+      if (forEmail) await saveAccessRecord(forEmail, snap.record);
       return snap;
     },
-    [user?.email]
+    [email]
   );
 
-  const syncPlanFromDb = useCallback(async () => {
-    if (!user?.email) return false;
+  /** Server-owned plan (RevenueCat webhook / admin). Used only when the store can't be queried. */
+  const dbPlanIsPremium = useCallback(async () => {
+    if (!email) return false;
     try {
-      const member = await fetchMemberByEmail(user.email);
-      if (member?.plan_id === 'premium') {
-        const record = await loadAccessRecord(user.email);
-        const next = markPaidAccess(record);
-        await applyAccess(true, next);
-        return true;
-      }
+      const member = await fetchMemberByEmail(email);
+      return member?.plan_id === 'premium';
     } catch (err) {
-      console.warn('Could not sync member plan from DB', err);
+      console.warn('Could not read member plan from DB', err);
+      return false;
     }
-    return false;
-  }, [user?.email, applyAccess]);
+  }, [email]);
+
+  const applyFromCustomer = useCallback(
+    async (info: CustomerInfoLike | null) => {
+      if (!email) {
+        await applyAccess(false, null);
+        return false;
+      }
+      if (storeAvailable && info) {
+        const active = isPremiumFromCustomer(info);
+        await applyAccess(active, active ? premiumExpirationFromCustomer(info) : null);
+        return active;
+      }
+      const fromDb = await dbPlanIsPremium();
+      await applyAccess(fromDb, null);
+      return fromDb;
+    },
+    [email, storeAvailable, applyAccess, dbPlanIsPremium]
+  );
 
   const initPurchases = useCallback(async () => {
+    const forEmail = email;
     try {
-      const local = await loadAccessRecord(user?.email);
-      setAccessRecord(local);
-
+      if (!forEmail) {
+        await applyAccess(false, null);
+        return;
+      }
       if (apiKey) {
         setConfigured(true);
-        const memberId = user?.email ? await resolveMemberId(user.email) : null;
+        const memberId = await resolveMemberId(forEmail);
         if (memberId) {
+          // RevenueCat app_user_id must be members.id (webhook maps it back to the member row).
           await identifyPurchaser(memberId);
         } else {
           await configurePurchases();
         }
       }
       const offerings = await fetchOfferings();
+      if (activeEmailRef.current !== forEmail) return;
       setPackages(offerings);
 
-      if (apiKey) {
-        const info = await getCustomerInfo();
-        const hasEntitlement = isPremiumFromCustomer(info);
-        if (hasEntitlement) {
-          const next = markPaidAccess(local);
-          await applyAccess(true, next);
-          if (user?.email) await syncPlanToSupabase('premium', user.email);
-        } else {
-          const fromDb = await syncPlanFromDb();
-          if (!fromDb) await applyAccess(false, local);
-        }
-      } else {
-        const fromDb = await syncPlanFromDb();
-        if (!fromDb) await applyAccess(false, local);
-      }
+      const info = storeAvailable ? await getCustomerInfo() : null;
+      await applyFromCustomer(info);
     } catch (err) {
+      if (activeEmailRef.current !== forEmail) return;
       setError(err instanceof Error ? err.message : 'Could not initialize subscription store.');
-      const fromDb = await syncPlanFromDb();
-      if (!fromDb) {
-        const local = await loadAccessRecord(user?.email);
-        await applyAccess(false, local);
+      try {
+        await applyFromCustomer(null);
+      } catch {
+        await applyAccess(false, null);
       }
     } finally {
-      setReady(true);
+      // No user yet (auth still restoring on a cold start): stay "not ready" so gated screens
+      // don't bounce a premium member before their real access has been loaded.
+      if (forEmail && activeEmailRef.current === forEmail) setReady(true);
     }
-  }, [apiKey, user?.email, syncPlanFromDb, applyAccess]);
+  }, [apiKey, email, storeAvailable, applyFromCustomer, applyAccess]);
 
   useEffect(() => {
-    initPurchases();
-  }, [initPurchases]);
+    // New account (or logout) — never carry the previous user's access over.
+    resetState();
+    void initPurchases();
+  }, [initPurchases, resetState]);
 
   useEffect(() => {
-    if (!user?.email) {
+    if (!email) {
       logoutPurchaser().catch(() => {});
     }
-  }, [user?.email]);
+  }, [email]);
 
   useEffect(() => {
-    if (!apiKey) return;
+    if (!apiKey || !email) return;
     let unsubscribe: (() => void) | undefined;
     let mounted = true;
     addCustomerInfoListener((info) => {
       if (!mounted) return;
-      const hasEntitlement = isPremiumFromCustomer(info);
-      void (async () => {
-        const local = await loadAccessRecord(user?.email);
-        if (hasEntitlement) {
-          const next = markPaidAccess(local);
-          await applyAccess(true, next);
-          if (user?.email) void syncPlanToSupabase('premium', user.email);
-        } else {
-          // Keep admin-granted premium from DB — do not wipe it when store has no entitlement.
-          const fromDb = await syncPlanFromDb();
-          if (!fromDb) await applyAccess(false, local);
-        }
-      })();
+      void applyFromCustomer(info).catch(() => undefined);
     }).then((unsub) => {
-      unsubscribe = unsub;
+      if (!mounted) unsub();
+      else unsubscribe = unsub;
     });
     return () => {
       mounted = false;
       unsubscribe?.();
     };
-  }, [apiKey, user?.email, applyAccess, syncPlanFromDb]);
+  }, [apiKey, email, applyFromCustomer]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -189,23 +203,14 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
     try {
       const list = await fetchOfferings();
       setPackages(list);
-      const info = await getCustomerInfo();
-      const hasEntitlement = isPremiumFromCustomer(info);
-      const local = await loadAccessRecord(user?.email);
-      if (hasEntitlement) {
-        const next = markPaidAccess(local);
-        await applyAccess(true, next);
-        if (user?.email) await syncPlanToSupabase('premium', user.email);
-      } else {
-        const fromDb = await syncPlanFromDb();
-        if (!fromDb) await applyAccess(false, local);
-      }
+      const info = storeAvailable ? await getCustomerInfo() : null;
+      await applyFromCustomer(info);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not refresh packages');
     } finally {
       setLoading(false);
     }
-  }, [user?.email, syncPlanFromDb, applyAccess]);
+  }, [storeAvailable, applyFromCustomer]);
 
   const buy = useCallback(
     async (item: StorePackage): Promise<boolean> => {
@@ -213,14 +218,8 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
       setError('');
       try {
         const customer = await purchasePackage(item);
-        const active = isPremiumFromCustomer(customer);
-        if (active) {
-          const local = await loadAccessRecord(user?.email);
-          const next = markPaidAccess(local);
-          await applyAccess(true, next);
-          if (user?.email) await syncPlanToSupabase('premium', user.email);
-          return true;
-        }
+        const active = await applyFromCustomer(customer);
+        if (active) return true;
         setError('Purchase completed but Premium was not activated. Please contact support.');
         return false;
       } catch (err) {
@@ -235,7 +234,7 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [user?.email, applyAccess]
+    [applyFromCustomer]
   );
 
   const restore = useCallback(async (): Promise<boolean> => {
@@ -243,24 +242,14 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
     setError('');
     try {
       const customer = await restorePurchases();
-      const active = isPremiumFromCustomer(customer);
-      const local = await loadAccessRecord(user?.email);
-      if (active) {
-        const next = markPaidAccess(local);
-        await applyAccess(true, next);
-        if (user?.email) await syncPlanToSupabase('premium', user.email);
-        return true;
-      }
-      const fromDb = await syncPlanFromDb();
-      if (!fromDb) await applyAccess(false, local);
-      return false;
+      return await applyFromCustomer(customer);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Restore failed.');
       return false;
     } finally {
       setLoading(false);
     }
-  }, [user?.email, syncPlanFromDb, applyAccess]);
+  }, [applyFromCustomer]);
 
   const value = useMemo(
     () => ({
@@ -270,6 +259,7 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
       inGracePeriod,
       graceDaysLeft,
       needsResumePaywall,
+      everPaid,
       currentPlanId,
       packages,
       loading,
@@ -286,6 +276,7 @@ export function PurchaseProvider({ children }: { children: React.ReactNode }) {
       inGracePeriod,
       graceDaysLeft,
       needsResumePaywall,
+      everPaid,
       currentPlanId,
       packages,
       loading,

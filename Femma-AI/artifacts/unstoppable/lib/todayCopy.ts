@@ -13,7 +13,7 @@ export function getTodayMotivational(
 
   if (day === 1 && streak === 0) {
     if (allDone) {
-      return 'Great start — you finished day one. That is how unstoppable habits begin.';
+      return 'Great start — you finished day one. That is how lasting habits begin.';
     }
     if (profile.goal) {
       return `Day 1 of your ${goalLabels(profile.goal).join(' + ').toLowerCase() || profile.goal.toLowerCase()} journey. One mission at a time.`;
@@ -39,7 +39,7 @@ export function getTodayMotivational(
   }
 
   const rotating = [
-    'Small steps build unstoppable confidence.',
+    'Small steps build lasting confidence.',
     'Listen to your body and move at your pace.',
     'Your next level is closer than you think.',
     "Today's mission is ready. Let's go.",

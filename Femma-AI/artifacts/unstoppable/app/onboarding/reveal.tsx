@@ -8,6 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { buildPersonalizedPlan } from '@/lib/dailyMissions';
 import { goalLabels } from '@/lib/nutritionPlan';
 
@@ -15,7 +16,8 @@ import MissionIcon from '@/components/MissionIcon';
 
 export default function RevealScreen() {
   const colors = useColors();
-  const { profile, stagedPlan } = useApp();
+  const { profile, stagedPlan, completeOnboarding } = useApp();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const topPad = insets.top + 8;
   const botPad = Math.max(insets.bottom, 12);
@@ -32,6 +34,12 @@ export default function RevealScreen() {
 
   const handleStart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Persist full onboarding to DB before payment so logout/login skips the questionnaire.
+    completeOnboarding({
+      planName: plan.planName || 'Premium Plan',
+      journeyDay: 1,
+      name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
+    });
     router.replace('/onboarding/subscription');
   };
 

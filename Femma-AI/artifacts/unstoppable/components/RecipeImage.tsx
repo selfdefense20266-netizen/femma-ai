@@ -54,6 +54,6 @@ export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0,
 
 const styles = StyleSheet.create({
   wrap: { overflow: 'hidden', position: 'relative' },
-  fill: { ...StyleSheet.absoluteFillObject },
+  fill: { ...StyleSheet.absoluteFill },
   fallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

@@ -71,25 +71,32 @@ export async function saveAccessRecord(email: string | null | undefined, record:
   }
 }
 
-/** Call when a purchase / restore succeeds. */
-export function markPaidAccess(record: SubscriptionAccessRecord, expiresAtIso?: string | null): SubscriptionAccessRecord {
+/**
+ * Call only when the store (or, without RevenueCat, the server-owned DB plan) says the
+ * entitlement is active. `expiresAtIso` must come from the store (entitlement.expirationDate);
+ * null means no known expiry (lifetime / DB-only) — we never invent a local 30-day window,
+ * otherwise every launch would extend access.
+ */
+export function markPaidAccess(_record: SubscriptionAccessRecord, expiresAtIso?: string | null): SubscriptionAccessRecord {
   return {
     everPremium: true,
-    periodEndsAt: expiresAtIso || addDays(new Date(), PLAN_PERIOD_DAYS),
+    periodEndsAt: expiresAtIso || null,
     graceStartedAt: null,
   };
 }
 
 /**
- * Resolve access when store entitlement is known.
- * Paid plan lasts ~30 days; if payment fails / entitlement drops, start a 3-day grace trial,
+ * Resolve access from the store entitlement.
+ * Paid while the store says active; if payment fails / entitlement drops, start a 3-day grace trial,
  * then require pay-to-resume.
  */
-export function resolveAccess(isStorePremium: boolean, record: SubscriptionAccessRecord): AccessSnapshot {
+export function resolveAccess(
+  isStorePremium: boolean,
+  record: SubscriptionAccessRecord,
+  storeExpiresAt?: string | null
+): AccessSnapshot {
   if (isStorePremium) {
-    const next = markPaidAccess(record, record.periodEndsAt && new Date(record.periodEndsAt) > new Date()
-      ? record.periodEndsAt
-      : addDays(new Date(), PLAN_PERIOD_DAYS));
+    const next = markPaidAccess(record, storeExpiresAt ?? null);
     return {
       hasAccess: true,
       isPaid: true,

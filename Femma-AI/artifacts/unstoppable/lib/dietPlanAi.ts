@@ -13,7 +13,8 @@ export type StoredDietPlan = {
   calorieTarget: number;
   bmi: number;
   days: DietDay[];
-  source: 'ai' | 'local';
+  /** 'fallback' = local planner saved after an AI failure (AI is retried next load). */
+  source: 'ai' | 'local' | 'fallback';
   model?: string | null;
   cached?: boolean;
 };
@@ -67,7 +68,7 @@ export async function fetchSavedDietPlan(memberId: string, profile: DietPlanProf
     calorieTarget: Number(data.calorie_target) || dietCalorieTarget(profile),
     bmi: Number(data.bmi) || bmiFromProfile(profile),
     days,
-    source: data.source === 'local' ? 'local' : 'ai',
+    source: data.source === 'fallback' ? 'fallback' : data.source === 'local' ? 'local' : 'ai',
     model: data.model || null,
     cached: true,
   };
@@ -119,15 +120,11 @@ async function postDietPlan(profile: UserProfile, memberId: string | null, force
     return { response, json };
   };
 
-  let token = supabaseAnonKey;
+  // The edge function requires the signed-in user's JWT; the anon key is only
+  // used when there is no session (the function will then reject with 401).
   const { data: sessionData } = await supabase.auth.getSession();
-  if (sessionData.session?.access_token) token = sessionData.session.access_token;
-
-  let result = await post(token);
-  if (result.response.status === 401 && token !== supabaseAnonKey) {
-    result = await post(supabaseAnonKey);
-  }
-  return result;
+  const token = sessionData.session?.access_token || supabaseAnonKey;
+  return post(token);
 }
 
 function localPlan(profile: UserProfile): StoredDietPlan {
@@ -149,13 +146,21 @@ export async function ensureAiDietPlan(
   if (!isSupabaseConfigured) return localPlan(profile);
 
   const memberId = await resolveMemberId(options?.email || undefined);
-  if (!options?.force && memberId) {
+  let force = Boolean(options?.force);
+  let savedFallback: StoredDietPlan | null = null;
+  if (!force && memberId) {
     const saved = await fetchSavedDietPlan(memberId, profile);
-    if (saved) return saved;
+    // Legacy rows saved with source 'local' were also failure fallbacks.
+    if (saved && saved.source === 'ai') return saved;
+    if (saved) {
+      // Previous AI attempt failed — retry AI (force so the server doesn't return the cached fallback).
+      savedFallback = saved;
+      force = true;
+    }
   }
 
   try {
-    const { response, json } = await postDietPlan(profile, memberId, Boolean(options?.force));
+    const { response, json } = await postDietPlan(profile, memberId, force);
     if (!response.ok || json.error || !json.plan?.days?.length) {
       throw new Error(json.error || `Diet plan generate failed (${response.status})`);
     }
@@ -169,9 +174,13 @@ export async function ensureAiDietPlan(
     };
   } catch (error) {
     console.warn('AI diet plan failed, using local fallback', error);
-    const fallback = localPlan(profile);
-    // Best-effort save local plan so UI has something in DB.
-    if (memberId) {
+    if (savedFallback) return savedFallback;
+    const fallback: StoredDietPlan = { ...localPlan(profile), source: 'fallback' };
+    // Best-effort save local plan (marked as fallback so AI is retried later).
+    // RLS only allows writing the signed-in member's own row, so require a session;
+    // memberId comes from resolveMemberId, which prefers the session user's email/uid.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (memberId && sessionData.session) {
       try {
         await supabase.from('member_diet_plans').upsert(
           {
@@ -185,7 +194,7 @@ export async function ensureAiDietPlan(
             bmi: fallback.bmi,
             fingerprint: fingerprintOf(profile),
             days: fallback.days,
-            source: 'local',
+            source: 'fallback',
             model: null,
             updated_at: new Date().toISOString(),
           },

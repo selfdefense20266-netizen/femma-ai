@@ -1,7 +1,8 @@
 import type { Mission, MissionCategory, UserProfile } from '@/context/AppContext';
 import colors from '@/constants/colors';
 import { libraryPath, type CatalogBundle } from '@/lib/catalog';
-import { supabase, isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { getAccessToken, refreshAccessToken } from '@/lib/memberAuth';
 import { addDays, planTotalDays, type PlanWatchCourse, type TrainingPlan } from '@/lib/trainingPlan';
 import { linkPlanToCatalog } from '@/lib/missionHref';
 
@@ -184,8 +185,7 @@ export async function generateAiCoursePlan(profile: UserProfile, catalog?: Catal
   const existing = profile.trainingPlan;
   if (existing?.days?.length) return existing;
 
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token || supabaseAnonKey;
+  const token = await getAccessToken();
   const payload = {
     goal: profile.goal,
     durationWeeks: profile.planDurationWeeks || 8,
@@ -214,8 +214,9 @@ export async function generateAiCoursePlan(profile: UserProfile, catalog?: Catal
   let response: Response;
   try {
     response = await post(token, controller.signal);
-    if (response.status === 401 && token !== supabaseAnonKey) {
-      response = await post(supabaseAnonKey, controller.signal);
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) response = await post(refreshed, controller.signal);
     }
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {

@@ -1,13 +1,7 @@
 import { supabase } from 'lib/supabase';
 import { uploadThumbnail } from 'api/uploadThumbnail';
+import { newRecordId } from 'utils/ids';
 
-function slugify(text, fallbackPrefix = 'program') {
-  const base = String(text || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  return base || `${fallbackPrefix}-${Date.now().toString(36)}`;
-}
 
 /** Postgres integer max is 2_147_483_647 — never use Date.now() ms. */
 function safeSortOrder(value) {
@@ -40,7 +34,8 @@ export async function fetchProgramCards() {
 }
 
 export async function upsertProgramCard(payload) {
-  const id = payload.id || slugify(payload.title);
+  const isNew = !payload.id;
+  const id = payload.id || newRecordId(payload.title, 'program');
   const courseId = String(payload.courseId || '').trim();
   if (!courseId) throw new Error('Select a course for this card');
 
@@ -54,9 +49,8 @@ export async function upsertProgramCard(payload) {
     sort_order: safeSortOrder(payload.sortOrder)
   };
 
-  const { data, error } = await supabase
-    .from('program_cards')
-    .upsert(row)
+  const query = isNew ? supabase.from('program_cards').insert(row) : supabase.from('program_cards').update(row).eq('id', id);
+  const { data, error } = await query
     .select('*, courses(id, title, category_id, image_url, status)')
     .single();
   if (error) throw error;
