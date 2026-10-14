@@ -1,21 +1,29 @@
 // ==============================|| PRESET THEME - FEMA AI ||============================== //
 
-// Femmi brand teal, sampled from the shield logo (assets/logo.jpeg): #014140 core.
+// Femma AI app brand palette (Femma-AI/artifacts/unstoppable/constants/colors.ts).
+// Pink scale built around primary #F26BB5 (main) and deepPink #D94A9A (dark).
 const femaPink = {
-  0: '#EAF3F1',
-  1: '#D3E7E3',
-  2: '#A8CFC7',
-  3: '#6EAEA2',
-  4: '#3D8B7E',
-  5: '#0B3D3B',
-  6: '#012E2D',
-  7: '#01201F',
-  8: '#011615',
-  9: '#000C0B'
+  0: '#FDEDF6',
+  1: '#FBD6EA',
+  2: '#F8B3D8',
+  3: '#F590C7',
+  4: '#F37DBE',
+  5: '#F26BB5',
+  6: '#D94A9A',
+  7: '#B8377F',
+  8: '#8F2862',
+  9: '#5E1A41'
 };
 
+// App accents: lavender, sky blue, mint, warm yellow, coral. `light` = the app's soft shade;
+// `main` is a deeper tone of the same hue so status text/chips stay readable on white.
+const lavender = { lighter: '#F4F0FE', light: '#E9E2FC', main: '#B9A7F2', dark: '#8F78DB', darker: '#6A52B8' };
+const skyBlue = { lighter: '#E8F7FC', light: '#77CDED', main: '#3FA9D1', dark: '#2A7FA0', darker: '#1D5C75' };
+const mint = { lighter: '#EAF8F3', light: '#A9E4D2', main: '#3FAE8C', dark: '#2E8A6E', darker: '#1F6450' };
+const warmYellow = { lighter: '#FFF6E3', light: '#FFD88A', main: '#E8A23A', dark: '#B97D22', darker: '#8A5C16' };
+
 export default function Default(colors) {
-  const { gold, cyan, green, grey } = colors;
+  const { grey } = colors;
   const greyColors = {
     0: grey[0],
     50: grey[1],
@@ -52,8 +60,8 @@ export default function Default(colors) {
       contrastText
     },
     secondary: {
-      lighter: '#EAF3F1',
-      100: '#EAF3F1',
+      lighter: lavender.lighter,
+      100: lavender.light,
       200: greyColors[200],
       light: greyColors[300],
       400: greyColors[400],
@@ -75,30 +83,11 @@ export default function Default(colors) {
       darker: '#B84A48',
       contrastText
     },
-    warning: {
-      lighter: gold[0],
-      light: gold[3],
-      main: gold[5],
-      dark: gold[7],
-      darker: gold[9],
-      contrastText: greyColors[100]
-    },
-    info: {
-      lighter: cyan[0],
-      light: cyan[3],
-      main: cyan[5],
-      dark: cyan[7],
-      darker: cyan[9],
-      contrastText
-    },
-    success: {
-      lighter: green[0],
-      light: green[3],
-      main: green[5],
-      dark: green[7],
-      darker: green[9],
-      contrastText
-    },
+    warning: { ...warmYellow, contrastText },
+    info: { ...skyBlue, contrastText },
+    success: { ...mint, contrastText },
+    // Lavender accent (app `accent`), available as palette.accent
+    accent: { ...lavender, contrastText },
     grey: greyColors
   };
 }
