@@ -2,7 +2,6 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { Mission, UserProfile } from '@/context/AppContext';
 import {
   asActivityLog,
-  earlierIso,
   mergeActivityLogs,
   type ActivityEvent,
 } from '@/lib/activityLog';
@@ -243,13 +242,32 @@ function mergeProfile(local: UserProfile, remote: Partial<UserProfile> | null | 
     weightKg: Number(remote.weightKg) > 0 ? Number(remote.weightKg) : local.weightKg,
     points: Math.max(localPoints || 0, Number.isFinite(remotePoints) ? remotePoints : 0),
     streak: Math.max(Number(local.streak || 0), Number(remote.streak || 0)),
-    journeyDay: Math.max(Number(local.journeyDay || 0), Number(remote.journeyDay || 0)),
     level: Math.max(Number(local.level || 1), Number(remote.level || 1)) as UserProfile['level'],
     cyclePhase: (remote.cyclePhase || local.cyclePhase) as UserProfile['cyclePhase'],
     cycleDay: remote.cycleDay ?? local.cycleDay,
     isPregnant: remote.isPregnant ?? local.isPregnant,
     pregnancyWeek: remote.pregnancyWeek ?? local.pregnancyWeek,
-    planStartedAt: earlierIso(local.planStartedAt, remote.planStartedAt),
+    // Newer planStartedAt wins (first payment resets the clock — must not lose to an older unpaid start).
+    ...(() => {
+      const localStart = Date.parse(local.planStartedAt || '') || 0;
+      const remoteStart = Date.parse(remote.planStartedAt || '') || 0;
+      if (localStart > remoteStart) {
+        return {
+          planStartedAt: local.planStartedAt || '',
+          journeyDay: Number(local.journeyDay || 1) || 1,
+        };
+      }
+      if (remoteStart > localStart) {
+        return {
+          planStartedAt: remote.planStartedAt || '',
+          journeyDay: Number(remote.journeyDay || 1) || 1,
+        };
+      }
+      return {
+        planStartedAt: local.planStartedAt || remote.planStartedAt || '',
+        journeyDay: Math.max(Number(local.journeyDay || 0), Number(remote.journeyDay || 0)) || 1,
+      };
+    })(),
     planDurationWeeks: Number(remote.planDurationWeeks || local.planDurationWeeks || 8),
     trainingPlan: (() => {
       const score = (plan: UserProfile['trainingPlan'] | undefined) => {

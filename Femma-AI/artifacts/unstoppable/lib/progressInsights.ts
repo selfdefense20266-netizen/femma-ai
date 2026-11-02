@@ -384,8 +384,13 @@ export function planProgressPercent(input: {
   missions: Mission[];
   trainingPlan?: TrainingPlan | null;
   durationWeeks?: number;
+  /** Prefer the same day count shown in the UI (e.g. admin plan durationDays). */
+  totalDays?: number;
 }) {
-  const totalDays = planTotalDays(input.durationWeeks || input.trainingPlan?.durationWeeks);
+  const totalDays = Math.max(
+    1,
+    input.totalDays || planTotalDays(input.durationWeeks || input.trainingPlan?.durationWeeks)
+  );
   const todayDone = input.missions.length > 0 && input.missions.every(isPlanItemDone);
   const completedDays = countCompletedPlanDays(input.trainingPlan, input.journeyDay, todayDone);
   const todayFraction =

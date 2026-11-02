@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   muteBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },

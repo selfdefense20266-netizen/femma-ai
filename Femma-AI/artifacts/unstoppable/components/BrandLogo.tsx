@@ -7,7 +7,7 @@ const LOGO = require('@/assets/logo.jpeg');
 type BrandLogoProps = {
   /** Icon size in px */
   size?: number;
-  /** Show "Femma AI" label beside or below the mark */
+  /** Show "Fema AI" label beside or below the mark */
   showName?: boolean;
   /** Layout: stacked (welcome) or row (headers) */
   layout?: 'stack' | 'row';
@@ -16,7 +16,7 @@ type BrandLogoProps = {
   imageStyle?: StyleProp<ImageStyle>;
 };
 
-/** Shared Femma AI mark + wordmark. */
+/** Shared Fema AI mark + wordmark. */
 export function BrandLogo({
   size = 56,
   showName = true,
@@ -32,7 +32,7 @@ export function BrandLogo({
     <View style={[layout === 'row' ? styles.row : styles.stack, style]}>
       <Image
         source={LOGO}
-        accessibilityLabel="Femma AI"
+        accessibilityLabel="Fema AI"
         style={[
           {
             width: size,
@@ -51,7 +51,7 @@ export function BrandLogo({
             nameStyle,
           ]}
         >
-          Femma AI
+          Fema AI
         </Text>
       ) : null}
     </View>

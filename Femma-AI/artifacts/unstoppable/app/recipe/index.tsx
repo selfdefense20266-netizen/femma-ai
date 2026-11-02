@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   syncBtn: {
     height: 40,
     paddingHorizontal: 18,
-    borderRadius: 20,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 72,
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   mealPill: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 999,
     backgroundColor: SURFACE,
   },
   mealPillText: { color: MUTED, fontSize: 12, fontFamily: 'Manrope_700Bold', letterSpacing: 0.5 },
@@ -392,9 +392,9 @@ const styles = StyleSheet.create({
   cuisinePill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 16,
+    borderRadius: 999,
     backgroundColor: SURFACE,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: 'transparent',
   },
   cuisineText: { color: MUTED, fontSize: 11, fontFamily: 'Manrope_600SemiBold', letterSpacing: 0.4 },
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
   modalBtn: {
     marginTop: 8,
     height: 54,
-    borderRadius: 16,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

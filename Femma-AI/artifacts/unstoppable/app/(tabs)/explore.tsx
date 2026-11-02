@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   bookmarkButton: {
     width: 38,
     height: 38,
-    borderRadius: 13,
+    borderRadius: 999,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 100,
     backgroundColor: 'rgba(0,0,0,0.35)',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: 'rgba(255,255,255,0.35)',
   },
   comingSoonBadgeText: {

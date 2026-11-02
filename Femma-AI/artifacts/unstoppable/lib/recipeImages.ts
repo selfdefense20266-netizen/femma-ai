@@ -1,86 +1,111 @@
-/** Look up real food photos by recipe title (free, no API key). */
+/** Recipe photos: bundled dish-type photo library (assets/recipes/lib), matched by the dish a title names. */
+import { DISH_PHOTOS, type DishType } from '@/data/recipePhotoLibrary';
 
-const memoryCache = new Map<string, string | null>();
 
-type MealDbResponse = {
-  meals?: Array<{ strMealThumb?: string | null }> | null;
-};
 
-const KEYWORD_PHOTOS: Array<[RegExp, string]> = [
-  [/chicken|turkey/, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80'],
-  [/salmon|tuna|fish/, 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80'],
-  [/tofu|stir.?fry/, 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80'],
-  [/soup|lentil/, 'https://images.unsplash.com/photo-1547592166-23acba3e6ef8?auto=format&fit=crop&w=800&q=80'],
-  [/smoothie|shake|cocoa/, 'https://images.unsplash.com/photo-1623065422902-30dd32d19fc8?auto=format&fit=crop&w=800&q=80'],
-  [/oat|overnight/, 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=800&q=80'],
-  [/egg/, 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80'],
-  [/chickpea|salad/, 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80'],
-  [/curry/, 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=800&q=80'],
-  [/yogurt|yoghurt|berry/, 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80'],
-  [/quinoa|bean|bowl/, 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80'],
-  [/sweet potato|hash/, 'https://images.unsplash.com/photo-1588166524941-3bf61a2c0d3e?auto=format&fit=crop&w=800&q=80'],
-  [/rice/, 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=800&q=80'],
+/** Dish type keywords, most specific first (ties go to the earlier entry). */
+const DISH_PATTERNS: Array<[DishType, RegExp]> = [
+  ['smoothie_bowl', /smoothie bowl|acai|açaí|nice cream/g],
+  ['shake', /shake/g],
+  ['smoothie', /smoothie|juice|lassi/g],
+  ['overnight_oats', /overnight oat/g],
+  ['pancakes', /pancake|crepe/g],
+  ['waffles', /waffle/g],
+  ['muffins', /muffin|banana bread|loaf/g],
+  ['oatmeal', /oat|porridge|muesli|granola/g],
+  ['omelette', /omelet|frittata/g],
+  ['chia', /chia/g],
+  ['parfait', /parfait|yogurt|yoghurt/g],
+  ['bites', /fat bomb|energy ball|energy bite|protein ball|truffle|bites/g],
+  ['dessert', /mousse|brownie|chocolate|pudding|cake|cookie/g],
+  ['toast', /toast/g],
+  ['tacos', /taco|quesadilla|enchilada|fajita/g],
+  ['wrap', /wrap|burrito|pita/g],
+  ['sandwich', /sandwich|burger|panini/g],
+  ['shrimp', /shrimp|prawn/g],
+  ['salmon', /salmon/g],
+  ['tuna', /tuna|poke/g],
+  ['fish', /\bcod\b|halibut|tilapia|fish|sea ?bass|mackerel|trout/g],
+  ['falafel', /falafel/g],
+  ['hummus', /hummus/g],
+  ['lentils', /\bdal\b|daal|lentil/g],
+  ['curry', /curry|masala|korma|chili|stew|tikka/g],
+  ['soup', /soup|broth|chowder|ramen/g],
+  ['rice', /biryani|fried rice|risotto|pilaf|paella|\brice\b/g],
+  ['stirfry', /stir.?fry|tofu|teriyaki/g],
+  ['pasta', /pasta|primavera|noodle|spaghetti|zoodle|lasagna|penne/g],
+  ['beef', /steak|beef|sirloin|meatball|lamb|pork/g],
+  ['sweet_potato', /sweet potato|\bhash\b/g],
+  ['grain_bowl', /quinoa|bean|buddha|power bowl|grain bowl|\bbowl\b/g],
+  ['salad', /salad|slaw/g],
+  ['chicken', /chicken|turkey/g],
+  ['eggs', /\beggs?\b|shakshuka|scramble/g],
 ];
 
-function photoForTitle(title: string): string | null {
-  const hay = title.toLowerCase();
-  const match = KEYWORD_PHOTOS.find(([pattern]) => pattern.test(hay));
-  return match?.[1] || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+function lastMatchEnd(text: string, pattern: RegExp) {
+  let end = -1;
+  pattern.lastIndex = 0;
+  for (let m = pattern.exec(text); m; m = pattern.exec(text)) end = m.index + m[0].length;
+  pattern.lastIndex = 0;
+  return end;
 }
 
-async function searchMealDb(query: string): Promise<string | null> {
-  const q = query.trim();
-  if (!q) return null;
-
-  try {
-    const response = await fetch(
-      `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q)}`
-    );
-    if (!response.ok) return null;
-    const json = (await response.json()) as MealDbResponse;
-    const thumb = json.meals?.[0]?.strMealThumb;
-    return typeof thumb === 'string' && thumb.startsWith('http') ? thumb : null;
-  } catch {
-    return null;
-  }
-}
-
-function searchQueries(title: string): string[] {
-  const clean = title.replace(/[^\w\s-]/g, ' ').trim();
-  const words = clean.split(/\s+/).filter(Boolean);
-  const queries = [clean];
-  if (words.length >= 3) queries.push(words.slice(0, 3).join(' '));
-  if (words.length >= 2) queries.push(words.slice(0, 2).join(' '));
-  if (words[0]) queries.push(words[0]);
-  return [...new Set(queries)];
-}
-
-/** Returns a food photo URL matched to the recipe title, or null. */
-export async function lookupRecipeImageUrl(title: string): Promise<string | null> {
-  const cacheKey = title.toLowerCase().trim();
-  if (memoryCache.has(cacheKey)) return memoryCache.get(cacheKey) ?? null;
-
-  for (const query of searchQueries(title)) {
-    const url = await searchMealDb(query);
-    if (url) {
-      memoryCache.set(cacheKey, url);
-      return url;
+/**
+ * The dish a title names is its head noun, which comes last in the main phrase:
+ * "Banana Oat Pancakes" -> pancakes, "Spinach and Feta Omelette" -> omelette,
+ * "Lemon Garlic Chicken with Quinoa" -> chicken (anything after "with" is a side).
+ */
+export function dishTypeForTitle(title: string): DishType | null {
+  const lower = title.toLowerCase();
+  for (const text of [lower.split(/\bwith\b|,|\(|\bserved\b/)[0], lower]) {
+    let best: DishType | null = null;
+    let bestEnd = -1;
+    for (const [type, pattern] of DISH_PATTERNS) {
+      const end = lastMatchEnd(text, pattern);
+      if (end > bestEnd) {
+        best = type;
+        bestEnd = end;
+      }
     }
+    if (best) return best;
   }
-
-  const fallback = photoForTitle(title);
-  memoryCache.set(cacheKey, fallback);
-  return fallback;
+  return null;
 }
 
-export async function attachRecipeImages<T extends { title: string; imageUrl?: string }>(
-  recipes: T[]
-): Promise<(T & { imageUrl?: string })[]> {
-  return Promise.all(
-    recipes.map(async (recipe) => {
-      if (recipe.imageUrl) return recipe;
-      const imageUrl = (await lookupRecipeImageUrl(recipe.title)) || undefined;
-      return imageUrl ? { ...recipe, imageUrl } : recipe;
-    })
-  );
+function hashString(value: string) {
+  let h = 0;
+  for (let i = 0; i < value.length; i += 1) h = (h * 31 + value.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/**
+ * Bundled photo key (see data/recipeImageMap.ts) for a dish title. Picks from the dish type's pool,
+ * preferring a photo not in `used` so lists don't repeat. Null when the title matches no dish type
+ * (the card then shows its colour gradient instead of a wrong photo).
+ */
+export function localPhotoKeyForTitle(title: string, used: ReadonlySet<string> = new Set()): string | null {
+  const type = dishTypeForTitle(title);
+  if (!type) return null;
+  const pool = DISH_PHOTOS[type];
+  if (!pool.length) return null;
+  // Library photos first (rotated per title), then the catalog's own photos as a last resort.
+  const library = pool.filter((key) => key.startsWith('lib/'));
+  const catalog = pool.filter((key) => !key.startsWith('lib/'));
+  const offset = library.length ? hashString(title.toLowerCase()) % library.length : 0;
+  const ordered = [...library.slice(offset), ...library.slice(0, offset), ...catalog];
+  return ordered.find((key) => !used.has(key)) ?? ordered[0];
+}
+
+/** Give each recipe without a photo a bundled dish photo, avoiding keys already in `used` (mutated). */
+export function attachRecipeImages<T extends { title: string; image?: string; imageUrl?: string }>(
+  recipes: T[],
+  used: Set<string> = new Set()
+): T[] {
+  return recipes.map((recipe) => {
+    if (recipe.image || recipe.imageUrl) return recipe;
+    const image = localPhotoKeyForTitle(recipe.title, used);
+    if (!image) return recipe;
+    used.add(image);
+    return { ...recipe, image };
+  });
 }

@@ -126,7 +126,11 @@ export default function Button(theme) {
       },
       styleOverrides: {
         root: {
-          fontWeight: 400,
+          // Pill buttons, matching the mobile app (e.g. "Close" / "Get started").
+          borderRadius: 999,
+          fontWeight: 600,
+          paddingLeft: 20,
+          paddingRight: 20,
           '&::after': {
             content: '""',
             display: 'block',
@@ -135,14 +139,14 @@ export default function Button(theme) {
             top: 0,
             width: '100%',
             height: '100%',
-            borderRadius: 4,
+            borderRadius: 'inherit',
             opacity: 0,
             transition: 'all 0.5s'
           },
 
           '&:active::after': {
             position: 'absolute',
-            borderRadius: 4,
+            borderRadius: 'inherit',
             left: 0,
             top: 0,
             opacity: 1,

@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   darkButton: {
     width: 40,
     height: 40,
-    borderRadius: 14,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.09)',

@@ -342,7 +342,7 @@ Deleting your account does not cancel your store subscription — cancel it in $
               </View>
               <View style={styles.settingsCopy}>
                 <Text style={[styles.settingsLabel, { color: colors.foreground }]}>App version</Text>
-                <Text style={[styles.settingsDetail, { color: colors.mutedForeground }]}>Femma AI {APP_VERSION}</Text>
+                <Text style={[styles.settingsDetail, { color: colors.mutedForeground }]}>Fema AI {APP_VERSION}</Text>
               </View>
             </View>
           </View>
@@ -384,9 +384,9 @@ const styles = StyleSheet.create({
   avatarSection: { position: 'relative' },
   avatar: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarLetter: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', fontFamily: 'Manrope_800ExtraBold' },
-  editAvatarBtn: { position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  editAvatarBtn: { position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: 999, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
   profileName: { fontSize: 22, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
-  levelTag: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 100, borderWidth: 1 },
+  levelTag: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 100, borderWidth: 0 },
   levelTagText: { fontSize: 12, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   body: { paddingHorizontal: 22, paddingTop: 8, gap: 16 },
   planCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, gap: 12 },
@@ -403,14 +403,14 @@ const styles = StyleSheet.create({
   settingsCopy: { flex: 1, minWidth: 0, gap: 2 },
   settingsLabel: { fontSize: 15, fontFamily: 'Manrope_600SemiBold' },
   settingsDetail: { fontSize: 12, fontFamily: 'Manrope_400Regular', lineHeight: 16 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, borderWidth: 1, gap: 10 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 999, borderWidth: 1, gap: 10 },
   logoutText: { fontSize: 15, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(20,18,24,0.45)', justifyContent: 'center', padding: 24 },
   modalCard: { borderRadius: 22, borderWidth: 1, padding: 22, alignItems: 'center', gap: 10 },
   modalIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   modalTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
   modalBody: { fontSize: 14, fontFamily: 'Manrope_400Regular', lineHeight: 20, textAlign: 'center', marginBottom: 8 },
-  modalLogout: { width: '100%', height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  modalLogout: { width: '100%', height: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   modalLogoutText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
   modalCancel: { height: 40, alignItems: 'center', justifyContent: 'center' },
   modalCancelText: { fontSize: 15, fontFamily: 'Manrope_600SemiBold' },

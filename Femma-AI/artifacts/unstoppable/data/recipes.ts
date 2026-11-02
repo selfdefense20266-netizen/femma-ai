@@ -4,6 +4,7 @@ import type { UserProfile } from '@/context/AppContext';
 import { detectFocus } from '@/lib/dailyMissions';
 import { goalLabels, ONBOARDING_GOALS, recipeFitsDiet } from '@/lib/nutritionPlan';
 import catalog from '@/data/goal-recipes.json';
+import { attachRecipeImages } from '@/lib/recipeImages';
 import { RECIPE_IMAGES } from '@/data/recipeImageMap';
 import { EXTRA_PROTOCOL_RECIPES } from '@/data/recipeProtocol';
 
@@ -26,6 +27,8 @@ export type Recipe = {
   ingredients: string[];
   steps: string[];
   source?: 'catalog' | 'ai';
+  /** Bumped when photo matching changes, so saved AI recipes get their photo re-picked. */
+  photoVersion?: number;
 };
 
 export const RECIPE_FILTERS = ['For you', 'All', 'High Protein', 'Quick', 'Vegan', 'Vegetarian', 'Weight Loss', 'Pregnancy', 'Recovery'];
@@ -63,9 +66,19 @@ export function profileGoalIds(profile: UserProfile): string[] {
 }
 
 const STORAGE_KEY = 'fema-ai-generated-recipes';
+const PHOTO_VERSION = 3;
 const extraRecipes: Recipe[] = [];
 let hydrated = false;
 let hydratePromise: Promise<void> | null = null;
+
+/** Photo keys already shown by catalog / protocol / saved recipes, so new picks don't repeat them. */
+function usedPhotoKeys(except?: Set<string>) {
+  const used = new Set<string>();
+  for (const recipe of [...EXTRA_PROTOCOL_RECIPES, ...CATALOG_RECIPES, ...extraRecipes]) {
+    if (recipe.image && !except?.has(recipe.id)) used.add(recipe.image);
+  }
+  return used;
+}
 
 function isRecipe(value: unknown): value is Recipe {
   const recipe = value as Recipe;
@@ -91,9 +104,21 @@ export async function hydrateGeneratedRecipes() {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
-      for (const recipe of parsed.filter(isRecipe)) {
-        if (!extraRecipes.some((item) => item.id === recipe.id)) extraRecipes.push(recipe);
+      let changed = false;
+      for (const saved of parsed.filter(isRecipe)) {
+        if (extraRecipes.some((item) => item.id === saved.id)) continue;
+        // Older builds saved photos from a loose web search (pancakes for a smoothie bowl, books for oats).
+        const stale = saved.source === 'ai' && (saved.photoVersion || 0) < PHOTO_VERSION;
+        if (stale) changed = true;
+        extraRecipes.push(stale ? { ...saved, image: undefined, imageUrl: undefined, photoVersion: PHOTO_VERSION } : saved);
       }
+      if (changed) {
+        const used = usedPhotoKeys();
+        for (let i = 0; i < extraRecipes.length; i += 1) {
+          if (!extraRecipes[i].image && !extraRecipes[i].imageUrl) extraRecipes[i] = attachRecipeImages([extraRecipes[i]], used)[0];
+        }
+      }
+      if (changed) void persistGenerated();
     } catch {
       // Keep catalog recipes if storage is corrupt.
     } finally {
@@ -104,7 +129,10 @@ export async function hydrateGeneratedRecipes() {
 }
 
 export function addGeneratedRecipes(recipes: Recipe[]) {
-  for (const recipe of recipes) {
+  const ids = new Set(recipes.map((recipe) => recipe.id));
+  const used = usedPhotoKeys(ids);
+  for (const fresh of attachRecipeImages(recipes, used)) {
+    const recipe = { ...fresh, photoVersion: PHOTO_VERSION };
     const index = extraRecipes.findIndex((item) => item.id === recipe.id);
     if (index >= 0) extraRecipes[index] = recipe;
     else extraRecipes.unshift(recipe);

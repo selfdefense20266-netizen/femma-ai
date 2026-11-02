@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
     marginBottom: 16,
   },
   planBadgeText: { fontSize: 12, fontWeight: '700', fontFamily: 'Manrope_700Bold' },

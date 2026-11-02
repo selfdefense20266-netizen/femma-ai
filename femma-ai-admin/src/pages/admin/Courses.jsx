@@ -237,9 +237,10 @@ export default function Courses() {
                           height: 44,
                           borderRadius: 1.5,
                           flexShrink: 0,
-                          backgroundColor: row.color || '#F26BB5',
+                          overflow: 'hidden',
+                          backgroundColor: row.imageUrl ? '#F3F4F6' : row.color || '#F26BB5',
                           backgroundImage: row.imageUrl ? `url(${row.imageUrl})` : 'none',
-                          backgroundSize: 'contain',
+                          backgroundSize: 'cover',
                           backgroundRepeat: 'no-repeat',
                           backgroundPosition: 'center'
                         }}
@@ -360,9 +361,10 @@ export default function Courses() {
                   borderRadius: 2,
                   border: '1px solid',
                   borderColor: 'divider',
-                  backgroundColor: form.color || '#F26BB5',
+                  overflow: 'hidden',
+                  backgroundColor: form.imageUrl ? '#F3F4F6' : form.color || '#F26BB5',
                   backgroundImage: form.imageUrl ? `url(${form.imageUrl})` : 'none',
-                  backgroundSize: 'contain',
+                  backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
                   backgroundPosition: 'center',
                   mb: 1.5

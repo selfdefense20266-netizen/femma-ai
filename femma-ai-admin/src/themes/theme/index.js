@@ -1,6 +1,6 @@
 // ==============================|| PRESET THEME - FEMA AI ||============================== //
 
-// Femma AI app brand palette (Femma-AI/artifacts/unstoppable/constants/colors.ts).
+// Fema AI app brand palette (Femma-AI/artifacts/unstoppable/constants/colors.ts).
 // Pink scale built around primary #F26BB5 (main) and deepPink #D94A9A (dark).
 const femaPink = {
   0: '#FDEDF6',

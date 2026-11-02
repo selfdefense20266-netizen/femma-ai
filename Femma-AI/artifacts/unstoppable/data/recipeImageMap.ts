@@ -1,4 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
+import { LIBRARY_IMAGES } from './recipePhotoLibrary';
 
 export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'r1.webp': require('../assets/recipes/r1.webp'),
@@ -15,4 +16,28 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'r12.webp': require('../assets/recipes/r12.webp'),
   'r13.webp': require('../assets/recipes/r13.webp'),
   'r14.webp': require('../assets/recipes/r14.webp'),
+  // Dedicated photos for the extra protocols in data/recipeProtocol.ts (CC0 / public domain, see assets/recipes/CREDITS.md)
+  'p15.webp': require('../assets/recipes/p15.webp'),
+  'p16.webp': require('../assets/recipes/p16.webp'),
+  'p17.webp': require('../assets/recipes/p17.webp'),
+  'p18.webp': require('../assets/recipes/p18.webp'),
+  'p19.webp': require('../assets/recipes/p19.webp'),
+  'p20.webp': require('../assets/recipes/p20.webp'),
+  'p21.webp': require('../assets/recipes/p21.webp'),
+  'p22.webp': require('../assets/recipes/p22.webp'),
+  'p23.webp': require('../assets/recipes/p23.webp'),
+  'p24.webp': require('../assets/recipes/p24.webp'),
+  'p25.webp': require('../assets/recipes/p25.webp'),
+  'p26.webp': require('../assets/recipes/p26.webp'),
+  'p27.webp': require('../assets/recipes/p27.webp'),
+  'p28.webp': require('../assets/recipes/p28.webp'),
+  'p29.webp': require('../assets/recipes/p29.webp'),
+  'p30.webp': require('../assets/recipes/p30.webp'),
+  'p31.webp': require('../assets/recipes/p31.webp'),
+  'p32.webp': require('../assets/recipes/p32.webp'),
+  'p33.webp': require('../assets/recipes/p33.webp'),
+  'p34.webp': require('../assets/recipes/p34.webp'),
+  'p35.webp': require('../assets/recipes/p35.webp'),
+  'p36.webp': require('../assets/recipes/p36.webp'),
+  ...LIBRARY_IMAGES,
 };

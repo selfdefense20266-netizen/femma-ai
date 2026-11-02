@@ -244,6 +244,7 @@ export default function ProgressScreen() {
     missions,
     trainingPlan: profile.trainingPlan,
     durationWeeks: totalWeeks,
+    totalDays,
   });
   const planName = displayPlanName(profile);
   const planDone = isTrainingPlanComplete(profile);
@@ -803,8 +804,8 @@ const styles = StyleSheet.create({
     minWidth: 62,
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 999,
+    borderWidth: 0,
     alignItems: 'center',
     gap: 2,
   },

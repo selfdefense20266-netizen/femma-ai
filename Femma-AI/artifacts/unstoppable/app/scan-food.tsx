@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   FadeInDown,
@@ -45,6 +45,7 @@ import {
 } from '@/lib/mealScanHistory';
 import ProgressBar from '@/components/ProgressBar';
 import SectionHeader from '@/components/SectionHeader';
+import NutritionIcon from '@/components/NutritionIcon';
 
 type Palette = ReturnType<typeof useColors>;
 
@@ -56,12 +57,6 @@ const DAILY_GOALS = {
 };
 
 const SCAN_TIPS = ['Good lighting', 'Center your plate', 'Include all items', 'Avoid glare'];
-
-function scoreColor(score: number, colors: Palette) {
-  if (score >= 80) return colors.mint;
-  if (score >= 60) return colors.warmYellow;
-  return colors.coral;
-}
 
 function guessMime(uri: string) {
   const lower = uri.toLowerCase();
@@ -87,21 +82,58 @@ function MacroTile({
 }) {
   const pct = goal > 0 ? Math.min(100, (value / goal) * 100) : 0;
   return (
-    <View style={styles.macroTile}>
+    <View style={[styles.macroTile, { backgroundColor: colors.muted, borderColor: colors.border }]}>
       <View style={styles.macroTileTop}>
-        <Text style={[styles.macroTileLabel, { color: colors.mutedForeground }]}>{label}</Text>
-        <Text style={[styles.macroTileValue, { color: colors.foreground }]}>
-          {Math.round(value)}
-          <Text style={[styles.macroTileUnit, { color: colors.mutedForeground }]}>{unit}</Text>
-        </Text>
+        <NutritionIcon label={label} size={36} />
+        <View style={styles.macroTileCopy}>
+          <Text style={[styles.macroTileLabel, { color: colors.mutedForeground }]}>{label}</Text>
+          <Text style={[styles.macroTileValue, { color: colors.foreground }]}>
+            {Math.round(value)}
+            <Text style={[styles.macroTileUnit, { color: colors.mutedForeground }]}>{unit}</Text>
+          </Text>
+        </View>
       </View>
-      <ProgressBar progress={pct} color={color} trackColor={colors.muted} height={4} />
+      <ProgressBar progress={pct} color={color} trackColor={colors.card} height={5} />
       <Text style={[styles.macroTileGoal, { color: colors.mutedForeground }]}>
         {Math.round(pct)}% of {goal}
         {unit === 'kcal' ? '' : unit}
       </Text>
     </View>
   );
+}
+
+function HistoryThumb({
+  uri,
+  colors,
+}: {
+  uri?: string | null;
+  colors: Palette;
+}) {
+  const [failed, setFailed] = useState(false);
+  const showPhoto = Boolean(uri) && !failed;
+
+  return (
+    <View style={[styles.historyThumb, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+      {showPhoto ? (
+        <Image
+          source={{ uri: uri as string }}
+          style={styles.historyThumbImg}
+          resizeMode="cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <NutritionIcon name="bowl" size={40} />
+      )}
+    </View>
+  );
+}
+
+function toPersistablePhotoUri(asset: ImagePicker.ImagePickerAsset) {
+  if (asset.base64) {
+    const mime = asset.mimeType || guessMime(asset.uri);
+    return `data:${mime};base64,${asset.base64}`;
+  }
+  return asset.uri;
 }
 
 export default function ScanScreen() {
@@ -196,8 +228,10 @@ export default function ScanScreen() {
         dailyTime: profile?.dailyTime,
       });
 
-      setLastMealScanPhotoUri(asset.uri);
-      const rows = await saveMealScan(result, user?.email, asset.uri);
+      const persistedPhoto = toPersistablePhotoUri(asset);
+      setPreviewUri(persistedPhoto);
+      setLastMealScanPhotoUri(persistedPhoto);
+      const rows = await saveMealScan(result, user?.email, persistedPhoto);
       setHistory(rows);
       completeMission('nutrition');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -301,8 +335,7 @@ export default function ScanScreen() {
             >
               <Feather name="arrow-left" size={20} color={colors.foreground} />
             </TouchableOpacity>
-            <View style={[styles.aiPill, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '28' }]}>
-              <Feather name="zap" size={12} color={colors.primary} />
+            <View style={[styles.aiPill, { backgroundColor: colors.primary + '14' }]}>
               <Text style={[styles.aiPillText, { color: colors.primary }]}>Fema AI</Text>
             </View>
           </View>
@@ -355,15 +388,13 @@ export default function ScanScreen() {
             >
               <Feather name="arrow-left" size={20} color={colors.foreground} />
             </TouchableOpacity>
-            <View style={[styles.aiPill, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '28' }]}>
-              <Feather name="zap" size={12} color={colors.primary} />
+            <View style={[styles.aiPill, { backgroundColor: colors.primary + '14' }]}>
               <Text style={[styles.aiPillText, { color: colors.primary }]}>Fema AI</Text>
             </View>
           </View>
 
           <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCopy}>
-            <View style={[styles.heroBadge, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '28', borderWidth: 1 }]}>
-              <Feather name="coffee" size={12} color={colors.primary} />
+            <View style={[styles.heroBadge, { backgroundColor: colors.primary + '14' }]}>
               <Text style={[styles.heroBadgeText, { color: colors.primary }]}>NUTRITION</Text>
             </View>
             <Text style={[styles.title, { color: colors.foreground }]}>Meal Scanner</Text>
@@ -454,8 +485,8 @@ export default function ScanScreen() {
                       <Text style={styles.viewfinderHint}>Ready to scan this photo</Text>
                     ) : (
                       <>
-                        <View style={[styles.viewfinderIcon, { backgroundColor: 'rgba(255,255,255,0.88)' }]}>
-                          <Ionicons name="restaurant-outline" size={28} color={colors.primary} />
+                        <View style={[styles.viewfinderIcon, { backgroundColor: '#FFFFFF' }]}>
+                          <NutritionIcon name="scanMeal" size={60} />
                         </View>
                         <Text style={styles.viewfinderHint}>Point at your meal</Text>
                       </>
@@ -512,11 +543,11 @@ export default function ScanScreen() {
           <Animated.View entering={FadeInDown.delay(120).duration(420)}>
             <View style={[styles.summaryCard, cardShadow, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.summaryHeader}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.summaryEyebrow, { color: colors.mutedForeground }]}>TODAY</Text>
                   <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Nutrition summary</Text>
                 </View>
-                <View style={[styles.goalPill, { backgroundColor: colors.primary + '14', borderColor: colors.primary + '28' }]}>
+                <View style={[styles.goalPill, { backgroundColor: colors.primary + '14' }]}>
                   <Text style={[styles.goalPillText, { color: colors.primary }]} numberOfLines={1}>
                     {goalHint}
                   </Text>
@@ -589,8 +620,8 @@ export default function ScanScreen() {
             <SectionHeader title="Recent scans" />
             {history.length === 0 ? (
               <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.emptyIcon, { backgroundColor: colors.primary + '14' }]}>
-                  <Feather name="camera" size={22} color={colors.primary} />
+                <View style={[styles.emptyIcon, { backgroundColor: '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
+                  <NutritionIcon name="scanMeal" size={48} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No scans yet</Text>
                 <Text style={[styles.emptySub, { color: colors.mutedForeground }]}>
@@ -601,7 +632,6 @@ export default function ScanScreen() {
               <View style={styles.historyList}>
                 {history.slice(0, 8).map((item, i) => {
                   const score = Math.round(Number(item.result.score) || 0);
-                  const sc = scoreColor(score, colors);
                   return (
                     <Animated.View key={item.id} entering={FadeInDown.delay(220 + i * 50).duration(360)}>
                       <TouchableOpacity
@@ -609,27 +639,19 @@ export default function ScanScreen() {
                         onPress={() => openHistory(item)}
                         activeOpacity={0.85}
                       >
-                        {item.photoUri ? (
-                          <Image source={{ uri: item.photoUri }} style={styles.historyThumb} resizeMode="contain" />
-                        ) : (
-                          <LinearGradient
-                            colors={[colors.softLavender, colors.lavender + '44']}
-                            style={styles.historyThumb}
-                          >
-                            <Feather name="coffee" size={18} color={colors.primary} />
-                          </LinearGradient>
-                        )}
+                        <HistoryThumb uri={item.photoUri} colors={colors} />
                         <View style={styles.historyInfo}>
                           <Text style={[styles.historyName, { color: colors.foreground }]} numberOfLines={1}>
                             {item.result.name}
                           </Text>
                           <Text style={[styles.historyMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                            {Math.round(Number(item.result.calories) || 0)} kcal · {Math.round(Number(item.result.protein_g) || 0)}g protein
+                            {Math.round(Number(item.result.calories) || 0)} kcal ·{' '}
+                            {Math.round(Number(item.result.protein_g) || 0)}g protein
                           </Text>
                         </View>
                         <View style={styles.historyRight}>
-                          <View style={[styles.scoreBadge, { backgroundColor: sc + '22', borderColor: sc + '55' }]}>
-                            <Text style={[styles.scoreBadgeText, { color: sc }]}>{score}</Text>
+                          <View style={[styles.scoreBadge, { backgroundColor: colors.primary + '16' }]}>
+                            <Text style={[styles.scoreBadgeText, { color: colors.primary }]}>{score}</Text>
                           </View>
                           <Text style={[styles.historyTime, { color: colors.mutedForeground }]}>
                             {formatScanTime(item.scannedAt)}
@@ -682,7 +704,15 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   lockedWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 14 },
-  lockedIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  lockedIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    overflow: 'hidden',
+  },
   lockedTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold', textAlign: 'center' },
   lockedSub: { fontSize: 14, fontFamily: 'Manrope_400Regular', textAlign: 'center', lineHeight: 20, marginBottom: 8 },
   lockedCta: {
@@ -691,7 +721,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     height: 54,
-    borderRadius: 27,
+    borderRadius: 999,
     paddingHorizontal: 20,
   },
   lockedCtaText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Manrope_700Bold' },
@@ -700,7 +730,7 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -712,7 +742,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   aiPillText: { fontSize: 11.5, fontFamily: 'Manrope_600SemiBold' },
   heroCopy: { gap: 6 },
@@ -755,11 +785,12 @@ const styles = StyleSheet.create({
   },
   viewfinderCenter: { alignItems: 'center', gap: 10, zIndex: 2 },
   viewfinderIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   viewfinderHint: { color: 'rgba(255,255,255,0.92)', fontSize: 14, fontFamily: 'Manrope_600SemiBold' },
   scanningBadge: {
@@ -782,7 +813,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 100,
-    borderWidth: 1.5,
+    borderWidth: 0,
   },
   processingBadgeText: {
     fontSize: 12,
@@ -790,7 +821,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   tipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tipChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
+  tipChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 0 },
   tipText: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
   actionRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   galleryBtn: {
@@ -799,7 +830,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
   },
   galleryBtnText: { fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
@@ -809,7 +840,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 15,
-    borderRadius: 16,
+    borderRadius: 999,
   },
   cameraBtnText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Manrope_700Bold' },
   errorText: { fontSize: 13, fontFamily: 'Manrope_400Regular', textAlign: 'center' },
@@ -817,34 +848,70 @@ const styles = StyleSheet.create({
   summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   summaryEyebrow: { fontSize: 10, fontFamily: 'Manrope_700Bold', letterSpacing: 0.8 },
   summaryTitle: { fontSize: 18, fontFamily: 'Manrope_700Bold', marginTop: 2 },
-  goalPill: { maxWidth: '46%', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
+  goalPill: { maxWidth: '46%', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100 },
   goalPillText: { fontSize: 10.5, fontFamily: 'Manrope_500Medium' },
   macroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  macroTile: { width: '48%', gap: 6 },
-  macroTileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  macroTileLabel: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
-  macroTileValue: { fontSize: 15, fontFamily: 'Manrope_800ExtraBold' },
-  macroTileUnit: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
-  macroTileGoal: { fontSize: 10, fontFamily: 'Manrope_400Regular' },
+  macroTile: {
+    width: '48%',
+    gap: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+  },
+  macroTileTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  macroTileCopy: { flex: 1, gap: 2, minWidth: 0 },
+  macroTileLabel: { fontSize: 12, fontFamily: 'Manrope_600SemiBold' },
+  macroTileValue: { fontSize: 17, fontFamily: 'Manrope_800ExtraBold' },
+  macroTileUnit: { fontSize: 12, fontFamily: 'Manrope_500Medium' },
+  macroTileGoal: { fontSize: 11, fontFamily: 'Manrope_400Regular' },
   toolsRow: { flexDirection: 'row', gap: 10 },
   toolCard: { flex: 1, borderRadius: 18, borderWidth: 1, padding: 12, gap: 6 },
   toolIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   toolLabel: { fontSize: 14, fontFamily: 'Manrope_700Bold' },
   toolSub: { fontSize: 11, fontFamily: 'Manrope_400Regular' },
   emptyCard: { borderRadius: 18, borderWidth: 1, padding: 20, alignItems: 'center', gap: 8 },
-  emptyIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  emptyIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   emptyTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold' },
   emptySub: { fontSize: 13, fontFamily: 'Manrope_400Regular', textAlign: 'center', lineHeight: 19 },
-  historyList: { gap: 8 },
-  historyItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, borderWidth: 1, gap: 12 },
-  historyThumb: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  historyInfo: { flex: 1, minWidth: 0 },
-  historyName: { fontSize: 15, fontFamily: 'Manrope_600SemiBold' },
-  historyMeta: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
-  historyRight: { alignItems: 'flex-end', gap: 4 },
-  scoreBadge: { minWidth: 36, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100, borderWidth: 1, alignItems: 'center' },
+  historyList: { gap: 10 },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 12,
+  },
+  historyThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  historyThumbImg: { width: '100%', height: '100%' },
+  historyInfo: { flex: 1, minWidth: 0, gap: 3 },
+  historyName: { fontSize: 15, fontFamily: 'Manrope_700Bold' },
+  historyMeta: { fontSize: 12, fontFamily: 'Manrope_400Regular' },
+  historyRight: { alignItems: 'flex-end', gap: 6 },
+  scoreBadge: {
+    minWidth: 36,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 100,
+    alignItems: 'center',
+  },
   scoreBadgeText: { fontSize: 13, fontFamily: 'Manrope_800ExtraBold' },
-  historyTime: { fontSize: 10.5, fontFamily: 'Manrope_400Regular' },
+  historyTime: { fontSize: 11, fontFamily: 'Manrope_500Medium' },
   scanOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.82)',

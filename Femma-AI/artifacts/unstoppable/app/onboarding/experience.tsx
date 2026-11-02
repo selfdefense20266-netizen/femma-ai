@@ -52,7 +52,13 @@ export default function ExperienceStep() {
         {LEVELS.map((l, i) => (
           <Animated.View key={l.id} entering={FadeInDown.delay(i * 80).duration(400)}>
             <TouchableOpacity
-              style={[styles.option, { backgroundColor: level === l.id ? colors.primary + '12' : colors.card, borderColor: level === l.id ? colors.primary : colors.border }]}
+              style={[
+                styles.option,
+                {
+                  backgroundColor: level === l.id ? colors.primary + '12' : colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
               onPress={() => selectLevel(l.id)}
               activeOpacity={0.8}
             >

@@ -70,6 +70,7 @@ export default function SubscriptionSelectionScreen() {
         name: user ? `${user.firstName} ${user.lastName}`.trim() : profile.name,
       });
     }
+    // AppContext starts the paid journey at day 1 on first access (restore keeps progress).
     router.replace('/(tabs)');
   };
 
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
     marginBottom: 12,
   },
   badgeText: { fontSize: 12, fontFamily: 'Manrope_700Bold' },

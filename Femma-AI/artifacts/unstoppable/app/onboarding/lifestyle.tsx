@@ -60,7 +60,14 @@ export default function LifestyleStep() {
           {ENVIRONMENTS.map(e => (
             <TouchableOpacity
               key={e.id}
-              style={[styles.envCard, { flex: 1, backgroundColor: env === e.id ? colors.primary + '12' : colors.card, borderColor: env === e.id ? colors.primary : colors.border }]}
+              style={[
+                styles.envCard,
+                {
+                  flex: 1,
+                  backgroundColor: env === e.id ? colors.primary + '12' : colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
               onPress={() => selectEnv(e.id)}
               activeOpacity={0.8}
             >
@@ -130,7 +137,7 @@ const styles = StyleSheet.create({
   envLabel: { fontSize: 14, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   envDesc: { fontSize: 11, fontFamily: 'Manrope_400Regular', textAlign: 'center' },
   foodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 100, borderWidth: 1.5 },
+  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 100, borderWidth: 0 },
   chipText: { fontSize: 13, fontWeight: '600', fontFamily: 'Manrope_600SemiBold' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 12 },
   nextBtn: { height: 56, borderRadius: 100, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },

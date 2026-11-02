@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   sessionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, overflow: 'hidden', gap: 12, width: '100%' },
   sessionLeft: { width: 72, height: 72, justifyContent: 'center', alignItems: 'center' },
   sessionInfo: { flex: 1, minWidth: 0, paddingVertical: 12, paddingRight: 8, gap: 3 },
-  sessionTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, borderWidth: 1, marginBottom: 2 },
+  sessionTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, borderWidth: 0, marginBottom: 2 },
   sessionTagText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   sessionTitle: { fontSize: 15, fontWeight: '700', fontFamily: 'Manrope_700Bold' },
   sessionDesc: { fontSize: 12, fontFamily: 'Manrope_400Regular', lineHeight: 17 },
