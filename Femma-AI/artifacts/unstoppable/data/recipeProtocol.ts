@@ -214,7 +214,7 @@ const CATALOG_META: Record<string, Meta> = {
   },
 };
 
-/** Extra protocols across meal types & cuisines (reuse catalog images). */
+/** Extra protocols across meal types & cuisines (each with its own photo). */
 export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
   {
     id: 'p15',
@@ -230,7 +230,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.8,
     tags: ['High Protein', 'Quick', 'Keto'],
     gradient: ['#F26BB5', '#B9A7F2'],
-    image: 'r9.webp',
+    image: 'p15.webp',
     ingredients: ['3 eggs', '1 oz cheddar', '1 cup spinach', '1 tbsp butter', 'Salt & pepper'],
     steps: [
       'Whisk eggs with salt and pepper.',
@@ -253,7 +253,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.6,
     tags: ['Vegan', 'Quick', 'Weight Loss'],
     gradient: ['#A9E4D2', '#77CDED'],
-    image: 'r10.webp',
+    image: 'p16.webp',
     ingredients: ['1 avocado', '2 cups mixed greens', '1/2 cup cherry tomatoes', '1 tbsp olive oil', '1/2 lemon', 'Salt'],
     steps: [
       'Chop avocado and halve tomatoes.',
@@ -275,7 +275,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.9,
     tags: ['High Protein', 'Recovery'],
     gradient: ['#77CDED', '#B9A7F2'],
-    image: 'r3.webp',
+    image: 'p17.webp',
     ingredients: ['6 oz salmon fillet', '1 tbsp olive oil', '1 lemon', '1 tsp dill', 'Salt & pepper'],
     steps: [
       'Brush salmon with oil, dill, salt, and pepper.',
@@ -297,7 +297,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.5,
     tags: ['Quick', 'Keto'],
     gradient: ['#FFD88A', '#FF928F'],
-    image: 'r14.webp',
+    image: 'p18.webp',
     ingredients: ['1/2 cup almond butter', '2 tbsp coconut oil', '1 tbsp cocoa powder', 'Pinch salt', 'Stevia to taste'],
     steps: [
       'Melt coconut oil and mix with almond butter, cocoa, salt, and stevia.',
@@ -319,7 +319,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.9,
     tags: ['High Protein', 'Low Carb'],
     gradient: ['#F26BB5', '#FFD88A'],
-    image: 'r11.webp',
+    image: 'p19.webp',
     ingredients: [
       '6 oz Chicken breast, cubed',
       '2 cups Cauliflower rice, fresh',
@@ -352,7 +352,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.7,
     tags: ['High Protein', 'Quick'],
     gradient: ['#FF928F', '#F26BB5'],
-    image: 'r6.webp',
+    image: 'p20.webp',
     ingredients: ['8 oz shrimp', '4 corn tortillas', '1 cup cabbage slaw', '1/2 avocado', 'Lime', 'Chili powder'],
     steps: [
       'Season shrimp with chili powder and sear 2 minutes per side.',
@@ -374,7 +374,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.6,
     tags: ['Vegetarian', 'Weight Loss'],
     gradient: ['#A9E4D2', '#B9A7F2'],
-    image: 'r5.webp',
+    image: 'p21.webp',
     ingredients: ['2 zucchini', '1 cup cherry tomatoes', '2 tbsp olive oil', '2 garlic cloves', 'Parmesan', 'Basil'],
     steps: [
       'Spiralize zucchini and sauté garlic in olive oil.',
@@ -396,7 +396,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.8,
     tags: ['High Protein', 'Recovery'],
     gradient: ['#77CDED', '#A9E4D2'],
-    image: 'r3.webp',
+    image: 'p22.webp',
     ingredients: ['6 oz cod', '1 tbsp white miso', '1 tsp sesame oil', '1 tsp ginger', 'Green onions'],
     steps: [
       'Mix miso, sesame oil, and ginger; brush on cod.',
@@ -418,7 +418,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.7,
     tags: ['Vegan', 'High Protein'],
     gradient: ['#FFD88A', '#A9E4D2'],
-    image: 'r12.webp',
+    image: 'p23.webp',
     ingredients: ['6 baked falafel', '1 cup cucumber tomato salad', '2 tbsp tahini', '1/2 cup hummus', 'Lemon'],
     steps: [
       'Warm falafel.',
@@ -440,7 +440,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.5,
     tags: ['Vegan', 'Quick'],
     gradient: ['#B9A7F2', '#F26BB5'],
-    image: 'r2.webp',
+    image: 'p24.webp',
     ingredients: ['3 tbsp chia seeds', '1 cup almond milk', '1/2 cup berries', '1 tsp vanilla', 'Stevia'],
     steps: [
       'Stir chia into almond milk with vanilla and stevia.',
@@ -462,7 +462,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.8,
     tags: ['High Protein', 'Low Carb'],
     gradient: ['#FF928F', '#FFD88A'],
-    image: 'r13.webp',
+    image: 'p25.webp',
     ingredients: ['8 oz ground beef', 'Butter lettuce cups', '1 tbsp soy sauce', 'Garlic', 'Ginger', 'Green onion'],
     steps: [
       'Brown beef with garlic and ginger.',
@@ -484,7 +484,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.6,
     tags: ['Vegan', 'Quick'],
     gradient: ['#B9A7F2', '#17181C'],
-    image: 'r14.webp',
+    image: 'p26.webp',
     ingredients: ['1 ripe avocado', '2 tbsp cocoa powder', '2 tbsp maple syrup', '1 tsp vanilla', 'Pinch salt'],
     steps: [
       'Blend avocado, cocoa, maple, vanilla, and salt until silky.',
@@ -506,7 +506,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.7,
     tags: ['High Protein', 'Quick'],
     gradient: ['#F26BB5', '#FFD88A'],
-    image: 'r4.webp',
+    image: 'p27.webp',
     ingredients: ['1 scoop protein powder', '1 egg', '1/2 banana', '1/4 cup oats', '1/2 cup berries', 'Cinnamon'],
     steps: [
       'Blend protein, egg, banana, and oats into a batter.',
@@ -528,7 +528,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.8,
     tags: ['High Protein', 'Quick'],
     gradient: ['#77CDED', '#B9A7F2'],
-    image: 'r1.webp',
+    image: 'p28.webp',
     ingredients: ['1 can tuna in olive oil', '1 cup cucumber', '1/2 cup cherry tomatoes', 'Olives', 'Lemon', 'Oregano'],
     steps: [
       'Drain tuna lightly and flake into a bowl.',
@@ -550,7 +550,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.8,
     tags: ['High Protein', 'Recovery'],
     gradient: ['#A9E4D2', '#F26BB5'],
-    image: 'r5.webp',
+    image: 'p29.webp',
     ingredients: ['8 oz chicken breast', '1 cup coconut milk', '1 cup broth', 'Ginger', 'Lime', 'Chili', 'Cilantro'],
     steps: [
       'Simmer ginger and chili in broth for 5 minutes.',
@@ -572,7 +572,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.6,
     tags: ['High Protein', 'Quick'],
     gradient: ['#FFD88A', '#F26BB5'],
-    image: 'r2.webp',
+    image: 'p30.webp',
     ingredients: ['1/2 cup oats', '1 scoop protein', '1 cup almond milk', '1 tbsp chia', 'Berries'],
     steps: [
       'Mix oats, protein, milk, and chia in a jar.',
@@ -594,7 +594,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.9,
     tags: ['High Protein', 'Low Carb'],
     gradient: ['#FF928F', '#17181C'],
-    image: 'r13.webp',
+    image: 'p31.webp',
     ingredients: ['6 oz sirloin', '1 bunch asparagus', '1 tbsp butter', 'Garlic', 'Salt & pepper'],
     steps: [
       'Season steak and sear 3–4 minutes per side.',
@@ -616,7 +616,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.5,
     tags: ['Vegan', 'Quick'],
     gradient: ['#FFD88A', '#A9E4D2'],
-    image: 'r14.webp',
+    image: 'p32.webp',
     ingredients: ['3 tbsp chia seeds', '1 cup coconut milk', '1/2 cup mango', '1 tsp vanilla', 'Lime zest'],
     steps: [
       'Stir chia into coconut milk with vanilla.',
@@ -638,7 +638,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.6,
     tags: ['High Protein', 'Quick', 'Weight Loss'],
     gradient: ['#F26BB5', '#77CDED'],
-    image: 'r9.webp',
+    image: 'p33.webp',
     ingredients: ['4 egg whites', '1 whole-wheat tortilla', 'Spinach', 'Tomato', '1 tbsp feta'],
     steps: [
       'Scramble egg whites with spinach.',
@@ -660,7 +660,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.8,
     tags: ['High Protein', 'Quick'],
     gradient: ['#77CDED', '#F26BB5'],
-    image: 'r6.webp',
+    image: 'p34.webp',
     ingredients: ['8 oz shrimp', '1 cup cauliflower rice', '1 tbsp butter', 'Garlic', 'Lemon', 'Parsley'],
     steps: [
       'Sauté garlic in butter, add shrimp until pink.',
@@ -682,7 +682,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.7,
     tags: ['Vegan', 'High Protein'],
     gradient: ['#FFD88A', '#FF928F'],
-    image: 'r7.webp',
+    image: 'p35.webp',
     ingredients: ['1 cup red lentils', '1 onion', 'Tomato', 'Turmeric', 'Cumin', 'Garlic', 'Cilantro'],
     steps: [
       'Sauté onion, garlic, and spices.',
@@ -704,7 +704,7 @@ export const EXTRA_PROTOCOL_RECIPES: Recipe[] = [
     rating: 4.5,
     tags: ['Vegan', 'Quick'],
     gradient: ['#B9A7F2', '#C9F2F6'],
-    image: 'r2.webp',
+    image: 'p36.webp',
     ingredients: ['1 cup coconut yogurt', '1/2 cup berries', '2 tbsp granola', '1 tsp honey'],
     steps: [
       'Layer yogurt and berries in a glass.',

@@ -17,6 +17,78 @@ export const ONBOARDING_GOALS = [
   { id: 'stress', label: 'Reduce Stress', icon: 'cloud', desc: 'Calm your mind and body' },
 ] as const;
 
+export type OnboardingGoalOption = {
+  id: string;
+  label: string;
+  icon: string;
+  desc: string;
+  /** Cover image uploaded in admin (courses.imageUrl). */
+  imageUrl?: string | null;
+  /** Value stored on the user profile (`goal`) — usually the course title. */
+  goalValue: string;
+};
+
+/** Categories whose published courses can appear on “What do you want to train?” */
+const ONBOARDING_GOAL_CATEGORIES = new Set([
+  'fitness',
+  'self-defence',
+  'cycle-pregnancy-health',
+  'yoga',
+]);
+
+function staticGoalMatch(title: string) {
+  const needle = title.trim().toLowerCase();
+  return ONBOARDING_GOALS.find(
+    (goal) =>
+      goal.label.toLowerCase() === needle ||
+      needle.includes(goal.label.toLowerCase()) ||
+      goal.id.replace(/_/g, ' ') === needle
+  );
+}
+
+/** Build onboarding goal list from published catalog courses (by course name). */
+export function onboardingGoalsFromCourses(
+  courses: {
+    id: string;
+    title: string;
+    shortTitle?: string | null;
+    description?: string | null;
+    icon?: string | null;
+    imageUrl?: string | null;
+    categoryId: string;
+  }[]
+): OnboardingGoalOption[] {
+  const fromCatalog = courses
+    .filter((course) => ONBOARDING_GOAL_CATEGORIES.has(course.categoryId))
+    .map((course) => {
+      const matched = staticGoalMatch(course.title);
+      const short = (course.shortTitle || '').trim();
+      const firstSentence = (course.description || '').trim().split(/[.!\n]/)[0]?.trim().slice(0, 88) || '';
+      const shortUseful =
+        short.length >= 12 && short.toLowerCase() !== course.title.trim().toLowerCase() ? short : '';
+      const blurb = shortUseful || firstSentence || matched?.desc || 'Personalized to your level';
+      return {
+        id: course.id,
+        label: course.title,
+        icon: course.icon || matched?.icon || 'zap',
+        desc: blurb,
+        imageUrl: course.imageUrl || null,
+        goalValue: course.title,
+      } satisfies OnboardingGoalOption;
+    });
+
+  if (fromCatalog.length) return fromCatalog;
+
+  return ONBOARDING_GOALS.map((goal) => ({
+    id: goal.id,
+    label: goal.label,
+    icon: goal.icon,
+    desc: goal.desc,
+    imageUrl: null,
+    goalValue: goal.id,
+  }));
+}
+
 export type ScanVerdict = 'good' | 'okay' | 'avoid';
 
 export type NutritionProfile = {

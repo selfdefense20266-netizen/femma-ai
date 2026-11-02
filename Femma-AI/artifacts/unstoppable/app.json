@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Femma AI",
+    "name": "Fema AI",
     "slug": "femmaai",
-    "version": "1.0.14",
+    "version": "1.0.17",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "femmaai",
@@ -20,7 +20,7 @@
     },
     "android": {
       "package": "femmi.app",
-      "versionCode": 15,
+      "versionCode": 18,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon-adaptive.png",
@@ -38,6 +38,7 @@
           "origin": "https://replit.com/"
         }
       ],
+      "@react-native-google-signin/google-signin",
       "expo-font",
       "expo-web-browser",
       "expo-apple-authentication",

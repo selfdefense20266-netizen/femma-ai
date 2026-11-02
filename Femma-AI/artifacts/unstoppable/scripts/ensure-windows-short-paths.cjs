@@ -42,6 +42,8 @@ const packages = [
   ['k', () => resolvePkg('react-native-keyboard-controller')],
   ['sa', () => resolvePkg('react-native-safe-area-context')],
   ['svg', () => resolvePkg('react-native-svg')],
+  // Longest path offender on Windows: pnpm nest + codegen JNI for Google Sign-In
+  ['gs', () => resolvePkg('@react-native-google-signin/google-signin')],
 ];
 
 function readlinkSafe(p) {
@@ -130,3 +132,66 @@ if (cxxLink) {
   rmdirCmd(cxxViaLongPath);
   console.log('[short-paths] removed legacy app\\.cxx junction (use D:\\a\\.cxx)');
 }
+
+/**
+ * Android-autolinking.cmake / autolinking.json bake absolute pnpm paths into CMake.
+ * Even with projectDir junctions, Ninja Stats the long path and hits MAX_PATH.
+ * Rewrite known long roots to D:/n/<short>/...
+ */
+function rewriteAutolinkingShortPaths() {
+  // Replace the entire absolute path through .../google-signin/android with D:/n/gs/android
+  const googleAndroidPath =
+    /[A-Za-z]:[^"'\\\s]*?(?:\\|\/)(?:@react-native-google-signin[^"'\\\s]*?(?:\\|\/))?google-signin(?:\\|\/)android/gi;
+  // Fix a previous bad rewrite that left a pnpm prefix before D:/n/gs
+  const brokenRewrite =
+    /[A-Za-z]:[^"'\\\s]*?(?:\\|\/)node_modules(?:\\|\/)\.pnpm(?:\\|\/)D:\/n\/gs\/android/gi;
+
+  const roots = [
+    path.join(appRoot, 'android', 'app', 'build', 'generated', 'autolinking'),
+    path.join(appRoot, 'android', 'build', 'generated', 'autolinking'),
+    'D:\\a\\build\\generated\\autolinking',
+  ];
+
+  const files = [];
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+    const stack = [root];
+    while (stack.length) {
+      const dir = stack.pop();
+      for (const name of fs.readdirSync(dir)) {
+        const full = path.join(dir, name);
+        let st;
+        try {
+          st = fs.statSync(full);
+        } catch {
+          continue;
+        }
+        if (st.isDirectory()) stack.push(full);
+        else if (/\.(cmake|json|cpp|h|txt)$/i.test(name)) files.push(full);
+      }
+    }
+  }
+
+  let patched = 0;
+  for (const file of files) {
+    let text;
+    try {
+      text = fs.readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    if (!/google-signin|D:\/n\/gs/i.test(text)) continue;
+    let next = text.replace(brokenRewrite, 'D:/n/gs/android');
+    next = next.replace(googleAndroidPath, 'D:/n/gs/android');
+    next = next.replace(/D:\\n\\gs\\android/gi, 'D:/n/gs/android');
+    if (next !== text) {
+      fs.writeFileSync(file, next);
+      patched += 1;
+      console.log(`[short-paths] rewrote ${file}`);
+    }
+  }
+  if (patched) console.log(`[short-paths] patched ${patched} autolinking file(s)`);
+}
+
+rewriteAutolinkingShortPaths();
+

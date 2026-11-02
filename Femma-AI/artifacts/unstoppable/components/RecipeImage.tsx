@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { localRecipeImage, type Recipe } from '@/data/recipes';
-import { lookupRecipeImageUrl } from '@/lib/recipeImages';
+import { localPhotoKeyForTitle } from '@/lib/recipeImages';
 
 type Props = {
   recipe: Recipe;
@@ -16,26 +16,15 @@ type Props = {
 
 export default function RecipeImage({ recipe, style, iconSize = 28, rounded = 0, contentFit = 'cover' }: Props) {
   const local = localRecipeImage(recipe.image);
-  const [uri, setUri] = useState<string | undefined>(local ? undefined : recipe.imageUrl);
-
-  useEffect(() => {
-    if (local) return;
-    if (recipe.imageUrl) {
-      setUri(recipe.imageUrl);
-      return;
-    }
-    let cancelled = false;
-    void lookupRecipeImageUrl(recipe.title).then((url) => {
-      if (!cancelled && url) setUri(url);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [local, recipe.title, recipe.imageUrl]);
+  // No saved photo: use a bundled photo of the same dish type (never a guessed web image).
+  const fallback = useMemo(
+    () => (local || recipe.imageUrl ? undefined : localRecipeImage(localPhotoKeyForTitle(recipe.title) || undefined)),
+    [local, recipe.imageUrl, recipe.title]
+  );
 
   const flatStyle = StyleSheet.flatten(style) || {};
   const radius = rounded || (typeof flatStyle.borderRadius === 'number' ? flatStyle.borderRadius : 0);
-  const source = local || (uri ? { uri } : undefined);
+  const source = local || (recipe.imageUrl ? { uri: recipe.imageUrl } : fallback);
 
   return (
     <View style={[styles.wrap, style, radius ? { borderRadius: radius } : null]}>

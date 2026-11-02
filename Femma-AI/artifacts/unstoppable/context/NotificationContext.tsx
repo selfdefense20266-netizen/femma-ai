@@ -8,6 +8,7 @@ import { usePurchases } from '@/context/PurchaseContext';
 import { fetchSentAdminNotices, noticeMatchesMember } from '@/lib/adminNotices';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import {
+  cancelScheduledTaskReminders,
   osNotificationPermission,
   requestOsNotificationPermission,
   scheduleDailyTaskReminder,
@@ -38,6 +39,7 @@ const KEYS = {
   notices: 'fema-notices',
   lastDay: 'fema-last-task-day',
   lastJourney: 'fema-last-notified-journey',
+  paidStart: 'fema-paid-journey-start-notified',
   asked: 'fema-notify-asked',
   enabled: 'fema-notify-enabled',
   adminBoot: 'fema-admin-notices-boot',
@@ -86,7 +88,7 @@ function NotificationAskBanner({
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { profile, onboardingCompleted, missions } = useApp();
   const { user } = useAuth();
-  const { isPremium } = usePurchases();
+  const { isPremium, hasAccess } = usePurchases();
   const [notices, setNotices] = useState<AppNotice[]>([]);
   const [permission, setPermission] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [enabled, setEnabledState] = useState(true);
@@ -156,9 +158,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setEnabledState(granted);
     await AsyncStorage.setItem(KEYS.enabled, String(granted));
     setShowAsk(false);
-    if (granted) await scheduleDailyTaskReminder();
+    if (granted && hasAccess && profile.planStartedAt) await scheduleDailyTaskReminder();
     return granted;
-  }, []);
+  }, [hasAccess, profile.planStartedAt]);
 
   const setEnabled = useCallback(async (on: boolean) => {
     if (on) {
@@ -181,26 +183,37 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const checkNewTasks = useCallback(async () => {
-    if (!ready || !onboardingCompleted) return;
+    // Task-day notices only after payment starts the journey clock.
+    if (!ready || !onboardingCompleted || !hasAccess || !profile.planStartedAt) return;
     const day = todayKey();
-    const [lastDay, lastJourneyRaw] = await Promise.all([
+    const [lastDay, lastJourneyRaw, paidStartNotified] = await Promise.all([
       AsyncStorage.getItem(KEYS.lastDay),
       AsyncStorage.getItem(KEYS.lastJourney),
+      AsyncStorage.getItem(KEYS.paidStart),
     ]);
     const lastJourney = Number(lastJourneyRaw) || 0;
     const journey = profile.journeyDay || 1;
+    const count = missions.filter((item) => !item.completed && !item.skipped).length || missions.length;
+    const justPaidStart = paidStartNotified !== profile.planStartedAt;
     const newCalendarDay = Boolean(lastDay && lastDay !== day);
     const newPlanDay = lastJourney > 0 && journey > lastJourney;
-    if (enabledRef.current && (newCalendarDay || newPlanDay)) {
-      const count = missions.filter((item) => !item.completed && !item.skipped).length || missions.length;
+
+    if (enabledRef.current && justPaidStart) {
+      await pushNotice(
+        'Your plan has started',
+        `Day 1 is ready — ${count} mission${count === 1 ? '' : 's'} waiting for you.`
+      );
+    } else if (enabledRef.current && (newCalendarDay || newPlanDay)) {
       await pushNotice(
         'New tasks today',
         `Day ${journey} is ready — ${count} mission${count === 1 ? '' : 's'} waiting for you.`
       );
     }
+
     await AsyncStorage.setItem(KEYS.lastDay, day);
     await AsyncStorage.setItem(KEYS.lastJourney, String(journey));
-  }, [missions, onboardingCompleted, profile.journeyDay, pushNotice, ready]);
+    if (justPaidStart) await AsyncStorage.setItem(KEYS.paidStart, profile.planStartedAt);
+  }, [hasAccess, missions, onboardingCompleted, profile.journeyDay, profile.planStartedAt, pushNotice, ready]);
 
   const pullAdminNotices = useCallback(async () => {
     if (!ready || !isSupabaseConfigured) return;
@@ -280,7 +293,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [pullAdminNotices]);
 
   useEffect(() => {
-    if (!onboardingCompleted || !ready) return;
+    if (!ready) return;
+    if (!onboardingCompleted || !hasAccess || !profile.planStartedAt) {
+      void cancelScheduledTaskReminders();
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const asked = await AsyncStorage.getItem(KEYS.asked);
@@ -298,7 +315,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => {
       cancelled = true;
     };
-  }, [onboardingCompleted, ready]);
+  }, [hasAccess, onboardingCompleted, profile.planStartedAt, ready]);
 
   const unreadCount = notices.filter((item) => !item.read).length;
 

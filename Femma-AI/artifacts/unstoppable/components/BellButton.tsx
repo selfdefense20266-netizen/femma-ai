@@ -27,7 +27,7 @@ export default function BellButton({ size = 40 }: { size?: number }) {
 
 const styles = StyleSheet.create({
   btn: {
-    borderRadius: 13,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,

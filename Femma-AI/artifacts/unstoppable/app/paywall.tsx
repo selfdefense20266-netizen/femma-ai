@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   priceTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold' },
   priceHint: { fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 3 },
   price: { fontSize: 18, fontFamily: 'Manrope_800ExtraBold' },
-  cta: { marginTop: 18, minHeight: 58, borderRadius: 29, justifyContent: 'center', alignItems: 'center', paddingVertical: 12 },
+  cta: { marginTop: 18, minHeight: 58, borderRadius: 999, justifyContent: 'center', alignItems: 'center', paddingVertical: 12 },
   ctaText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_700Bold' },
   ctaSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
   restoreLink: { alignItems: 'center', paddingTop: 16 },
@@ -233,6 +233,6 @@ const styles = StyleSheet.create({
   cardInputRow: { flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14 },
   cardInputText: { flex: 1, fontSize: 14.5, fontFamily: 'Manrope_500Medium' },
   fieldRow: { flexDirection: 'row', gap: 12 },
-  paySubmitBtn: { height: 54, borderRadius: 27, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 6 },
+  paySubmitBtn: { height: 54, borderRadius: 999, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 6 },
   paySubmitText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_700Bold' },
 });

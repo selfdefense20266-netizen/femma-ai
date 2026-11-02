@@ -36,6 +36,7 @@ import {
   primaryRoadmapCategory,
 } from '@/lib/exerciseRoadmap';
 import { prefetchAiDietPlan } from '@/lib/dietPlanAi';
+import { usePurchases } from '@/context/PurchaseContext';
 
 export type MissionCategory = 'fitness' | 'yoga' | 'safety' | 'nutrition' | 'recipe';
 export type MissionSlot = 'course' | 'meal' | 'recipe' | 'exercise';
@@ -303,6 +304,8 @@ interface AppContextType {
   resetMissions: () => void;
   syncMissions: (catalog?: CatalogBundle) => void;
   completeOnboarding: (profile: Partial<UserProfile>) => void;
+  /** Start (or restart) the paid journey clock at day 1. Call after first successful payment. */
+  startPaidJourney: () => void;
   startNewPlan: () => void;
   advanceTestDay: () => void;
   setLessonComplete: (lessonId: string, completed: boolean) => void;
@@ -531,6 +534,10 @@ function isMissionResolved(mission: Mission) {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
+  const { hasAccess, everPaid, ready: purchasesReady } = usePurchases();
+  const accessHydratedRef = useRef(false);
+  const hasAccessRef = useRef(false);
+  const everPaidRef = useRef(false);
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [missions, setMissions] = useState<Mission[]>(DEFAULT_MISSIONS);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
@@ -647,6 +654,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     const email = normalizeEmail(user?.email);
     setAccountReadyFor(null);
+    accessHydratedRef.current = false;
+    hasAccessRef.current = false;
+    everPaidRef.current = false;
     // Any in-flight onboarding plan / pending cloud save belongs to the previous account.
     resetAiPlan();
     if (cloudTimerRef.current) {
@@ -719,8 +729,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!syncReady) return;
     const snapshot = snapshotRef.current;
     if (!snapshot.onboardingCompleted) return;
+    // Unpaid users: do not invent or advance a journey clock (starts on payment).
+    if (!hasAccess || !snapshot.profile.planStartedAt) return;
 
-    const startedAt = snapshot.profile.planStartedAt || startedAtFromJourney(snapshot.profile.journeyDay);
+    const startedAt = snapshot.profile.planStartedAt;
     const nextDay = journeyDayFromStart(startedAt);
     let nextLog = snapshot.activityLog;
     for (const mission of snapshot.missions) {
@@ -754,7 +766,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         journeyDay: nextDay,
       },
     });
-  }, [syncReady, persistAll, onboardingCompleted, completedLessonIds]);
+  }, [syncReady, persistAll, onboardingCompleted, completedLessonIds, hasAccess]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
     const answerKeys: Array<keyof UserProfile> = [
@@ -1213,13 +1225,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       profileUpdates.name ||
       snapshotRef.current.profile.name ||
       (user ? `${user.firstName} ${user.lastName}`.trim() : '');
-    const startedAt = new Date().toISOString();
+    // Save questionnaire + Day 1 preview, but do NOT start the journey clock until payment.
     const merged = {
       ...snapshotRef.current.profile,
       ...profileUpdates,
       name,
       planName: stagedPlan?.planName || profileUpdates.planName || planNameForGoal(snapshotRef.current.profile.goal || profileUpdates.goal || ''),
-      planStartedAt: startedAt,
+      planStartedAt: '',
       planDurationWeeks: stagedPlan?.stats?.weeks || stagedPlan?.trainingPlan?.durationWeeks || profileUpdates.planDurationWeeks || snapshotRef.current.profile.planDurationWeeks || 8,
       journeyDay: 1,
       streak: 0,
@@ -1231,8 +1243,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const trainingPlan = sourcePlan?.days?.length
       ? {
           ...sourcePlan,
-          startedAt,
-          endsAt: addDays(startedAt, planTotalDays(sourcePlan.durationWeeks)),
+          startedAt: '',
+          endsAt: '',
           status: 'active' as const,
         }
       : buildTrainingPlan({
@@ -1264,6 +1276,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Generate AI 30-day diet (height/weight/activity) and save to DB in background.
     prefetchAiDietPlan(profile, user?.email);
   };
+
+  const startPaidJourney = useCallback(() => {
+    const snapshot = snapshotRef.current;
+    if (!snapshot.onboardingCompleted) return;
+    const startedAt = new Date().toISOString();
+    const sourcePlan = snapshot.profile.trainingPlan;
+    const trainingPlan = sourcePlan?.days?.length
+      ? {
+          ...sourcePlan,
+          startedAt,
+          endsAt: addDays(startedAt, planTotalDays(sourcePlan.durationWeeks)),
+          status: 'active' as const,
+        }
+      : sourcePlan;
+    const dayMissions = trainingPlan?.days?.length
+      ? missionsFromPlanDay(trainingPlan, 1)
+      : snapshot.missions.map((item) => ({ ...item, completed: false, skipped: false }));
+    const next: MemberProgressSnapshot = {
+      ...snapshot,
+      missions: dayMissions.map((item) => ({ ...item, completed: false, skipped: false })),
+      activityLog: [],
+      profile: {
+        ...snapshot.profile,
+        planStartedAt: startedAt,
+        journeyDay: 1,
+        streak: 0,
+        trainingPlan: trainingPlan || snapshot.profile.trainingPlan,
+      },
+    };
+    // Allow day-1 task notice after payment (clear unpaid-day notify markers).
+    void AsyncStorage.multiRemove(['fema-last-task-day', 'fema-last-notified-journey']);
+    void persistAll(next, { immediateCloud: true });
+  }, [persistAll]);
+
+  // Journey clock starts on first paid access (not at reveal). Resume after lapse keeps progress.
+  useEffect(() => {
+    if (!purchasesReady || !syncReady || !onboardingCompleted) return;
+
+    if (!accessHydratedRef.current) {
+      accessHydratedRef.current = true;
+      hasAccessRef.current = hasAccess;
+      everPaidRef.current = everPaid;
+      if (hasAccess && !snapshotRef.current.profile.planStartedAt) {
+        startPaidJourney();
+      }
+      return;
+    }
+
+    const gainedAccess = hasAccess && !hasAccessRef.current;
+    const wasEverPaid = everPaidRef.current;
+    hasAccessRef.current = hasAccess;
+    everPaidRef.current = everPaid;
+
+    if (gainedAccess && !wasEverPaid) {
+      startPaidJourney();
+    } else if (hasAccess && !snapshotRef.current.profile.planStartedAt) {
+      startPaidJourney();
+    }
+  }, [purchasesReady, syncReady, onboardingCompleted, hasAccess, everPaid, startPaidJourney]);
 
   const advanceTestDay = useCallback(() => {
     const snapshot = snapshotRef.current;
@@ -1448,6 +1519,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         resetMissions,
         syncMissions,
         completeOnboarding,
+        startPaidJourney,
         startNewPlan,
         advanceTestDay,
         setLessonComplete,

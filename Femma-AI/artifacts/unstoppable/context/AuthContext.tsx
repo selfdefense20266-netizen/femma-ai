@@ -6,7 +6,7 @@ import { clearMemberPasswords } from '@/lib/memberAuth';
 import { isSupabaseConfigured, supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import { persistAndLoadProfile } from '@/lib/members';
 import { clearMemberIdCache } from '@/lib/memberProgress';
-import { signInWithApple, signInWithGoogle } from '@/lib/socialAuth';
+import { signInWithApple, signInWithGoogle, signOutGoogle } from '@/lib/socialAuth';
 import {
   createConfirmedAccount,
   isAppSignupConflict,
@@ -64,8 +64,11 @@ export const USER_SCOPED_STORAGE_KEYS = [
 function mapAuthError(message?: string) {
   const msg = message || '';
   if (/invalid login credentials/i.test(msg)) return 'Incorrect email or password';
+  if (/email rate limit|over_email_send_rate_limit/i.test(msg)) {
+    return 'Too many signup emails sent. Wait about an hour, or turn off “Confirm email” in Supabase Auth.';
+  }
   if (/email not confirmed|email_not_confirmed/i.test(msg)) {
-    return 'Please confirm your email address (check your inbox), then log in.';
+    return 'Account is not ready yet. Try again in a moment, or contact support.';
   }
   if (/already registered|user already registered|already exists/i.test(msg)) {
     return EXISTS_MESSAGE;
@@ -230,7 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const names = { firstName, lastName };
 
       try {
-        // 1) Server creates a confirmed auth user + members row.
+        // Server creates a confirmed auth user (no confirmation email / OTP) + members row.
         let useFallback = false;
         try {
           await createConfirmedAccount({ email, password: input.password, firstName, lastName });
@@ -243,7 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (useFallback) {
-          // 1b) app-signup not deployed — standard Supabase sign-up (may require email confirmation).
+          // app-signup not deployed — client sign-up; auto-confirm trigger should skip email verification.
           const { data, error } = await supabase.auth.signUp({
             email,
             password: input.password,
@@ -252,14 +255,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             },
           });
           if (error) return { ok: false, error: mapAuthError(error.message) };
-          // Supabase returns a user with no identities when the email is already registered.
           if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
             return { ok: false, error: EXISTS_MESSAGE };
           }
           if (!data.session) {
             return {
               ok: false,
-              error: 'Account created. Check your email to confirm your address, then log in.',
+              error: 'Account created. Turn off "Confirm email" in Supabase Auth settings, then log in.',
             };
           }
           const profile = await resolveSession(data.session, names);
@@ -267,11 +269,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { ok: true, user: profile };
         }
 
-        // 2) Sign in to obtain a real session.
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: input.password });
         if (error || !data.session?.user) {
           if (isUnconfirmedError(error)) {
-            return { ok: false, error: 'Please confirm your email address (check your inbox), then log in.' };
+            return {
+              ok: false,
+              error: 'Account is not ready yet. Turn off email confirmation in Supabase, then try again.',
+            };
           }
           return {
             ok: false,
@@ -279,7 +283,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
         }
 
-        // 3) Persist profile through the session (members row keyed by auth id / email).
         const profile = await resolveSession(data.session, names);
         if (!profile) return { ok: false, error: 'Sign-up did not complete. Try logging in.' };
         return { ok: true, user: profile };
@@ -326,6 +329,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [completeSessionLogin]);
 
   const logout = useCallback(async () => {
+    void signOutGoogle();
     try {
       if (isSupabaseConfigured) {
         await Promise.race([

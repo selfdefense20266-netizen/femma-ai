@@ -4,7 +4,7 @@ import type { UserProfile } from '@/context/AppContext';
 import { detectFocus } from '@/lib/dailyMissions';
 import { calorieTarget, goalLabels, ONBOARDING_GOALS, recipeCoachNotes, recipeFitsDiet } from '@/lib/nutritionPlan';
 import { addGeneratedRecipes, hydrateGeneratedRecipes, type Recipe } from '@/data/recipes';
-import { attachRecipeImages } from '@/lib/recipeImages';
+import { sendCoachMessage } from '@/lib/coachAi';
 
 const GRADIENTS: [string, string][] = [
   ['#F26BB5', '#B9A7F2'],
@@ -99,6 +99,8 @@ export type AiRecipeRequest = {
   foodPreference?: string;
   /** Breakfast / Lunch / Dinner / Snack — only ask the member for this */
   mealType?: string;
+  /** Free-text search, e.g. "paneer tikka" or "high protein oats" */
+  query?: string;
   /** Abort the in-flight request (timeout / cancel). */
   signal?: AbortSignal;
 };
@@ -112,6 +114,7 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
   const goalId = request?.goalId || '';
   const foodPreference = request?.foodPreference || profile.foodPreference;
   const mealType = String(request?.mealType || '').trim();
+  const query = String(request?.query || '').trim().slice(0, 120);
   const askedGoal = goalId
     ? ONBOARDING_GOALS.find((item) => item.id === goalId)?.label || goalId
     : '';
@@ -132,6 +135,9 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
     goal: goalLabel,
     cyclePhase: profile.cyclePhase || 'none',
     preferences: [
+      query
+        ? `User searched for: "${query}". Every recipe must be a version of this dish or closely match this search.`
+        : '',
       foodPreference,
       `can eat: ${foodPreference || 'Eat everything'}`,
       askedGoal ? `User picked this training: ${askedGoal}. Build recipes specifically for that.` : '',
@@ -147,7 +153,9 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
       ...recipeCoachNotes(workingProfile),
       profile.isPregnant || goalId === 'pregnancy' ? 'pregnancy-safe food only' : '',
       profile.planDurationWeeks ? `${profile.planDurationWeeks} week plan` : '',
-      mealType
+      query
+        ? `Return 4 complete recipes for "${query}" with ingredients and numbered steps.`
+        : mealType
         ? `Return 4 complete ${mealType} recipes with ingredients and numbered steps.`
         : 'Return 4 complete recipes with ingredients and numbered steps.',
     ].filter(Boolean),
@@ -203,7 +211,6 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
   const allowed = recipes.filter((recipe) => recipeFitsDiet(recipe, foodPreference));
   if (allowed.length) recipes = allowed;
   if (!recipes.length) throw new Error('AI did not return usable recipes.');
-  recipes = await attachRecipeImages(recipes);
   if (profile.isPregnant || focus === 'pregnancy' || goalId === 'pregnancy') {
     for (const recipe of recipes) {
       if (!recipe.tags.includes('Pregnancy')) recipe.tags.unshift('Pregnancy');
@@ -211,4 +218,48 @@ export async function generateAiRecipes(profile: UserProfile, request?: AiRecipe
   }
   addGeneratedRecipes(recipes);
   return recipes;
+}
+
+export type RecipeVerdict = 'suitable' | 'moderation' | 'not_suitable';
+
+export type RecipeSuitability = {
+  verdict: RecipeVerdict;
+  reason: string;
+};
+
+/** Asks the AI coach whether a recipe fits the member's onboarding profile. */
+export async function checkRecipeSuitability(recipe: Recipe, profile: UserProfile): Promise<RecipeSuitability> {
+  const heightCm = Number(profile.heightCm) || 0;
+  const weightKg = Number(profile.weightKg) || 0;
+  const facts = [
+    `Goal: ${goalLabels(profile.goal).join(', ') || profile.goal || 'general fitness'}`,
+    profile.fitnessLevel ? `Experience level: ${profile.fitnessLevel}` : '',
+    `Food preference: ${profile.foodPreference || 'Eat everything'}`,
+    heightCm > 0 ? `Height: ${Math.round(heightCm)} cm` : '',
+    weightKg > 0 ? `Weight: ${Math.round(weightKg)} kg` : '',
+    profile.isPregnant ? `Pregnant, week ${profile.pregnancyWeek || 'unknown'}` : '',
+    profile.cyclePhase && profile.cyclePhase !== 'none' ? `Cycle phase: ${profile.cyclePhase}` : '',
+    `Daily calorie target: ${calorieTarget(profile)} kcal`,
+  ].filter(Boolean);
+
+  const question = [
+    'Is this recipe suitable for me based on my profile?',
+    `My profile: ${facts.join('; ')}.`,
+    `Recipe: ${recipe.title}. Per serving: ${recipe.calories} kcal, ${recipe.protein}g protein, ${recipe.carbs}g carbs, ${recipe.fat}g fat.`,
+    `Ingredients: ${recipe.ingredients.join(', ')}.`,
+    'Answer on the first line with exactly one of: SUITABLE, IN MODERATION, NOT SUITABLE.',
+    'Then give 2-3 short sentences explaining why, speaking directly to me.',
+  ].join('\n');
+
+  const reply = await sendCoachMessage([{ role: 'user', content: question }], profile);
+  const [first = '', ...rest] = reply.split('\n');
+  const head = first.toUpperCase();
+  const verdict: RecipeVerdict = head.includes('NOT SUITABLE')
+    ? 'not_suitable'
+    : head.includes('MODERATION')
+    ? 'moderation'
+    : 'suitable';
+  const known = /SUITABLE|MODERATION/.test(head);
+  const reason = (known ? rest.join('\n') : reply).replace(/^[\s:*-]+/, '').trim();
+  return { verdict, reason: reason || first.trim() };
 }

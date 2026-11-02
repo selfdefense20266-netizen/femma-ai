@@ -80,6 +80,16 @@ export async function sendOsNotification(title: string, body: string) {
   }
 }
 
+export async function cancelScheduledTaskReminders() {
+  const Notifications = await loadNotifications();
+  if (!Notifications) return;
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch {
+    // Ignore — schedule may not exist yet.
+  }
+}
+
 export async function scheduleDailyTaskReminder() {
   const Notifications = await loadNotifications();
   if (!Notifications) return;

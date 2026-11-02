@@ -39,71 +39,9 @@ import { itemMetaLine, itemsForDay, intensityFromProfile, userTypeFromProfile, t
 import { defaultMediaForDailyItem, isVideoMediaUrl } from '@/lib/dailyPlanMedia';
 import { sectionExercisesForLevel } from '@/lib/recoverySections';
 import { Image } from 'expo-image';
+import NutritionIcon from '@/components/NutritionIcon';
 
 type Palette = ReturnType<typeof useColors>;
-
-/** Scan-frame + bowl icon so “Scan meal” reads as food scan. */
-function FoodScanIcon({ color, size = 34 }: { color: string; size?: number }) {
-  const corner = Math.max(10, Math.round(size * 0.28));
-  const thickness = 2.5;
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: corner,
-          height: corner,
-          borderTopWidth: thickness,
-          borderLeftWidth: thickness,
-          borderColor: color,
-          borderTopLeftRadius: 4,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: corner,
-          height: corner,
-          borderTopWidth: thickness,
-          borderRightWidth: thickness,
-          borderColor: color,
-          borderTopRightRadius: 4,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: corner,
-          height: corner,
-          borderBottomWidth: thickness,
-          borderLeftWidth: thickness,
-          borderColor: color,
-          borderBottomLeftRadius: 4,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: corner,
-          height: corner,
-          borderBottomWidth: thickness,
-          borderRightWidth: thickness,
-          borderColor: color,
-          borderBottomRightRadius: 4,
-        }}
-      />
-      <Ionicons name="restaurant" size={Math.round(size * 0.48)} color={color} />
-    </View>
-  );
-}
 
 function polishMission<T extends { slot?: string; category: string; label?: string; cue?: string; title: string }>(
   mission: T,
@@ -757,21 +695,23 @@ export default function TodayScreen() {
                     styles.cycleIcon,
                     {
                       backgroundColor:
-                        (profile.cyclePhase !== 'none' ? phaseInfo.color : colors.mint) + '14',
+                        (profile.cyclePhase !== 'none' ? phaseInfo.color : colors.coral) + '14',
                     },
                   ]}
                 >
                   <Feather
                     name="heart"
                     size={14}
-                    color={profile.cyclePhase !== 'none' ? phaseInfo.color : colors.mint}
+                    color={profile.cyclePhase !== 'none' ? phaseInfo.color : colors.coral}
                   />
                 </View>
                 <View style={styles.cycleText}>
                   {profile.cyclePhase !== 'none' ? (
                     <>
                       <Text style={[styles.cyclePhase, { color: phaseInfo.color }]}>
-                        {phaseInfo.name} · Day {profile.cycleDay}
+                        {profile.cyclePhase === 'menstrual'
+                          ? `Period · Day ${profile.cycleDay}`
+                          : `${phaseInfo.name} · Day ${profile.cycleDay}`}
                       </Text>
                       <Text style={[styles.cycleInsight, { color: colors.mutedForeground }]}>
                         {phaseInfo.insight}
@@ -779,7 +719,7 @@ export default function TodayScreen() {
                     </>
                   ) : (
                     <>
-                      <Text style={[styles.cyclePhase, { color: colors.mint }]}>Track your cycle</Text>
+                      <Text style={[styles.cyclePhase, { color: colors.coral }]}>Track your cycle</Text>
                       <Text style={[styles.cycleInsight, { color: colors.mutedForeground }]}>
                         Tap to set your cycle day and get phase tips
                       </Text>
@@ -832,59 +772,41 @@ export default function TodayScreen() {
                 router.push('/diet' as never);
               }}
             >
-              <View style={[styles.mealsEntryIcon, { backgroundColor: colors.pink + '22' }]}>
-                <Ionicons name="restaurant" size={22} color={colors.pink} />
+              <View style={[styles.mealsEntryIcon, { backgroundColor: '#FFFFFF', borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
+                <NutritionIcon name="todayMeals" size={40} />
               </View>
               <View style={styles.mealsEntryCopy}>
                 <Text style={[styles.mealsEntryTitle, { color: colors.foreground }]}>Today’s meals</Text>
-                <Text style={[styles.mealsEntrySub, { color: colors.mutedForeground }]}>Your suggested plan</Text>
+                <Text style={[styles.mealsEntrySub, { color: colors.mutedForeground }]}>
+                  Suggested plan & recipes
+                </Text>
               </View>
-              <Text style={[styles.mealsEntryLink, { color: colors.pink }]}>View plan</Text>
+              <Text style={[styles.mealsEntryLink, { color: colors.pink }]}>Open</Text>
               <Feather name="chevron-right" size={18} color={colors.pink} />
             </TouchableOpacity>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.foodOptionsRow}
-              decelerationRate="fast"
-            >
-              {isPremium ? (
-                <TouchableOpacity
-                  style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push('/scan-food' as never);
-                  }}
-                >
-                  <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.warmYellow + '33' }]}>
-                    <FoodScanIcon color="#C9952A" size={36} />
-                  </View>
-                  <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>Scan meal</Text>
-                  <Text style={[styles.foodOptionMeta, { color: '#C9952A' }]}>Food scan</Text>
-                </TouchableOpacity>
-              ) : null}
-
+            {isPremium ? (
               <TouchableOpacity
-                style={[styles.foodOptionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[styles.mealsEntryCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 activeOpacity={0.9}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  if (!hasAccess) {
-                    router.push({ pathname: '/plan-gate', params: { mode: 'resume' } } as never);
-                    return;
-                  }
-                  router.push('/ai-recipes' as never);
+                  router.push('/scan-food' as never);
                 }}
               >
-                <View style={[styles.foodOptionIconWrap, { backgroundColor: colors.primary + '18' }]}>
-                  <Ionicons name="sparkles" size={32} color={colors.primary} />
+                <View style={[styles.mealsEntryIcon, { backgroundColor: '#FFFFFF', borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}>
+                  <NutritionIcon name="scanMeal" size={34} />
                 </View>
-                <Text style={[styles.foodOptionLabel, { color: colors.foreground }]}>AI Recipes</Text>
-                <Text style={[styles.foodOptionMeta, { color: colors.primary }]}>Cook with AI</Text>
+                <View style={styles.mealsEntryCopy}>
+                  <Text style={[styles.mealsEntryTitle, { color: colors.foreground }]}>Scan meal</Text>
+                  <Text style={[styles.mealsEntrySub, { color: colors.mutedForeground }]}>
+                    Snap food for nutrition
+                  </Text>
+                </View>
+                <Text style={[styles.mealsEntryLink, { color: '#2F9E6B' }]}>Scan</Text>
+                <Feather name="chevron-right" size={18} color="#2F9E6B" />
               </TouchableOpacity>
-            </ScrollView>
+            ) : null}
           </View>
 
           <View style={styles.recoverySection}>
@@ -1134,7 +1056,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   planTypeText: {
     fontSize: 11,
@@ -1145,7 +1067,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   dayPillText: {
     fontSize: 11,
@@ -1370,7 +1292,7 @@ const styles = StyleSheet.create({
   modalPrimary: {
     width: '100%',
     height: 50,
-    borderRadius: 25,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1387,9 +1309,9 @@ const styles = StyleSheet.create({
   mealsEntryCard: {
     marginHorizontal: 22,
     marginBottom: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingVertical: 16,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1401,46 +1323,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   mealsEntryCopy: { flex: 1, gap: 2 },
   mealsEntryTitle: { fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
   mealsEntrySub: { fontSize: 13, fontFamily: 'Manrope_400Regular' },
   mealsEntryLink: { fontSize: 14, fontFamily: 'Manrope_700Bold' },
-  foodOptionsRow: {
-    paddingHorizontal: 22,
-    gap: 12,
-    paddingBottom: 2,
-  },
-  foodOptionCard: {
-    width: 148,
-    minHeight: 168,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  foodOptionIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  foodOptionLabel: {
-    fontSize: 16,
-    fontFamily: 'Manrope_800ExtraBold',
-    letterSpacing: -0.2,
-    textAlign: 'center',
-  },
-  foodOptionMeta: {
-    fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
-    marginTop: 4,
-    textAlign: 'center',
-  },
   programMedia: { width: '100%', height: '100%' },
   programMediaFallback: {
     width: '100%',
@@ -1479,7 +1367,7 @@ const styles = StyleSheet.create({
   restartBtn: {
     marginTop: 6,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
@@ -1552,7 +1440,7 @@ const styles = StyleSheet.create({
   congratsBtn: {
     marginTop: 12,
     height: 56,
-    borderRadius: 18,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
@@ -1563,5 +1451,5 @@ const styles = StyleSheet.create({
   aiCoachLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontFamily: 'Manrope_600SemiBold', marginBottom: 4, letterSpacing: 0.5 },
   aiCoachTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', fontFamily: 'Manrope_800ExtraBold' },
   aiCoachSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontFamily: 'Manrope_400Regular', marginTop: 2 },
-  aiCoachBtn: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
+  aiCoachBtn: { width: 50, height: 50, borderRadius: 999, justifyContent: 'center', alignItems: 'center' },
 });

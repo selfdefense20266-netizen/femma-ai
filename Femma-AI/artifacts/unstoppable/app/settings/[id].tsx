@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   lead: { fontSize: 13, fontFamily: 'Manrope_400Regular', lineHeight: 19, marginBottom: 4 },
   section: { fontSize: 14, fontFamily: 'Manrope_700Bold', marginTop: 8 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, borderWidth: 1 },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, borderWidth: 0 },
   chipText: { fontSize: 13, fontFamily: 'Manrope_600SemiBold' },
   row: {
     flexDirection: 'row',
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   rowLabel: { fontSize: 15, fontFamily: 'Manrope_600SemiBold', flex: 1 },
-  save: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  save: { height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   saveText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope_800ExtraBold' },
   input: { minWidth: 48, textAlign: 'right', fontFamily: 'Manrope_700Bold', fontSize: 16 },
   field: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, height: 48, fontFamily: 'Manrope_500Medium' },

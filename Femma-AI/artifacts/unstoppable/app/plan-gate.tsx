@@ -41,6 +41,7 @@ export default function PlanGateScreen() {
   } = usePurchases();
   // "Resume" copy only for members whose paid plan actually lapsed; first-timers see the subscribe copy.
   const isResume = params.mode === 'resume' && everPaid;
+  const isFirstTimePay = !everPaid;
   const isRequired = params.mode === 'resume';
 
   const [plans, setPlans] = useState<PlanDefinition[]>(FALLBACK_PLANS);
@@ -111,7 +112,13 @@ export default function PlanGateScreen() {
     try {
       const success = await buy(chosenPackage);
       if (success) {
-        Alert.alert('Payment Successful', 'Your subscription is active again. Welcome back!');
+        // AppContext starts day 1 on first paid access; resume keeps existing journey day.
+        Alert.alert(
+          'Payment Successful',
+          isFirstTimePay
+            ? 'Your subscription is active. Your plan starts today at Day 1.'
+            : 'Your subscription is active again. Welcome back!'
+        );
         dismiss();
         router.replace('/(tabs)');
       }
@@ -290,7 +297,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
     marginBottom: 12,
   },
   badgeText: { fontSize: 12, fontFamily: 'Manrope_700Bold' },

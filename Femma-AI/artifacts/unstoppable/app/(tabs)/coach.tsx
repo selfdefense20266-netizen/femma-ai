@@ -212,7 +212,7 @@ export default function CoachScreen() {
         contentContainerStyle={styles.suggestionsScroll}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.suggestionChip, { backgroundColor: colors.background, borderColor: colors.border }]}
+            style={[styles.suggestionChip, { backgroundColor: colors.muted }]}
             onPress={() => send(item)}
             disabled={typing}
             activeOpacity={0.75}
@@ -339,8 +339,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 999,
+    borderWidth: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
     maxWidth: 280,
@@ -365,14 +365,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_500Medium',
     maxHeight: 110,
   },
-  sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  sendBtn: { width: 42, height: 42, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   upgradeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 14,
+    borderRadius: 999,
   },
   upgradeBadgeText: { color: '#FFF', fontSize: 11, fontFamily: 'Manrope_700Bold' },
 });

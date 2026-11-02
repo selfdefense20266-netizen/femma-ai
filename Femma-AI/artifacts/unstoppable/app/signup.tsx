@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   formError: { fontSize: 13, fontFamily: 'Manrope_500Medium', textAlign: 'center' },
   primaryBtn: {
     height: 56,
-    borderRadius: 18,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,

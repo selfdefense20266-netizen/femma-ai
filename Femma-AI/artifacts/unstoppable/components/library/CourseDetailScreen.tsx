@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
   missingTitle: { fontSize: 20, fontFamily: 'Manrope_800ExtraBold' },
-  missingButton: { borderRadius: 20, paddingHorizontal: 22, paddingVertical: 12 },
+  missingButton: { borderRadius: 999, paddingHorizontal: 22, paddingVertical: 12 },
   hero: { paddingHorizontal: 20, paddingBottom: 25, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden' },
   heroImage: { resizeMode: 'contain' },
   heroOverlay: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.38)',
   },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  glassButton: { width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  glassButton: { width: 40, height: 40, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   savedDot: { position: 'absolute', right: 8, top: 8, width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFFFFF' },
   heroIcon: { width: 54, height: 54, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
   heroEyebrow: { color: 'rgba(255,255,255,0.7)', fontSize: 9.5, letterSpacing: 1.2, fontFamily: 'Manrope_800ExtraBold' },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   lessonMetaDot: { width: 3, height: 3, borderRadius: 2 },
   disclaimer: { flexDirection: 'row', gap: 9, borderRadius: 16, borderWidth: 1, padding: 13, alignItems: 'flex-start' },
   disclaimerText: { flex: 1, fontSize: 10.3, lineHeight: 16, fontFamily: 'Manrope_500Medium' },
-  primaryButton: { height: 52, borderRadius: 26, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 },
+  primaryButton: { height: 52, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 4 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 14.5, fontFamily: 'Manrope_700Bold' },
 });
 

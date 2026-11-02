@@ -66,6 +66,10 @@ def shortSvg = new File('D:/n/svg/android')
 if (shortSvg.exists()) {
   project(':react-native-svg').projectDir = shortSvg
 }
+def shortGoogleSignIn = new File('D:/n/gs/android')
+if (shortGoogleSignIn.exists()) {
+  project(':react-native-google-signin_google-signin').projectDir = shortGoogleSignIn
+}
 `;
 
 function withShortNativePaths(config) {

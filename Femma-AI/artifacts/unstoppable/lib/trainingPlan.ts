@@ -95,13 +95,18 @@ export function countCompletedPlanDays(
   journeyDay = 1,
   todayAllDone = false
 ) {
+  // Journey-based floor: Day 3 means at least 2 prior days are behind you.
+  const byJourney = Math.max(0, (journeyDay || 1) - 1) + (todayAllDone ? 1 : 0);
   if (plan?.days?.length) {
     const fromPlan = plan.days.filter(isPlanDayComplete).length;
     const todayRow = plan.days.find((day) => day.day === journeyDay);
-    if (todayAllDone && todayRow && !isPlanDayComplete(todayRow)) return fromPlan + 1;
-    return fromPlan;
+    const fromPlanAdj =
+      todayAllDone && todayRow && !isPlanDayComplete(todayRow) ? fromPlan + 1 : fromPlan;
+    // Prefer the higher value so the ring moves with journey day even when
+    // older plan-day completion flags were never persisted on the plan object.
+    return Math.max(byJourney, fromPlanAdj);
   }
-  return Math.max(0, (journeyDay || 1) - 1) + (todayAllDone ? 1 : 0);
+  return byJourney;
 }
 
 export function countEarnedPlanDays(

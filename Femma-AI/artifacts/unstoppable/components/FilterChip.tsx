@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: 0,
     flexShrink: 0,
   },
   label: {

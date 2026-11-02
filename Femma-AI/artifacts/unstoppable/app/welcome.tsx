@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   ctaSection: { gap: 16 },
   primaryBtn: {
     height: 56,
-    borderRadius: 18,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
   },
